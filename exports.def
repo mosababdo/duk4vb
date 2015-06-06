@@ -1,0 +1,10 @@
+LIBRARY Duk4VB
+      DESCRIPTION 'DukTape JS engine for VB6'
+      EXPORTS
+		Eval
+		LastString
+		AddFile
+		DukDestroy
+		DukCreate
+		GetLastStringSize
+		SetCallBacks

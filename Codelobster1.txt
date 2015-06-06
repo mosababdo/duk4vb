@@ -1,0 +1,22 @@
+duk_tval *tv;
+
+	DUK_ASSERT(ctx != NULL);
+
+	/* default: NULL, length 0 */
+	ret = NULL;
+	if (out_len) {
+		*out_len = 0;
+	}
+
+	tv = duk_get_tval(ctx, index);
+	if (tv && DUK_TVAL_IS_STRING(tv)) {
+		/* Here we rely on duk_hstring instances always being zero
+		 * terminated even if the actual string is not.
+		 */
+		duk_hstring *h = DUK_TVAL_GET_STRING(tv);
+		DUK_ASSERT(h != NULL);
+		ret = (const char *) DUK_HSTRING_GET_DATA(h);
+		if (out_len) {
+			*out_len = DUK_HSTRING_GET_BYTELEN(h);
+		}
+	}
