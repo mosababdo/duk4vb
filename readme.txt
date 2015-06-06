@@ -9,3 +9,10 @@ currently in the early stages and experimental but functioning so far.
 
 no major roadblocks hit yet.
 
+note test exe uses one of my own activex dlls that you probably wont
+have
+
+http://sandsprite.com/CodeStuff/vbdevkit.exe
+
+
+

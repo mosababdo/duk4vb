@@ -1,14 +1,21 @@
 VERSION 5.00
 Begin VB.Form Form1 
    Caption         =   "Form1"
-   ClientHeight    =   3195
+   ClientHeight    =   4320
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   4680
+   ClientWidth     =   9390
    LinkTopic       =   "Form1"
-   ScaleHeight     =   3195
-   ScaleWidth      =   4680
+   ScaleHeight     =   4320
+   ScaleWidth      =   9390
    StartUpPosition =   3  'Windows Default
+   Begin VB.TextBox Text1 
+      Height          =   375
+      Left            =   1845
+      TabIndex        =   0
+      Top             =   495
+      Width           =   3750
+   End
 End
 Attribute VB_Name = "Form1"
 Attribute VB_GlobalNameSpace = False
@@ -21,6 +28,7 @@ Private Sub Form_Load()
     Dim hDukLib As Long
     Dim dlg As New clsCmnDlg2
     Dim fso As New CFileSystem2
+    Dim tmp As String
     
     hDukLib = LoadLibrary(App.Path & "\duk4vb.dll") 'to ensure the ide finds the dll
     
@@ -29,7 +37,7 @@ Private Sub Form_Load()
         Exit Sub
     End If
     
-    SetCallBacks AddressOf vb_stdout, 0, AddressOf HostResolver, 0
+    SetCallBacks AddressOf vb_stdout, 0, AddressOf HostResolver, AddressOf VbLineInput
     DukCreate
     AddObject dlg, "cmndlg"
     AddObject fso, "fso"
@@ -42,18 +50,21 @@ Private Sub Form_Load()
         MsgBox "Addfile Error: " & GetLastString()
     End If
     
+    rv = Eval("prompt('text')") 'works
     'rv = Eval("1+2") 'works
-    'rv = Eval("alert(1+2)") 'works
+    'Eval "alert(1+2)" 'works
+    'Eval "a='testing';alert(a[0]);" 'works
     'rv = Eval("pth = cmndlg.ShowOpen(4,'title','c:\\',0); alert(fso.ReadFile(pth))") 'works
-     'rv = Eval("form.caption = 'test!'; alert(form.ReadFile('c:\\lastGraph.txt'));")
-     rv = Eval("form.caption = 'test!';alert(form.caption)")
-'    If rv < 0 Then
-'        MsgBox "Error: " & GetLastString()
-'    Else
-'        If GetLastStringSize() > 0 Then
-'            MsgBox "result: " & GetLastString()
-'        End If
-'    End If
+    'Eval "form.caption = 'test!'; alert(form.ReadFile('c:\\lastGraph.txt'));"
+    'Eval "form.caption = 'test!';alert(form.caption)"
+     
+    If rv < 0 Then
+        Text1.text = "Error: " & GetLastString()
+    Else
+        If GetLastStringSize() > 0 Then
+            Text1.text = GetLastString()
+        End If
+    End If
     
     DukDestroy
     FreeLibrary hDukLib 'so the ide doesnt hang on to the dll and we can recompile it..

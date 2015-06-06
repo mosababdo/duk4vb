@@ -1,6 +1,13 @@
 #include "./duk/duktape.h"
 #include <conio.h>
 
+/*
+api tidbits:
+	DUK_EXTERNAL_DECL duk_int_t duk_get_type(duk_context *ctx, duk_idx_t index);
+	duk_is_none(), which would indicate whether index it outside of stack,
+	is not needed; duk_is_valid_index() gives the same information.
+*/
+
 
 #define EXPORT comment(linker, "/EXPORT:"__FUNCTION__"="__FUNCDNAME__)
 
@@ -8,9 +15,15 @@
 
 vbCallback vbStdOut;
 vbHostResolverCallback vbHostResolver;
+vbDbgCallback vbLineInput;
 
 duk_context *ctx = 0 ; //vb6 is single threaded so lets simplify..
 char* mLastString = 0;
+
+void __stdcall DukPushUndefined(duk_context *ctx){ 
+#pragma EXPORT
+	duk_push_undefined(ctx);
+}
 
 void __stdcall DukPushNum(duk_context *ctx, int num){ 
 #pragma EXPORT
@@ -27,11 +40,13 @@ void __stdcall SetCallBacks(void* lpfnMsgHandler, void* lpfnDbgHandler, void* lp
 	vbStdOut     = (vbCallback)lpfnMsgHandler;
 	//vbDbgHandler = (vbDbgCallback)lpfnDbgHandler;
 	vbHostResolver = (vbHostResolverCallback)lpfnHostResolver;
-	//vbLineInput = (vbDbgCallback)lpfnLineInput;
+	vbLineInput = (vbDbgCallback)lpfnLineInput;
 }
 
-int setLastString(const char* s){
+int __stdcall setLastString(const char* s){ //accepts null string to just free last buffer
+#pragma EXPORT
 	if(mLastString != 0){ free(mLastString); mLastString = 0 ;}
+	if(s==0) return 0;
 	mLastString = strdup(s);
 	return strlen(s);
 }
@@ -64,12 +79,13 @@ int __stdcall DukGetInt(duk_context *ctx, int index){
 int __stdcall DukGetString(duk_context *ctx, int index){
 #pragma EXPORT
 	if(ctx == 0) return -1;
-	return setLastString(duk_safe_to_string(ctx, index));
+	//return setLastString(duk_safe_to_string(ctx, index));
+	return (int)duk_safe_to_string(ctx, index);
 }
 
 
 int comResolver(duk_context *ctx) {
-	int i, retType ;
+	int i, hasRetVal ;
 	const char* meth = 0;
 
 	int n = duk_get_top(ctx);  /* #args */
@@ -78,9 +94,28 @@ int comResolver(duk_context *ctx) {
 	if(vbHostResolver==NULL) return 0; 
 	
 	meth = duk_safe_to_string(ctx, 0); //first arg is obj.method string
-	retType = vbHostResolver(meth, strlen(meth), ctx, n-1);
+	hasRetVal = vbHostResolver(meth, strlen(meth), ctx, n-1);
 
-	return 1;  
+	if(hasRetVal != 0 && hasRetVal != 1){
+			MessageBox(0,"comresolver","vbdev the hasRetVal must be 0 or 1",0);
+			hasRetVal = 1;
+	}
+
+	return hasRetVal;  
+}
+
+int prompt(duk_context *ctx){
+	//prompt(text,defaultText)
+	const char* meth = 0;
+	int i, hasRetVal ;
+	int n = duk_get_top(ctx);  /* #args */
+
+	if(n < 0) return 0;
+	if(vbHostResolver==NULL) return 0; 
+	
+	meth = duk_safe_to_string(ctx, 0); 
+	hasRetVal = vbLineInput(meth, ctx);
+	return 1;
 }
 
 void RegisterNativeHandlers(){
@@ -89,6 +124,12 @@ void RegisterNativeHandlers(){
 	duk_push_c_function(ctx, comResolver, DUK_VARARGS);
 	duk_put_prop_string(ctx, -2, "resolver");
 	duk_pop(ctx);  /* pop global */
+
+	duk_push_global_object(ctx);
+	duk_push_c_function(ctx, prompt, 2);
+	duk_put_prop_string(ctx, -2, "prompt");
+	duk_pop(ctx);  /* pop global */
+
 
 }
 
@@ -124,8 +165,12 @@ int __stdcall AddFile(char* pth){
 int __stdcall Eval(char* js){
 #pragma EXPORT
 
+	int topIndex;
 	int rv = 0;
+
 	if(ctx == 0) return -1;
+	
+	//topIndex = duk_get_top_index(ctx);
 
 	//safe to call eval to avoid fatal panic handler on syntax error
 	duk_push_string(ctx, js);
@@ -133,7 +178,10 @@ int __stdcall Eval(char* js){
 		setLastString(duk_safe_to_string(ctx, -1));
 		rv = -1;
 	} else {
-		setLastString(duk_safe_to_string(ctx, -1));
+		//if(topIndex != duk_get_top_index(ctx)){
+			//is there a way to tell if eval actually returned a result? just ignore "undefined" ?
+			setLastString(duk_safe_to_string(ctx, -1));
+		//}
 	}
 
 	duk_pop(ctx);

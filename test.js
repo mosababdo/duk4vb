@@ -13,6 +13,21 @@ function fsoClass(){
 	}	
 }
 
+/*
+Function OpenTextFile(FileName As String, 
+						[IOMode As IOMode = ForReading], 
+						[Create As Boolean = False], 
+						[Format As Tristate = TristateFalse]
+) As TextStream
+
+Function ReadAll() As String Member of Scripting.TextStream
+
+how to call a method on  a specific instance of an object instead of 
+static top level global objects like we have been?
+
+*/
+
+
 var cmndlg = new dlgClass();
 var fso = new fsoClass();
 

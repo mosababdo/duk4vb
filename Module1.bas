@@ -5,13 +5,15 @@ Public Declare Sub DukCreate Lib "Duk4VB.dll" ()
 Public Declare Function AddFile Lib "Duk4VB.dll" (ByVal jsFile As String) As Long
 Public Declare Function Eval Lib "Duk4VB.dll" (ByVal js As String) As Long
 Public Declare Function LastString Lib "Duk4VB.dll" (ByVal buf As String, ByVal bufSz As Long) As Long
+Public Declare Function SetLastString Lib "Duk4VB.dll" (ByVal buf As String) As Long
 
 'safe from invalid indexes..invalid context will crash
 Public Declare Function DukGetInt Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long
-Public Declare Function DukGetString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long 'returns string length..
+Public Declare Function DukGetString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long 'returns string ptr..
 
 Public Declare Sub DukPushNum Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal val As Long)
 Public Declare Sub DukPushString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal val As String)
+Public Declare Sub DukPushUndefined Lib "Duk4VB.dll" (ByVal ctx As Long)
 
 Public Declare Function GetLastStringSize Lib "Duk4VB.dll" () As Long
 Public Declare Sub SetCallBacks Lib "Duk4VB.dll" (ByVal msgProc As Long, ByVal dbgCmdProc As Long, ByVal hostResolverProc As Long, ByVal lineInputfunc As Long)
@@ -20,7 +22,7 @@ Public Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal l
 Public Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, Source As Any, ByVal length As Long)
 Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-
+Declare Function lstrlen Lib "kernel32.dll" Alias "lstrlenA" (ByVal lpString As Long) As Long
 
 Enum cb_type
     cb_output = 0
@@ -42,7 +44,18 @@ hell:
 End Function
 
 Function GetArgAsString(ctx As Long, index As Long) As String
-    If DukGetString(ctx, index) > 0 Then GetArgAsString = GetLastString()
+    
+    'an invalid index here would trigger a script error and aborting the eval call..weird.. <---
+    'as long as the native function is added with expected arg count, and you dont surpass it your ok
+    'even if the js function ommitted args in its call, empty ones will just be retrieved as 'undefined'
+    
+    Dim ptr As Long
+    ptr = DukGetString(ctx, index)
+    
+    If ptr <> 0 Then
+        GetArgAsString = StringFromPointer(ptr)
+    End If
+    
 End Function
  
 Function GetLastString() As String
@@ -159,10 +172,14 @@ Public Function HostResolver(ByVal buf As Long, ByVal strlen As Long, ByVal ctx 
         retVal = CallByNameEx(o, CStr(tmp(2)), t)
     End If
     
+    HostResolver = 0 'are we setting a return value (doesnt seem to be critical)
+    
     If InStr(1, tmp(UBound(tmp)), "string") > 0 Then
         DukPushString ctx, CStr(retVal)
+        If t <> VbLet Then HostResolver = 1
     ElseIf InStr(1, tmp(UBound(tmp)), "long") > 0 Then
         DukPushNum ctx, CLng(retVal)
+        If t <> VbLet Then HostResolver = 1
     End If
         
     
@@ -206,4 +223,44 @@ Handler:
 End Function
     
     
+Public Function VbLineInput(ByVal buf As Long, ByVal ctx As Long) As Long
+    Dim b() As Byte
+    Dim retVal As String
+    VbLineInput = 0 'return value default..
+    
+    Dim text As String
+    Dim def As String
+    
+    text = StringFromPointer(buf)
+    def = GetArgAsString(ctx, 1)
+    
+    retVal = InputBox(text, "Script Basic Line Input", def)
+    
+    If Len(retVal) = 0 Then
+        DukPushUndefined ctx
+        Exit Function
+    Else
+        DukPushString ctx, retVal
+    End If
+        
+  
+End Function
 
+Private Function StringFromPointer(buf As Long) As String
+    Dim sz As Long
+    Dim tmp As String
+    Dim b() As Byte
+    
+    If buf = 0 Then Exit Function
+       
+    sz = lstrlen(buf)
+    If sz = 0 Then Exit Function
+    
+    ReDim b(sz)
+    CopyMemory b(0), ByVal buf, sz
+    tmp = StrConv(b, vbUnicode)
+    If Right(tmp, 1) = Chr(0) Then tmp = Left(tmp, Len(tmp) - 1)
+    
+    StringFromPointer = tmp
+ 
+End Function
