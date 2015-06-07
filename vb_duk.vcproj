@@ -186,6 +186,10 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\VB.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -314,10 +318,6 @@
 			</File>
 			<File
 				RelativePath=".\duk\duktape.h"
-				>
-			</File>
-			<File
-				RelativePath=".\VB.h"
 				>
 			</File>
 		</Filter>

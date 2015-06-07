@@ -14,6 +14,7 @@ Public Declare Function DukGetString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal 
 Public Declare Sub DukPushNum Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal val As Long)
 Public Declare Sub DukPushString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal val As String)
 Public Declare Sub DukPushUndefined Lib "Duk4VB.dll" (ByVal ctx As Long)
+Public Declare Function DukPushNewJSClass Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal jsClassName As String, ByVal hInst As Long) As Long 'returns 0/-1
 
 Public Declare Function GetLastStringSize Lib "Duk4VB.dll" () As Long
 Public Declare Sub SetCallBacks Lib "Duk4VB.dll" (ByVal msgProc As Long, ByVal dbgCmdProc As Long, ByVal hostResolverProc As Long, ByVal lineInputfunc As Long)
@@ -30,7 +31,7 @@ Enum cb_type
     'cb_debugger = 2
     'cb_engine = 3
     cb_error = 4
-    cb_refreshUI = 5
+    cb_ReleaseObj = 5
 End Enum
 
 Dim objs As New Collection
@@ -75,9 +76,8 @@ Function GetLastString() As String
         
 End Function
 
-Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long, ByVal sz As Long)
+Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
 
-    Dim b() As Byte
     Dim msg As String
     
     'If shuttingDown Then Exit Sub
@@ -89,16 +89,15 @@ Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long, ByVal sz As Long)
 '        Exit Sub
 '    End If
     
-    If lpMsg = 0 Or sz = 0 Then Exit Sub
+    If lpMsg = 0 Then Exit Sub
     
-    ReDim b(sz)
-    CopyMemory b(0), ByVal lpMsg, sz
-    msg = StrConv(b, vbUnicode)
-    If Right(msg, 1) = Chr(0) Then msg = Left(msg, Len(msg) - 1)
+    msg = StringFromPointer(lpMsg)
     
-    MsgBox msg
-    
-'    Select Case t
+    Select Case t
+        Case cb_ReleaseObj: ReleaseObj CLng(msg)
+        Case cb_output, cb_error:  MsgBox msg, vbInformation, "Script Output"
+                
+                
 '        'Case cb_debugger: HandleDebugMessage msg
 '        'Case cb_engine:   HandleEngineMessage msg
 '        'Case cb_error:    ParseError msg
@@ -111,22 +110,31 @@ Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long, ByVal sz As Long)
 '                               .Refresh
 '                               DoEvents
 '                          End With
-'    End Select
+    End Select
     
 End Sub
 
+Function ReleaseObj(hInst As Long)
+    On Error GoTo hell
+    dbg "ReleaseObj: ", hInst
+    Dim o As Object
+    Set o = objs("obj:" & hInst)
+    objs.Remove "obj:" & hInst
+    Set o = Nothing
+hell:
+    If Err.Number <> 0 Then Debug.Print "Error in ReleaseObj(" & hInst & ")" & Err.Description
+End Function
+
 'this is used for script to host app object integration..
-Public Function HostResolver(ByVal buf As Long, ByVal strlen As Long, ByVal ctx As Long, ByVal argCnt As Long) As Long
+Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt As Long) As Long
 
 
     Dim b() As Byte
     Dim name As String
     
-    ReDim b(strlen)
-    CopyMemory b(0), ByVal buf, strlen
-    name = StrConv(b, vbUnicode)
-    If Right(name, 1) = Chr(0) Then name = Left(name, Len(name) - 1)
-
+    name = StringFromPointer(buf)
+    dbg "HostResolver: ", name, ctx, argCnt
+    
     'MsgBox "Host resolver: " & name & " ctx:" & Hex(ctx) & " args: " & argCnt
     
     'MsgBox DukGetInt(ctx, 1)
@@ -139,20 +147,38 @@ Public Function HostResolver(ByVal buf As Long, ByVal strlen As Long, ByVal ctx 
     '"call:cmndlg:OpenDialog:int:[string][string][int]:r_string"
     
     On Error Resume Next
-    Dim o As Object, tmp, args(), retVal As Variant, i As Long
+    Dim o As Object, tmp, args(), retVal As Variant, i As Long, hInst As Long, oo As Object
+    Dim firstUserArg As Long
     
     tmp = Split(name, ":")
-    Set o = objs(tmp(1))
+    If tmp(1) = "objptr" Then
+        argCnt = argCnt - 1
+        firstUserArg = 1
+        hInst = DukGetInt(ctx, 1) 'first arg for this type of call is the hInst ( or do another way?)
+        For Each oo In objs
+            If ObjPtr(oo) = hInst Then
+                Set o = oo
+                Exit For
+            End If
+        Next
+    Else
+        Set o = objs(tmp(1))
+    End If
     
-    If o Is Nothing Then Exit Function
+    If o Is Nothing Then
+        dbg "Host resolver could not find object!"
+        Exit Function
+    End If
     
     If argCnt > 0 Then
         ReDim args(argCnt - 1)
-        For i = 0 To argCnt - 1
+        For i = firstUserArg To argCnt - 1
             If InStr(1, tmp(i + 3), "string") > 0 Then
                 args(i) = GetArgAsString(ctx, i + 1)
             ElseIf InStr(1, tmp(i + 3), "long") > 0 Then
                 args(i) = DukGetInt(ctx, i + 1)
+            ElseIf InStr(1, tmp(i + 3), "bool") > 0 Then
+                args(i) = CBool(GetArgAsString(ctx, i + 1))
             End If
         Next
     End If
@@ -161,28 +187,40 @@ Public Function HostResolver(ByVal buf As Long, ByVal strlen As Long, ByVal ctx 
     'callbyname obj, method, type, args() as variant
     'retVal = CallByName(o, CStr(tmp(2)), VbMethod, args()) 'nope wont work this way.. :(
     
-    Dim t As VbCallType
+    Dim t As VbCallType, isObj As Boolean
+    
     If tmp(0) = "call" Then t = VbMethod
     If tmp(0) = "let" Then t = VbLet
     If tmp(0) = "get" Then t = VbGet
-        
-    If argCnt > 0 Then
-        retVal = CallByNameEx(o, CStr(tmp(2)), t, args())
+    If VBA.Left(tmp(UBound(tmp)), 5) = "r_obj" Then
+        isObj = True
+        tmp(UBound(tmp)) = Mid(tmp(UBound(tmp)), 6)
+    End If
+    
+    If isObj Then
+        Set retVal = CallByNameEx(o, CStr(tmp(2)), t, args(), isObj)
     Else
-        retVal = CallByNameEx(o, CStr(tmp(2)), t)
+        retVal = CallByNameEx(o, CStr(tmp(2)), t, args(), isObj)
     End If
     
     HostResolver = 0 'are we setting a return value (doesnt seem to be critical)
     
     If InStr(1, tmp(UBound(tmp)), "string") > 0 Then
+        dbg "returning string"
         DukPushString ctx, CStr(retVal)
         If t <> VbLet Then HostResolver = 1
     ElseIf InStr(1, tmp(UBound(tmp)), "long") > 0 Then
+        dbg "returning long"
         DukPushNum ctx, CLng(retVal)
         If t <> VbLet Then HostResolver = 1
     End If
         
-    
+    If isObj Then
+        dbg "returning new js class " & tmp(UBound(tmp))
+        DukPushNewJSClass ctx, tmp(UBound(tmp)), ObjPtr(retVal)
+        objs.Add retVal, "obj:" & ObjPtr(retVal)
+        HostResolver = 1
+    End If
     
     'If Err.Number <> 0 Then MsgBox Err.Description Else MsgBox retVal
     
@@ -190,7 +228,7 @@ Public Function HostResolver(ByVal buf As Long, ByVal strlen As Long, ByVal ctx 
 End Function
 
 'http://www.vbforums.com/showthread.php?405366-RESOLVED-Using-CallByName-with-variable-number-of-arguments
-Public Function CallByNameEx(Obj As Object, ProcName As String, CallType As VbCallType, Optional vArgsArray As Variant)
+Public Function CallByNameEx(Obj As Object, ProcName As String, CallType As VbCallType, Optional vArgsArray As Variant, Optional isObj As Boolean = False)
     
         Dim oTLI As New TLIApplication
         Dim ProcID As Long
@@ -203,25 +241,41 @@ Public Function CallByNameEx(Obj As Object, ProcName As String, CallType As VbCa
         'Set oTLI = CreateObject("TLI.TLIApplication")
         ProcID = oTLI.InvokeID(Obj, ProcName)
         
-        If IsMissing(vArgsArray) Then
-            CallByNameEx = oTLI.InvokeHook(Obj, ProcID, CallType)
-        End If
-        
-        If IsArray(vArgsArray) Then
+        If Not IsArray(vArgsArray) Or AryIsEmpty(vArgsArray) Then
+            dbg "CallByName: ", Obj, ProcName, isObj
+            If isObj Then
+                Set CallByNameEx = oTLI.InvokeHook(Obj, ProcID, CallType)
+            Else
+                CallByNameEx = oTLI.InvokeHook(Obj, ProcID, CallType)
+            End If
+        Else
             numArgs = UBound(vArgsArray)
+            dbg "CallByName: ", Obj, ProcName, isObj, Join(vArgsArray, ", ")
             ReDim v(numArgs)
             For i = 0 To numArgs
                 v(i) = vArgsArray(numArgs - i)
             Next i
-            CallByNameEx = oTLI.InvokeHookArray(Obj, ProcID, CallType, v)
+            If isObj Then
+                Set CallByNameEx = oTLI.InvokeHookArray(Obj, ProcID, CallType, v)
+            Else
+                CallByNameEx = oTLI.InvokeHookArray(Obj, ProcID, CallType, v)
+            End If
         End If
         
     Exit Function
      
 Handler:
-        Debug.Print Err.Number, Err.Description
+        dbg "Error in CallByNameEx: ", Err.Number, Err.Description
 End Function
-    
+
+Function AryIsEmpty(ary) As Boolean
+  On Error GoTo oops
+    i = UBound(ary)  '<- throws error if not initalized
+    AryIsEmpty = False
+  Exit Function
+oops: AryIsEmpty = True
+End Function
+
     
 Public Function VbLineInput(ByVal buf As Long, ByVal ctx As Long) As Long
     Dim b() As Byte
@@ -264,3 +318,22 @@ Private Function StringFromPointer(buf As Long) As String
     StringFromPointer = tmp
  
 End Function
+
+Sub dbg(prefix As String, ParamArray args())
+    Dim a, tmp As String
+    
+    tmp = prefix
+    
+    For Each a In args
+        If IsNumeric(a) Then
+            tmp = tmp & Hex(a) & ", "
+        ElseIf IsObject(a) Then
+            tmp = tmp & "Obj: " & Hex(ObjPtr(a)) & ", "
+        Else
+            tmp = tmp & a & ", "
+        End If
+    Next
+    
+    Form1.List1.AddItem tmp
+    
+End Sub

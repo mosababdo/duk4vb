@@ -14,5 +14,9 @@ have
 
 http://sandsprite.com/CodeStuff/vbdevkit.exe
 
+also requires the ms type lib info activex control registered
+
+https://github.com/dzzie/iDBG/blob/master/dependancy/TLBINF32.DLL
+
 
 

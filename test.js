@@ -13,6 +13,20 @@ function fsoClass(){
 	}	
 }
 
+var fso2 = {
+	OpenTextFile : function(FileName,IOMode,Create,Format){
+		return resolver("call:fso2:OpenTextFile:string:[long]:[bool]:[long]:r_objTextStreamClass", FileName,IOMode,Create,Format); 	
+	}
+	
+}
+
+function TextStreamClass(){
+	this.hInst =0;
+	this.ReadAll = function(){
+		return resolver("call:objptr:ReadAll:r_string", this.hInst); 	
+	}
+}
+
 /*
 Function OpenTextFile(FileName As String, 
 						[IOMode As IOMode = ForReading], 
