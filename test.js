@@ -31,49 +31,39 @@ function TextStreamClass(){
 }
 
 
-/*
-Function OpenTextFile(FileName As String, 
-						[IOMode As IOMode = ForReading], 
-						[Create As Boolean = False], 
-						[Format As Tristate = TristateFalse]
-) As TextStream
+function TextBoxClass(){
+	this.hInst=0;
+}
 
-Function ReadAll() As String Member of Scripting.TextStream
+TextBoxClass.prototype = {
+	get Text (){
+		return resolver("get:objptr:Text:r_string", arguments.length, this.hInst); 	
+	},
+	set Text (val){
+		resolver("let:objptr:Text", arguments.length, this.hInst, val); 
+	}
+};
 
-how to call a method on  a specific instance of an object instead of 
-static top level global objects like we have been?
+function FormClass(){
+	//dummy
+}
 
-*/
-
+FormClass.prototype = {
+	  set caption (str) {
+	    	resolver("let:form:caption:string", arguments.length, str); 
+	  }, 
+	  
+	  get caption() {
+	    	return resolver("get:form:caption:string", arguments.length); 
+	  },
+	  
+	  get Text1 (){
+			return resolver("get:form:Text1:r_objTextBoxClass", arguments.length); 	
+	  }
+	  
+};
 
 var cmndlg = new dlgClass();
 var fso = new fsoClass();
-
-var form = {
-  set caption (str) {
-    resolver("let:form:caption:string", arguments.length, str); 
-  }, 
-  
-  get caption() {
-    return resolver("get:form:caption:string", arguments.length); 
-  },
-  
-  ReadFile : function(fname){
-		return resolver("call:fso:ReadFile:string:r_string", arguments.length, fname); 	
-  },  
-  
-  ShowOpen : function(filt,initDir,title,hwnd){ 
-		return resolver("call:cmndlg:OpenDialog:long:[string]:[string]:[long]:r_string", arguments.length, filt,initDir,title,hwnd); 
-  }	
-
-}
-
-
-/* this works
-form.ReadFile = function(fname){
-		return resolver("call:fso:ReadFile:string:r_string", arguments.length, fname); 	
-}
-*/
-
-
+var form = new FormClass();
 

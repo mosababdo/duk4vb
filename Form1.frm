@@ -49,6 +49,8 @@ Private Sub Form_Load()
     Dim tmp As String
     Dim fso2 As New Scripting.FileSystemObject
     
+    Me.Visible = True
+    
     hDukLib = LoadLibrary(App.Path & "\duk4vb.dll") 'to ensure the ide finds the dll
     
     If hDukLib = 0 Then
@@ -85,9 +87,12 @@ Private Sub Form_Load()
     '+calling a method on returned js object
     '-getting all ???? for ReadAll() output from com object?
     'rv = Eval("var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1,true,0); v = ts.ReadAll();alert(v)") 'works!
-    rv = Eval("var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1); v = ts.ReadAll();alert(v)") 'works (default args)
+    'rv = Eval("var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1); v = ts.ReadAll();alert(v)") 'works (default args)
     
-    'how about form.text1.text ?
+    'Eval "form.Text1.Text = 'test'" 'works!
+    
+    'Text1.text = "this is my message in a vb textbox!"
+    'Eval "alert(form.Text1.Text)" 'works..
     
     'rv = Eval("prompt('text')") 'works
     'rv = Eval("1+2") 'works
