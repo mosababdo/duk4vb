@@ -1,13 +1,13 @@
 VERSION 5.00
 Begin VB.Form Form1 
    Caption         =   "Form1"
-   ClientHeight    =   7215
+   ClientHeight    =   8700
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   13230
+   ClientWidth     =   12870
    LinkTopic       =   "Form1"
-   ScaleHeight     =   7215
-   ScaleWidth      =   13230
+   ScaleHeight     =   8700
+   ScaleWidth      =   12870
    StartUpPosition =   3  'Windows Default
    Begin VB.ListBox List1 
       BeginProperty Font 
@@ -20,17 +20,19 @@ Begin VB.Form Form1
          Strikethrough   =   0   'False
       EndProperty
       Height          =   3840
-      Left            =   225
+      Left            =   45
       TabIndex        =   1
-      Top             =   2655
+      Top             =   4770
       Width           =   12705
    End
    Begin VB.TextBox Text1 
-      Height          =   375
-      Left            =   1845
+      Height          =   4605
+      Left            =   45
+      MultiLine       =   -1  'True
+      ScrollBars      =   3  'Both
       TabIndex        =   0
-      Top             =   495
-      Width           =   3750
+      Top             =   90
+      Width           =   12750
    End
 End
 Attribute VB_Name = "Form1"
@@ -65,8 +67,11 @@ Private Sub Form_Load()
     
      
      'Call CallByName(fso2, "OpenTextFile", VbMethod, "c:\\lastGraph.txt", 1, True)'works
-    'Call CallByNameEx(fso2, "OpenTextFile", VbMethod, Array("c:\\lastGraph.txt", 1, True), True) 'works..
     
+    'Dim ts As Object
+    'Set ts = CallByNameEx(fso2, "OpenTextFile", VbMethod, Array("c:\\lastGraph.txt", 1, True, 0), True) 'works..
+    'MsgBox CallByNameEx(ts, "ReadAll", VbMethod)
+    'End
     
     rv = AddFile(App.Path & "\test.js")
     If rv <> 0 Then
@@ -79,7 +84,10 @@ Private Sub Form_Load()
     '+returning js object
     '+calling a method on returned js object
     '-getting all ???? for ReadAll() output from com object?
-    rv = Eval("var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1,true,-1); v = ts.ReadAll();alert(v)")
+    'rv = Eval("var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1,true,0); v = ts.ReadAll();alert(v)") 'works!
+    rv = Eval("var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1); v = ts.ReadAll();alert(v)") 'works (default args)
+    
+    'how about form.text1.text ?
     
     'rv = Eval("prompt('text')") 'works
     'rv = Eval("1+2") 'works
@@ -100,4 +108,9 @@ Private Sub Form_Load()
     DukDestroy
     FreeLibrary hDukLib 'so the ide doesnt hang on to the dll and we can recompile it..
     
+End Sub
+
+Private Sub Form_Resize()
+    On Error Resume Next
+    List1.Width = Me.Width
 End Sub

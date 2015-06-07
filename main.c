@@ -76,6 +76,12 @@ int __stdcall DukGetInt(duk_context *ctx, int index){
 	return (int)duk_to_number(ctx, index);
 }
 
+int __stdcall DukIsNullOrUndef(duk_context *ctx, int index){
+#pragma EXPORT
+	if(ctx == 0) return -1;
+	return (int)duk_is_null_or_undefined(ctx, index);
+}
+
 //so even numeric args can be returned here like .ToString()
 int __stdcall DukGetString(duk_context *ctx, int index){
 #pragma EXPORT
@@ -136,14 +142,16 @@ int __stdcall DukPushNewJSClass(duk_context *ctx, char* className, int hInst){
 int comResolver(duk_context *ctx) {
 	int i, hasRetVal ;
 	const char* meth = 0;
+	int realArgCount = 0;
 
-	int n = duk_get_top(ctx);  /* #args */
-
-	if(n < 0) return 0;
+	int n = duk_get_top(ctx);  //padded number of args..not usable for us here..
+	
+	if(n < 2) return 0; //we require at least 2 args for this function..
 	if(vbHostResolver==NULL) return 0; 
 	
-	meth = duk_safe_to_string(ctx, 0); //first arg is obj.method string
-	hasRetVal = vbHostResolver(meth, ctx, n-1);
+	meth = duk_safe_to_string(ctx, 0);   //arg0 is obj.method string
+	realArgCount = duk_to_number(ctx,1); //arg1 is arguments.length
+	hasRetVal = vbHostResolver(meth, ctx, realArgCount);
 
 	if(hasRetVal != 0 && hasRetVal != 1){
 			MessageBox(0,"comresolver","vbdev the hasRetVal must be 0 or 1",0);

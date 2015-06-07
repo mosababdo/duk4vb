@@ -10,6 +10,7 @@ Public Declare Function SetLastString Lib "Duk4VB.dll" (ByVal buf As String) As 
 'safe from invalid indexes..invalid context will crash
 Public Declare Function DukGetInt Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long
 Public Declare Function DukGetString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long 'returns string ptr..
+Public Declare Function DukIsNullOrUndef Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long
 
 Public Declare Sub DukPushNum Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal val As Long)
 Public Declare Sub DukPushString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal val As String)
@@ -135,26 +136,17 @@ Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt 
     name = StringFromPointer(buf)
     dbg "HostResolver: ", name, ctx, argCnt
     
-    'MsgBox "Host resolver: " & name & " ctx:" & Hex(ctx) & " args: " & argCnt
-    
-    'MsgBox DukGetInt(ctx, 1)
- 
     Dim rv As Long
-    'rv = DukGetString(ctx, 2)
-    'MsgBox "arg2: " & GetLastString()
-    
-    'Function OpenDialog(filt As FilterTypes, [initDir As String], [title As String], [pHwnd As Long]) As String
-    '"call:cmndlg:OpenDialog:int:[string][string][int]:r_string"
     
     On Error Resume Next
     Dim o As Object, tmp, args(), retVal As Variant, i As Long, hInst As Long, oo As Object
     Dim firstUserArg As Long
     
+    firstUserArg = 0
     tmp = Split(name, ":")
     If tmp(1) = "objptr" Then
-        argCnt = argCnt - 1
         firstUserArg = 1
-        hInst = DukGetInt(ctx, 1) 'first arg for this type of call is the hInst ( or do another way?)
+        hInst = DukGetInt(ctx, 2) '2nd arg for this type of call is the hInst ( or do another way?)
         For Each oo In objs
             If ObjPtr(oo) = hInst Then
                 Set o = oo
@@ -171,16 +163,20 @@ Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt 
     End If
     
     If argCnt > 0 Then
-        ReDim args(argCnt - 1)
         For i = firstUserArg To argCnt - 1
+            'If DukIsNullOrUndef(ctx, i) = 1 Then
+            '    Exit For
+            'End If
             If InStr(1, tmp(i + 3), "string") > 0 Then
-                args(i) = GetArgAsString(ctx, i + 1)
+                 push args, GetArgAsString(ctx, i + 2)
             ElseIf InStr(1, tmp(i + 3), "long") > 0 Then
-                args(i) = DukGetInt(ctx, i + 1)
+                push args, DukGetInt(ctx, i + 2)
             ElseIf InStr(1, tmp(i + 3), "bool") > 0 Then
-                args(i) = CBool(GetArgAsString(ctx, i + 1))
+                push args, CBool(GetArgAsString(ctx, i + 2))
             End If
         Next
+        
+        
     End If
     
     Err.Clear
@@ -328,12 +324,27 @@ Sub dbg(prefix As String, ParamArray args())
         If IsNumeric(a) Then
             tmp = tmp & Hex(a) & ", "
         ElseIf IsObject(a) Then
-            tmp = tmp & "Obj: " & Hex(ObjPtr(a)) & ", "
+            tmp = tmp & "Obj: " & TypeName(a) & ", "
         Else
             tmp = tmp & a & ", "
         End If
     Next
     
     Form1.List1.AddItem tmp
+    Debug.Print tmp
     
 End Sub
+
+
+
+
+Sub push(ary, value) 'this modifies parent ary object
+    On Error GoTo init
+    X = UBound(ary) '<-throws Error If Not initalized
+    ReDim Preserve ary(UBound(ary) + 1)
+    ary(UBound(ary)) = value
+    Exit Sub
+init:     ReDim ary(0): ary(0) = value
+End Sub
+
+
