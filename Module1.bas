@@ -1,5 +1,6 @@
 Attribute VB_Name = "mDuk"
 Public hDukLib As Long
+Public libRefCnt As Long 'used when running in IDE...
 
 Public Declare Function DukCreate Lib "Duk4VB.dll" () As Long
 Public Declare Function AddFile Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal jsFile As String) As Long
@@ -98,46 +99,6 @@ Function GetArgAsString(ctx As Long, index As Long) As String
     
 End Function
  
-
-
-Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
-
-    Dim msg As String
-    
-    'If shuttingDown Then Exit Sub
-'
-'    If t = cb_refreshUI Then
-'        frmMain.Refresh
-'        DoEvents
-'        Sleep 10
-'        Exit Sub
-'    End If
-    
-    If lpMsg = 0 Then Exit Sub
-    
-    msg = StringFromPointer(lpMsg)
-    
-    Select Case t
-        Case cb_ReleaseObj: ReleaseObj CLng(msg)
-        Case cb_output, cb_error:  MsgBox msg, vbInformation, "Script Output"
-                
-                
-'        'Case cb_debugger: HandleDebugMessage msg
-'        'Case cb_engine:   HandleEngineMessage msg
-'        'Case cb_error:    ParseError msg
-'        Case Else:
-'
-'                          If t = cb_dbgout Then msg = "DBG> " & msg
-'
-'                          With frmMain.txtOut
-'                               .Text = .Text & Replace(msg, vbLf, vbCrLf)
-'                               .Refresh
-'                               DoEvents
-'                          End With
-    End Select
-    
-End Sub
-
 Function ReleaseObj(hInst As Long)
     On Error GoTo hell
     dbg "ReleaseObj: ", hInst
@@ -148,6 +109,26 @@ Function ReleaseObj(hInst As Long)
 hell:
     If Err.Number <> 0 Then Debug.Print "Error in ReleaseObj(" & hInst & ")" & Err.Description
 End Function
+
+
+
+'callback functions
+'------------------------------
+Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
+
+    Dim msg As String
+    
+    If lpMsg = 0 Then Exit Sub
+    
+    msg = StringFromPointer(lpMsg)
+    
+    Select Case t
+        Case cb_ReleaseObj: ReleaseObj CLng(msg)
+        Case cb_output, cb_error:  MsgBox msg, vbInformation, "Script Output"
+    End Select
+    
+End Sub
+
 
 'this is used for script to host app object integration..
 Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt As Long) As Long
@@ -246,6 +227,38 @@ Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt 
     
 End Function
 
+Public Function VbLineInput(ByVal buf As Long, ByVal ctx As Long) As Long
+    Dim b() As Byte
+    Dim retVal As String
+    VbLineInput = 0 'return value default..
+    
+    Dim text As String
+    Dim def As String
+    
+    text = StringFromPointer(buf)
+    def = GetArgAsString(ctx, 1)
+    
+    retVal = InputBox(text, "Script Basic Line Input", def)
+    
+    If Len(retVal) = 0 Then
+        DukOp opd_PushUndef, ctx
+        Exit Function
+    Else
+        DukOp opd_PushStr, ctx, 0, retVal
+    End If
+        
+  
+End Function
+
+
+
+
+
+
+'utility functions..
+'--------------------------------------------------------------------
+
+
 'http://www.vbforums.com/showthread.php?405366-RESOLVED-Using-CallByName-with-variable-number-of-arguments
 Public Function CallByNameEx(Obj As Object, ProcName As String, CallType As VbCallType, Optional vArgsArray As Variant, Optional isObj As Boolean = False)
     
@@ -287,37 +300,7 @@ Handler:
         dbg "Error in CallByNameEx: ", Err.Number, Err.Description
 End Function
 
-Function AryIsEmpty(ary) As Boolean
-  On Error GoTo oops
-    i = UBound(ary)  '<- throws error if not initalized
-    AryIsEmpty = False
-  Exit Function
-oops: AryIsEmpty = True
-End Function
 
-    
-Public Function VbLineInput(ByVal buf As Long, ByVal ctx As Long) As Long
-    Dim b() As Byte
-    Dim retVal As String
-    VbLineInput = 0 'return value default..
-    
-    Dim text As String
-    Dim def As String
-    
-    text = StringFromPointer(buf)
-    def = GetArgAsString(ctx, 1)
-    
-    retVal = InputBox(text, "Script Basic Line Input", def)
-    
-    If Len(retVal) = 0 Then
-        DukOp opd_PushUndef, ctx
-        Exit Function
-    Else
-        DukOp opd_PushStr, ctx, 0, retVal
-    End If
-        
-  
-End Function
 
 Private Function StringFromPointer(buf As Long) As String
     Dim sz As Long
@@ -382,3 +365,19 @@ init:     ReDim ary(0): ary(0) = value
 End Sub
 
 
+
+Function IsIde() As Boolean
+' Brad Martinez  http://www.mvps.org/ccrp
+    On Error GoTo out
+    Debug.Print 1 / 0
+out: IsIde = Err
+End Function
+
+
+Function AryIsEmpty(ary) As Boolean
+  On Error GoTo oops
+    i = UBound(ary)  '<- throws error if not initalized
+    AryIsEmpty = False
+  Exit Function
+oops: AryIsEmpty = True
+End Function

@@ -8,7 +8,7 @@ Begin VB.Form Form1
    LinkTopic       =   "Form1"
    ScaleHeight     =   8700
    ScaleWidth      =   12870
-   StartUpPosition =   3  'Windows Default
+   StartUpPosition =   2  'CenterScreen
    Begin VB.ListBox List1 
       BeginProperty Font 
          Name            =   "Courier New"
@@ -26,6 +26,15 @@ Begin VB.Form Form1
       Width           =   12705
    End
    Begin VB.TextBox Text1 
+      BeginProperty Font 
+         Name            =   "Courier"
+         Size            =   12
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
       Height          =   4605
       Left            =   45
       MultiLine       =   -1  'True
@@ -43,6 +52,7 @@ Attribute VB_Exposed = False
 Private Sub Form_Load()
     
     Dim rv
+    Dim js
     Dim duk As CDukTape
     
     Dim dlg As New clsCmnDlg2
@@ -50,48 +60,39 @@ Private Sub Form_Load()
     Dim fso2 As New Scripting.FileSystemObject
     
     Me.Visible = True
+    Text1.text = "this is my message in a vb textbox!"
     
-    'If Not InitDukLib(App.path & "\duk4vb.dll") Then
-    '    MsgBox "Could not load duk4vb.dll?", vbCritical
-    '    Exit Sub
-    'End If
-    
-    Set duk = New CDukTape 'note after init/loadlib for trick to work..
+    Set duk = New CDukTape
     
     AddObject dlg, "cmndlg"
     AddObject fso, "fso"
     AddObject Me, "form"
     AddObject fso2, "fso2"
+    
+'test cases all currently working
+'    js = "1+2"
+'    js = "alert(1+2)"
+'    js = "prompt('text')"
+'    js = "a='testing';alert(a[0]);"
+'    js = "pth = cmndlg.ShowOpen(4,'title','c:\\',0); alert(fso.ReadFile(pth))"
+'    js = "form.caption = 'test!'; alert(form.ReadFile('c:\\lastGraph.txt'));"
+'    js = "form.caption = 'test!';alert(form.caption)"
+'    js = "var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1,true,0);v = ts.ReadAll(); v"         'value of v is returned from eval..
+'    js = "var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1); v = ts.ReadAll();alert(v)"         '(default args test)
+'    js = "form.Text1.Text = 'test'"
+    js = "form.Text1.Text + ' read back in from javascript!'"
  
-    If Not duk.AddFile(App.path & "\test.js") Then GoTo finished
-       
-    'rv = duk.Eval("var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1,true,0); v = ts.ReadAll();alert(v)") 'works
-    
-    'rv = duk.Eval("var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1); v = ts.ReadAll();alert(v)") 'works (default args)
-    
-    'duk.Eval "form.Text1.Text = 'test'" 'works
-    
-    Text1.text = "this is my message in a vb textbox!"
-    rv = duk.Eval("form.Text1.Text + ' read back in from javascript!'")  'works..
-    
-    'rv = duk.Eval("prompt('text')") 'works
-    'rv = duk.Eval("1+2") 'works
-    'rv = duk.Eval("alert(1+2)" 'works
-    'Eval hDuk,"a='testing';alert(a[0]);" 'works
-    'rv = duk.Eval(hDuk,"pth = cmndlg.ShowOpen(4,'title','c:\\',0); alert(fso.ReadFile(pth))") 'works
-    'duk.Eval "form.caption = 'test!'; alert(form.ReadFile('c:\\lastGraph.txt'));"
-    'duk.Eval "form.caption = 'test!';alert(form.caption)"
-     
-finished:
+    If duk.AddFile(App.path & "\test.js") Then
+        rv = duk.Eval(js)
+    End If
 
     If duk.hadError Then
         Text1.text = "Error: " & duk.LastError
     Else
-        If Len(rv) Then Text1.text = rv
+        If Len(rv) Then Text1.text = "eval returned: " & rv
     End If
     
     Set duk = Nothing
-    FreeLibrary mDuk.hDukLib 'so the ide doesnt hang on to the dll and we can recompile it..
     
 End Sub
 

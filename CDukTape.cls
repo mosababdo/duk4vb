@@ -26,31 +26,42 @@ End Property
 
 Private Sub Class_Initialize()
     If mDuk.hDukLib = 0 Then
-        If Not InitDukLib() Then Exit Sub
+        If Not InitDukLib() Then
+            hadError = True
+            LastError = "Library not initilized"
+            RaiseEvent Error(LastErrorLine, LastError)
+            Exit Sub
+        End If
     End If
     hDuk = DukCreate()
+    mDuk.libRefCnt = mDuk.libRefCnt + 1
 End Sub
 
 Private Sub Class_Terminate()
     If hDuk <> 0 Then DukOp opd_Destroy, hDuk
+    mDuk.libRefCnt = mDuk.libRefCnt - 1
+    If IsIde() And mDuk.libRefCnt = 0 Then
+        'in the IDE we release it as soon as not needed..that way IDE doesnt
+        'ever hang onto the dll after debugging. If it does we cant recompile the dll
+        'without closing VB IDE which is annoying...
+        FreeLibrary mDuk.hDukLib
+    End If
+End Sub
+
+Private Sub ClearErr()
+    hadError = False
+    LastError = Empty
+    LastErrorLine = 0
 End Sub
 
 Function AddFile(fPath) As Boolean
     Dim rv As Long
     Dim tmp As String
     
-    hadError = False
-    LastError = Empty
-    LastErrorLine = 0
+    If hDuk = 0 Then Exit Function
+    ClearErr
 
-    If hDuk = 0 Then
-        hadError = True
-        LastError = "Library not initilized"
-        RaiseEvent Error(LastErrorLine, LastError)
-        Exit Function
-    End If
-    
-    rv = mDuk.AddFile(hDuk, fPath)
+    rv = mDuk.AddFile(hDuk, CStr(fPath))
     
     If rv = 0 Then
         AddFile = True
@@ -78,18 +89,10 @@ Function Eval(js)
     Dim rv As Long
     Dim tmp As String
     
-    hadError = False
-    LastError = Empty
-    LastErrorLine = 0
-
-    If hDuk = 0 Then
-        hadError = True
-        LastError = "Library not initilized"
-        RaiseEvent Error(LastErrorLine, LastError)
-        Exit Function
-    End If
-
-    rv = mDuk.Eval(hDuk, js)
+    If hDuk = 0 Then Exit Function
+    ClearErr
+    
+    rv = mDuk.Eval(hDuk, CStr(js))
     
     If rv = 0 Then
         Eval = GetLastString()
