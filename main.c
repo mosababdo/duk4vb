@@ -18,23 +18,45 @@ vbCallback vbStdOut = 0;
 vbHostResolverCallback vbHostResolver = 0;
 vbDbgCallback vbLineInput = 0;
 
-duk_context *ctx = 0 ; //vb6 is single threaded so lets simplify..
 char* mLastString = 0;
 
-void __stdcall DukPushUndefined(duk_context *ctx){ 
+enum opDuk{
+	opd_PushUndef = 0,
+	opd_PushNum =1,
+	opd_PushStr =2,
+	opd_GetInt=3,
+	opd_IsNullUndef=4,
+	opd_GetString=5,
+	opd_Destroy=6,
+	opd_LastString=7
+};
+
+
+
+int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 #pragma EXPORT
-	duk_push_undefined(ctx);
+	
+	//these do not require a context..
+	switch(operation){
+		case opd_LastString: return mLastString;
+	}
+
+	if(ctx == 0) return -1;
+
+	switch(operation){
+		case opd_PushUndef: duk_push_undefined(ctx); return 0;
+		case opd_PushNum: duk_push_number(ctx,arg1); return 0;
+		case opd_PushStr: duk_push_string(ctx, arg2); return 0;
+		case opd_GetInt: return duk_to_number(ctx, arg1);
+		case opd_IsNullUndef: return (int)duk_is_null_or_undefined(ctx, arg1);
+		case opd_GetString: return (int)duk_safe_to_string(ctx, arg1);
+		case opd_Destroy: duk_destroy_heap(ctx); ctx = 0; return 0;
+	}
+
+	return -1;
+
 }
 
-void __stdcall DukPushNum(duk_context *ctx, int num){ 
-#pragma EXPORT
-	duk_push_number(ctx,num);
-}
-
-void __stdcall DukPushString(duk_context *ctx, char* str){ 
-#pragma EXPORT
-	duk_push_string(ctx,str);
-}
 
 void __stdcall SetCallBacks(void* lpfnMsgHandler, void* lpfnDbgHandler, void* lpfnHostResolver, void* lpfnLineInput){
 #pragma EXPORT
@@ -52,54 +74,11 @@ int __stdcall setLastString(const char* s){ //accepts null string to just free l
 	return strlen(s);
 }
 
-int __stdcall GetLastStringSize(){ 
-#pragma EXPORT
-	if(mLastString == 0) return -1;
-	return strlen(mLastString);
-}
 
-int __stdcall LastString(char* buf, int sz){
-#pragma EXPORT
-	if(mLastString){
-		int a = strlen(mLastString);
-		if(a < sz) strcpy(buf, (char*)mLastString);
-		return a;
-	}
 
-	return -1;
 
-}
 
-int __stdcall DukGetInt(duk_context *ctx, int index){
-#pragma EXPORT
-	if(ctx == 0) return -1;
-	return (int)duk_to_number(ctx, index);
-}
 
-int __stdcall DukIsNullOrUndef(duk_context *ctx, int index){
-#pragma EXPORT
-	if(ctx == 0) return -1;
-	return (int)duk_is_null_or_undefined(ctx, index);
-}
-
-//so even numeric args can be returned here like .ToString()
-int __stdcall DukGetString(duk_context *ctx, int index){
-#pragma EXPORT
-	if(ctx == 0) return -1;
-	//return setLastString(duk_safe_to_string(ctx, index));
-	return (int)duk_safe_to_string(ctx, index);
-}
-
-/*
-int __stdcall DukGethInst(duk_context *ctx, int index){
-#pragma EXPORT
-	int hInst=0;
-	if(ctx == 0) return -1;
-	duk_get_prop_string(ctx, index, "hInst"); 
-	hInst = duk_to_number(ctx,index);
-	return hInst;
-}
-*/
 
 duk_ret_t js_dtor(duk_context *ctx)
 {
@@ -149,6 +128,39 @@ int comResolver(duk_context *ctx) {
 	if(n < 2) return 0; //we require at least 2 args for this function..
 	if(vbHostResolver==NULL) return 0; 
 	
+	/*
+	duk_push_this(ctx);
+	duk_push_string(ctx, "this.arguments");
+	duk_get_var(ctx);
+	duk_push_string(ctx, "length");
+	duk_get_prop(ctx,-1);
+	meth = duk_safe_to_string(ctx, 0);
+
+	//duk_push_string(ctx, "length");
+	if(duk_pcall_prop(ctx, 0, -1)==DUK_EXEC_SUCCESS){
+		
+	}
+	i = duk_to_number(ctx,0);
+	i=0;
+	*/
+
+	//duk_eval_string(ctx, "this.arguments.length");
+	//meth = duk_safe_to_string(ctx, -1);
+
+	/*duk_push_string(ctx, "arguments");
+	duk_push_string(ctx, "length");
+    duk_call_prop(ctx, -1, 1);
+	meth = duk_safe_to_string(ctx, -1);
+
+	duk_get_prop_string(ctx, -2, "arguments");
+	meth = duk_safe_to_string(ctx, -1);
+	//duk_push_object(ctx);
+	duk_get_prop_string(ctx, 0, "length");
+	realArgCount = duk_to_number(ctx,-1);
+	duk_pop(ctx);
+	duk_pop(ctx);
+	*/
+
 	meth = duk_safe_to_string(ctx, 0);   //arg0 is obj.method string
 	realArgCount = duk_to_number(ctx,1); //arg1 is arguments.length
 	hasRetVal = vbHostResolver(meth, ctx, realArgCount);
@@ -175,7 +187,7 @@ int prompt(duk_context *ctx){
 	return 1;
 }
 
-void RegisterNativeHandlers(){
+void RegisterNativeHandlers(duk_context *ctx){
 	
 	duk_push_global_object(ctx);
 	duk_push_c_function(ctx, comResolver, DUK_VARARGS);
@@ -190,22 +202,15 @@ void RegisterNativeHandlers(){
 
 }
 
-void __stdcall DukDestroy(){
+int __stdcall DukCreate(){
 #pragma EXPORT
-	duk_destroy_heap(ctx);
-	ctx = 0;
-}
-
-void __stdcall DukCreate(){
-#pragma EXPORT
-	if(ctx != 0) DukDestroy();
-	ctx = duk_create_heap_default();
-	RegisterNativeHandlers();
+	duk_context *ctx = duk_create_heap_default();
+	RegisterNativeHandlers(ctx);
+	return (int)ctx;
 }
 
 
-
-int __stdcall AddFile(char* pth){
+int __stdcall AddFile(duk_context *ctx, char* pth){
 #pragma EXPORT
 	int rv;
 	if(ctx == 0) return -1;
@@ -217,9 +222,7 @@ int __stdcall AddFile(char* pth){
 	return rv;
 }
 
-
-
-int __stdcall Eval(char* js){
+int __stdcall Eval(duk_context *ctx, char* js ){
 #pragma EXPORT
 
 	int rv = 0;
@@ -254,3 +257,6 @@ int my_fwrite( const void *buf, size_t size, size_t count, FILE* fp){
 	return 0;
 }
  
+
+
+

@@ -1,25 +1,15 @@
-Attribute VB_Name = "Module1"
+Attribute VB_Name = "mDuk"
+Public hDukLib As Long
 
-Public Declare Sub DukDestroy Lib "Duk4VB.dll" ()
-Public Declare Sub DukCreate Lib "Duk4VB.dll" ()
-Public Declare Function AddFile Lib "Duk4VB.dll" (ByVal jsFile As String) As Long
-Public Declare Function Eval Lib "Duk4VB.dll" (ByVal js As String) As Long
-Public Declare Function LastString Lib "Duk4VB.dll" (ByVal buf As String, ByVal bufSz As Long) As Long
-Public Declare Function SetLastString Lib "Duk4VB.dll" (ByVal buf As String) As Long
-
-'safe from invalid indexes..invalid context will crash
-Public Declare Function DukGetInt Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long
-Public Declare Function DukGetString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long 'returns string ptr..
-Public Declare Function DukIsNullOrUndef Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long
-
-Public Declare Sub DukPushNum Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal val As Long)
-Public Declare Sub DukPushString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal val As String)
-Public Declare Sub DukPushUndefined Lib "Duk4VB.dll" (ByVal ctx As Long)
+Public Declare Function DukCreate Lib "Duk4VB.dll" () As Long
+Public Declare Function AddFile Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal jsFile As String) As Long
+Public Declare Function Eval Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal js As String) As Long
 Public Declare Function DukPushNewJSClass Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal jsClassName As String, ByVal hInst As Long) As Long 'returns 0/-1
-
-Public Declare Function GetLastStringSize Lib "Duk4VB.dll" () As Long
 Public Declare Sub SetCallBacks Lib "Duk4VB.dll" (ByVal msgProc As Long, ByVal dbgCmdProc As Long, ByVal hostResolverProc As Long, ByVal lineInputfunc As Long)
+Public Declare Function DukOp Lib "Duk4VB.dll" (ByVal operation As opDuk, Optional ByVal ctx As Long = 0, Optional ByVal arg1 As Long, Optional ByVal sArg As String) As Long
 
+
+'misc windows api..
 Public Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Public Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, Source As Any, ByVal length As Long)
@@ -35,7 +25,55 @@ Enum cb_type
     cb_ReleaseObj = 5
 End Enum
 
+Enum opDuk
+    opd_PushUndef = 0
+    opd_PushNum = 1
+    opd_PushStr = 2
+    opd_GetInt = 3
+    opd_IsNullUndef = 4
+    opd_GetString = 5
+    opd_Destroy = 6
+    opd_LastString = 7
+End Enum
+
+
 Dim objs As New Collection
+
+Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
+    
+    If Len(explicitPathToDll) = 0 Then
+        explicitPathToDll = App.path
+        If Not FileExists(explicitPathToDll & "\duk4vb.dll") Then
+            explicitPathToDll = GetParentFolder(explicitPathToDll)
+            If Not FileExists(explicitPathToDll & "\duk4vb.dll") Then
+                explicitPathToDll = GetParentFolder(explicitPathToDll)
+                If Not FileExists(explicitPathToDll & "\duk4vb.dll") Then explicitPathToDll = GetParentFolder(explicitPathToDll)
+            End If
+        End If
+        If Not FileExists(explicitPathToDll & "\duk4vb.dll") Then
+            explicitPathToDll = Empty
+        Else
+            explicitPathToDll = explicitPathToDll & "\duk4vb.dll"
+        End If
+    End If
+
+    If FileExists(explicitPathToDll) Then
+        hDukLib = LoadLibrary(explicitPathToDll) 'to ensure the ide finds the dll
+        If hDukLib = 0 Then Exit Function
+    End If
+    
+    'this can still work..but now its up to the runtime to find the dll..if not the app will terminate
+    SetCallBacks AddressOf vb_stdout, 0, AddressOf HostResolver, AddressOf VbLineInput
+    InitDukLib = True
+    
+End Function
+
+Function GetLastString() As String
+    Dim rv As Long
+    rv = DukOp(opd_LastString)
+    If rv = 0 Then Exit Function
+    GetLastString = StringFromPointer(rv)
+End Function
 
 Function AddObject(o As Object, name As String) As Boolean
     On Error GoTo hell
@@ -52,7 +90,7 @@ Function GetArgAsString(ctx As Long, index As Long) As String
     'even if the js function ommitted args in its call, empty ones will just be retrieved as 'undefined'
     
     Dim ptr As Long
-    ptr = DukGetString(ctx, index)
+    ptr = DukOp(opd_GetString, ctx, index)
     
     If ptr <> 0 Then
         GetArgAsString = StringFromPointer(ptr)
@@ -60,22 +98,7 @@ Function GetArgAsString(ctx As Long, index As Long) As String
     
 End Function
  
-Function GetLastString() As String
-    
-    Dim rv As Long
-    Dim tmp As String
-    
-    rv = GetLastStringSize()
-    If rv < 0 Then Exit Function
-    
-    rv = rv + 2
-    tmp = String(rv, " ")
-    rv = LastString(tmp, rv)
-    tmp = Mid(tmp, 1, rv)
-    
-    GetLastString = tmp
-        
-End Function
+
 
 Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
 
@@ -146,7 +169,7 @@ Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt 
     tmp = Split(name, ":")
     If tmp(1) = "objptr" Then
         firstUserArg = 1
-        hInst = DukGetInt(ctx, 2) '2nd arg for this type of call is the hInst ( or do another way?)
+        hInst = DukOp(opd_GetInt, ctx, 2)
         For Each oo In objs
             If ObjPtr(oo) = hInst Then
                 Set o = oo
@@ -170,7 +193,7 @@ Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt 
             If InStr(1, tmp(i + 3), "string") > 0 Then
                  push args, GetArgAsString(ctx, i + 2)
             ElseIf InStr(1, tmp(i + 3), "long") > 0 Then
-                push args, DukGetInt(ctx, i + 2)
+                push args, DukOp(opd_GetInt, ctx, i + 2)
             ElseIf InStr(1, tmp(i + 3), "bool") > 0 Then
                 push args, CBool(GetArgAsString(ctx, i + 2))
             End If
@@ -203,11 +226,11 @@ Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt 
     
     If InStr(1, tmp(UBound(tmp)), "string") > 0 Then
         dbg "returning string"
-        DukPushString ctx, CStr(retVal)
+        DukOp opd_PushStr, ctx, 0, CStr(retVal)
         If t <> VbLet Then HostResolver = 1
     ElseIf InStr(1, tmp(UBound(tmp)), "long") > 0 Then
         dbg "returning long"
-        DukPushNum ctx, CLng(retVal)
+        DukOp opd_PushNum, ctx, CLng(retVal)
         If t <> VbLet Then HostResolver = 1
     End If
         
@@ -287,10 +310,10 @@ Public Function VbLineInput(ByVal buf As Long, ByVal ctx As Long) As Long
     retVal = InputBox(text, "Script Basic Line Input", def)
     
     If Len(retVal) = 0 Then
-        DukPushUndefined ctx
+        DukOp opd_PushUndef, ctx
         Exit Function
     Else
-        DukPushString ctx, retVal
+        DukOp opd_PushStr, ctx, 0, retVal
     End If
         
   
@@ -335,8 +358,19 @@ Sub dbg(prefix As String, ParamArray args())
     
 End Sub
 
+Function GetParentFolder(path) As String
+    On Error Resume Next
+    If Len(path) = 0 Then Exit Function
+    tmp = Split(path, "\")
+    ub = tmp(UBound(tmp))
+    GetParentFolder = Replace(Join(tmp, "\"), "\" & ub, "")
+End Function
 
-
+Function FileExists(path) As Boolean
+  On Error Resume Next
+  If Len(path) = 0 Then Exit Function
+  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
+End Function
 
 Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init

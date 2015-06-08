@@ -1,0 +1,104 @@
+/*
+
+'safe from invalid indexes..invalid context will crash
+'Public Declare Function DukGetInt Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long
+'Public Declare Function DukGetString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long 'returns string ptr..
+'Public Declare Function DukIsNullOrUndef Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long
+'Public Declare Sub DukPushNum Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal val As Long)
+'Public Declare Sub DukPushString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal val As String)
+'Public Declare Sub DukPushUndefined Lib "Duk4VB.dll" (ByVal ctx As Long)
+Public Declare Sub DukDestroy Lib "Duk4VB.dll" ()
+Public Declare Function DukCreate Lib "Duk4VB.dll" () As Long
+Public Declare Function GetLastStringSize Lib "Duk4VB.dll" () As Long
+Public Declare Function LastString Lib "Duk4VB.dll" (ByVal buf As String, ByVal bufSz As Long) As Long
+'Public Declare Function SetLastString Lib "Duk4VB.dll" (ByVal buf As String) As Long
+
+
+Function GetLastString() As String
+    
+    Dim rv As Long
+    Dim tmp As String
+    
+    rv = GetLastStringSize()
+    If rv < 0 Then Exit Function
+    
+    rv = rv + 2
+    tmp = String(rv, " ")
+    rv = LastString(tmp, rv)
+    tmp = Mid(tmp, 1, rv)
+    
+    GetLastString = tmp
+        
+End Function
+
+int __stdcall LastString(char* buf, int sz){
+#pragma EXPORT
+	if(mLastString){
+		int a = strlen(mLastString);
+		if(a < sz) strcpy(buf, (char*)mLastString);
+		return a;
+	}
+
+	return 0;
+
+}
+
+void __stdcall DukPushUndefined(duk_context *ctx){ 
+#pragma EXPORT
+	duk_push_undefined(ctx);
+}
+
+void __stdcall DukPushNum(duk_context *ctx, int num){ 
+#pragma EXPORT
+	duk_push_number(ctx,num);
+}
+
+void __stdcall DukPushString(duk_context *ctx, char* str){ 
+#pragma EXPORT
+	duk_push_string(ctx,str);
+}
+
+int __stdcall DukGetInt(duk_context *ctx, int index){
+#pragma EXPORT
+	if(ctx == 0) return -1;
+	return (int)duk_to_number(ctx, index);
+}
+
+int __stdcall DukIsNullOrUndef(duk_context *ctx, int index){
+#pragma EXPORT
+	if(ctx == 0) return -1;
+	return (int)duk_is_null_or_undefined(ctx, index);
+}
+
+//so even numeric args can be returned here like .ToString()
+int __stdcall DukGetString(duk_context *ctx, int index){
+#pragma EXPORT
+	if(ctx == 0) return -1;
+	//return setLastString(duk_safe_to_string(ctx, index));
+	return (int)duk_safe_to_string(ctx, index);
+}
+*/
+
+int __stdcall GetLastStringSize(){ 
+#pragma EXPORT
+	if(mLastString == 0) return -1;
+	return strlen(mLastString);
+}
+
+/*
+int __stdcall DukGethInst(duk_context *ctx, int index){
+#pragma EXPORT
+	int hInst=0;
+	if(ctx == 0) return -1;
+	duk_get_prop_string(ctx, index, "hInst"); 
+	hInst = duk_to_number(ctx,index);
+	return hInst;
+}
+*/
+
+void __stdcall DukDestroy(){
+#pragma EXPORT
+	duk_destroy_heap(ctx);
+	ctx = 0;
+}
+

@@ -42,76 +42,56 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Private Sub Form_Load()
     
-    Dim rv As Long
-    Dim hDukLib As Long
+    Dim rv
+    Dim duk As CDukTape
+    
     Dim dlg As New clsCmnDlg2
     Dim fso As New CFileSystem2
-    Dim tmp As String
     Dim fso2 As New Scripting.FileSystemObject
     
     Me.Visible = True
     
-    hDukLib = LoadLibrary(App.Path & "\duk4vb.dll") 'to ensure the ide finds the dll
+    'If Not InitDukLib(App.path & "\duk4vb.dll") Then
+    '    MsgBox "Could not load duk4vb.dll?", vbCritical
+    '    Exit Sub
+    'End If
     
-    If hDukLib = 0 Then
-        MsgBox "Could not load duk4vb.dll?", vbCritical
-        Exit Sub
-    End If
+    Set duk = New CDukTape 'note after init/loadlib for trick to work..
     
-    SetCallBacks AddressOf vb_stdout, 0, AddressOf HostResolver, AddressOf VbLineInput
-    DukCreate
     AddObject dlg, "cmndlg"
     AddObject fso, "fso"
     AddObject Me, "form"
     AddObject fso2, "fso2"
  
-    'CallByNameEx dlg, "OpenDialog", VbMethod, Array(0, "title", "c:\", 4)
+    If Not duk.AddFile(App.path & "\test.js") Then GoTo finished
+       
+    'rv = duk.Eval("var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1,true,0); v = ts.ReadAll();alert(v)") 'works
     
+    'rv = duk.Eval("var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1); v = ts.ReadAll();alert(v)") 'works (default args)
+    
+    'duk.Eval "form.Text1.Text = 'test'" 'works
+    
+    Text1.text = "this is my message in a vb textbox!"
+    rv = duk.Eval("form.Text1.Text + ' read back in from javascript!'")  'works..
+    
+    'rv = duk.Eval("prompt('text')") 'works
+    'rv = duk.Eval("1+2") 'works
+    'rv = duk.Eval("alert(1+2)" 'works
+    'Eval hDuk,"a='testing';alert(a[0]);" 'works
+    'rv = duk.Eval(hDuk,"pth = cmndlg.ShowOpen(4,'title','c:\\',0); alert(fso.ReadFile(pth))") 'works
+    'duk.Eval "form.caption = 'test!'; alert(form.ReadFile('c:\\lastGraph.txt'));"
+    'duk.Eval "form.caption = 'test!';alert(form.caption)"
      
-     'Call CallByName(fso2, "OpenTextFile", VbMethod, "c:\\lastGraph.txt", 1, True)'works
-    
-    'Dim ts As Object
-    'Set ts = CallByNameEx(fso2, "OpenTextFile", VbMethod, Array("c:\\lastGraph.txt", 1, True, 0), True) 'works..
-    'MsgBox CallByNameEx(ts, "ReadAll", VbMethod)
-    'End
-    
-    rv = AddFile(App.Path & "\test.js")
-    If rv <> 0 Then
-        MsgBox "Addfile Error: " & GetLastString()
-    End If
-    
-    'fso2.OpenTextFile("'c:\\lastGraph.txt'",ForReading ,True)
-    
-    '+getting obj ref..
-    '+returning js object
-    '+calling a method on returned js object
-    '-getting all ???? for ReadAll() output from com object?
-    'rv = Eval("var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1,true,0); v = ts.ReadAll();alert(v)") 'works!
-    'rv = Eval("var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1); v = ts.ReadAll();alert(v)") 'works (default args)
-    
-    'Eval "form.Text1.Text = 'test'" 'works!
-    
-    'Text1.text = "this is my message in a vb textbox!"
-    'Eval "alert(form.Text1.Text)" 'works..
-    
-    'rv = Eval("prompt('text')") 'works
-    'rv = Eval("1+2") 'works
-    'Eval "alert(1+2)" 'works
-    'Eval "a='testing';alert(a[0]);" 'works
-    'rv = Eval("pth = cmndlg.ShowOpen(4,'title','c:\\',0); alert(fso.ReadFile(pth))") 'works
-    'Eval "form.caption = 'test!'; alert(form.ReadFile('c:\\lastGraph.txt'));"
-    'Eval "form.caption = 'test!';alert(form.caption)"
-     
-    If rv < 0 Then
-        Text1.text = "Error: " & GetLastString()
+finished:
+
+    If duk.hadError Then
+        Text1.text = "Error: " & duk.LastError
     Else
-        If GetLastStringSize() > 0 Then
-            Text1.text = GetLastString()
-        End If
+        If Len(rv) Then Text1.text = rv
     End If
     
-    DukDestroy
-    FreeLibrary hDukLib 'so the ide doesnt hang on to the dll and we can recompile it..
+    Set duk = Nothing
+    FreeLibrary mDuk.hDukLib 'so the ide doesnt hang on to the dll and we can recompile it..
     
 End Sub
 
