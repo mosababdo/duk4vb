@@ -20,7 +20,7 @@ Declare Function lstrlen Lib "kernel32.dll" Alias "lstrlenA" (ByVal lpString As 
 Enum cb_type
     cb_output = 0
     cb_Refresh = 1
-    'cb_debugger = 2
+    cb_Fatal = 2
     'cb_engine = 3
     cb_error = 4
     cb_ReleaseObj = 5
@@ -120,9 +120,25 @@ Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
 
     Dim msg As String
     
+    If t = cb_Fatal Then
+    
+        MsgBox "A fatal error has occured in Duktape the application " & vbCrLf & _
+               "is unstable now please save your work and exit." & vbCrLf & vbCrLf & _
+               "The specific error message was: " & StringFromPointer(lpMsg), vbCritical, "Fatal Error"
+        
+        While Forms.Count > 0
+            DoEvents
+            Sleep 10
+        Wend
+        
+        FreeLibrary hDukLib
+        End
+        
+    End If
+    
     If t = cb_Refresh Then
         DoEvents
-        'Form1.Refresh
+        Sleep 3
         Exit Sub
     End If
     

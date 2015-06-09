@@ -72,6 +72,7 @@ Private Sub Form_Load()
 'test cases all currently working
 '    js = "1+2"
 '    js = "alert(1+2)"
+'    js = "while(1){;}"
 '    js = "prompt('text')"
 '    js = "a='testing';alert(a[0]);"
 '    js = "pth = cmndlg.ShowOpen(4,'title','c:\\',0); alert(fso.ReadFile(pth))"
@@ -80,10 +81,9 @@ Private Sub Form_Load()
 '    js = "var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1,true,0);v = ts.ReadAll(); v"         'value of v is returned from eval..
 '    js = "var ts = fso2.OpenTextFile('c:\\lastGraph.txt',1); v = ts.ReadAll();alert(v)"         '(default args test)
 '    js = "form.Text1.Text = 'test'"
-'    js = "form.Text1.Text + ' read back in from javascript!'"
-'    js = "while(1){;}"
-    
-    duk.Timeout = 7000
+    js = "form.Text1.Text + ' read back in from javascript!'"
+
+    duk.Timeout = 7000 'set to 0 to disabled
     Me.Caption = "Loading file..."
     If duk.AddFile(App.path & "\test.js") Then
         Me.Caption = "Running..."

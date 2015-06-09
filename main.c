@@ -97,7 +97,30 @@ int ScriptTimeoutCheck(const void*udata)
     return 0;
 }
 
+static void sandbox_fatal(duk_context *ctx, duk_errcode_t code, const char *msg) {
 
+	char buf[255]={0};
+	char *def = "no message";
+
+	if(msg==0) msg = def;
+
+	if(strlen(msg) < 200){
+		sprintf(buf, "%ld: %s", (long)code, msg);
+		if(vbStdOut){
+			vbStdOut(cb_Fatal, buf);
+		}else{
+			MessageBox(0,buf,"Fatal Error In DukTape",0);
+		}
+	}else{
+		if(vbStdOut){
+			vbStdOut(cb_Fatal, msg);
+		}else{
+			MessageBox(0,msg,"Fatal Error In DukTape",0);
+		}
+	}
+	
+	exit(1);  /* must not return */
+}
 
 
 duk_ret_t js_dtor(duk_context *ctx)
@@ -225,7 +248,7 @@ void RegisterNativeHandlers(duk_context *ctx){
 int __stdcall DukCreate(){
 #pragma EXPORT
 	//duk_context *ctx = duk_create_heap_default();
-	duk_context *ctx = duk_create_heap(0, 0, 0, ScriptTimeoutCheck, 0);
+	duk_context *ctx = duk_create_heap(0, 0, 0, ScriptTimeoutCheck, sandbox_fatal);
 	RegisterNativeHandlers(ctx);
 	return (int)ctx;
 }

@@ -7,7 +7,7 @@ extern "C" {
 typedef enum{ 
 	cb_output=0, 
 	cb_Refresh = 1,
-    cb_debugger = 2,
+    cb_Fatal = 2,
 	cb_engine = 3,
 	cb_error = 4,
 	cb_ReleaseObj = 5
