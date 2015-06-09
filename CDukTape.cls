@@ -12,13 +12,30 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Private hDuk As Long
+Private mTimeout As Long
+Private mRunning As Boolean
 
 'check for errors either manually after or receive through event..
 Public hadError As Boolean
 Public LastError As String
 Public LastErrorLine As Long
 
+
+
 Event Error(ByVal line As Long, ByVal desc As String)
+
+Property Get Running() As Boolean
+    Running = mRunning
+End Property
+
+Property Let Timeout(v As Long)
+    mTimeout = v
+    DukOp opd_ScriptTimeout, 0, v
+End Property
+
+Property Get Timeout() As Long
+    Timeout = mTimeout
+End Property
 
 Property Get Context() As Long
     Context = hDuk
@@ -61,7 +78,9 @@ Function AddFile(fPath) As Boolean
     If hDuk = 0 Then Exit Function
     ClearErr
 
+    mRunning = True
     rv = mDuk.AddFile(hDuk, CStr(fPath))
+    mRunning = False
     
     If rv = 0 Then
         AddFile = True
@@ -92,7 +111,9 @@ Function Eval(js)
     If hDuk = 0 Then Exit Function
     ClearErr
     
+    mRunning = True
     rv = mDuk.Eval(hDuk, CStr(js))
+    mRunning = False
     
     If rv = 0 Then
         Eval = GetLastString()

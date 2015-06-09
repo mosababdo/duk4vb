@@ -106,7 +106,7 @@
  *  (``sami.vaarala@iki.fi``) and I'll fix the omission.
  */
 
-#include "vb.h"
+#include "./../vb.h"
 
 #ifndef DUKTAPE_H_INCLUDED
 #define DUKTAPE_H_INCLUDED
@@ -156,6 +156,20 @@
 
 #ifndef DUK_FEATURES_H_INCLUDED
 #define DUK_FEATURES_H_INCLUDED
+
+//-------------------------------- config block added for duk4vb ------------------------
+#ifdef  __cplusplus
+extern "C" {
+#endif
+	int ScriptTimeoutCheck(const void*udata); 
+#ifdef  __cplusplus
+}
+#endif
+
+#define DUK_OPT_EXEC_TIMEOUT_CHECK  ScriptTimeoutCheck
+#define DUK_OPT_INTERRUPT_COUNTER  1
+
+//----------------------------------------------------------------------------------
 
 /*
  *  Compiler features

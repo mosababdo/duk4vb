@@ -19,11 +19,12 @@ Declare Function lstrlen Lib "kernel32.dll" Alias "lstrlenA" (ByVal lpString As 
 
 Enum cb_type
     cb_output = 0
-    'cb_dbgout = 1
+    cb_Refresh = 1
     'cb_debugger = 2
     'cb_engine = 3
     cb_error = 4
     cb_ReleaseObj = 5
+    
 End Enum
 
 Enum opDuk
@@ -35,6 +36,7 @@ Enum opDuk
     opd_GetString = 5
     opd_Destroy = 6
     opd_LastString = 7
+    opd_ScriptTimeout = 8
 End Enum
 
 
@@ -117,6 +119,12 @@ End Function
 Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
 
     Dim msg As String
+    
+    If t = cb_Refresh Then
+        DoEvents
+        'Form1.Refresh
+        Exit Sub
+    End If
     
     If lpMsg = 0 Then Exit Sub
     

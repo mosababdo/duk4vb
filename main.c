@@ -1,6 +1,7 @@
 #include "./duk/duktape.h"
 #include <conio.h>
 #include "vb.h"
+#include <windows.h>
 
 /*
 api tidbits:
@@ -28,10 +29,13 @@ enum opDuk{
 	opd_IsNullUndef=4,
 	opd_GetString=5,
 	opd_Destroy=6,
-	opd_LastString=7
+	opd_LastString=7,
+	opd_ScriptTimeout=8
 };
 
-
+int watchdogTimeout = 0;
+unsigned int startTime = 0;
+unsigned int lastRefresh = 0;
 
 int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 #pragma EXPORT
@@ -39,6 +43,7 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 	//these do not require a context..
 	switch(operation){
 		case opd_LastString: return mLastString;
+		case opd_ScriptTimeout: watchdogTimeout = arg1; return 0;
 	}
 
 	if(ctx == 0) return -1;
@@ -75,7 +80,22 @@ int __stdcall setLastString(const char* s){ //accepts null string to just free l
 }
 
 
+int ScriptTimeoutCheck(const void*udata)
+{
+	unsigned int tick = GetTickCount();
 
+	if(vbStdOut){
+		if(tick - lastRefresh > 500){
+			vbStdOut(cb_Refresh,0);
+			lastRefresh = tick;
+		}
+	}
+
+    if (watchdogTimeout) {
+        if (tick - startTime > watchdogTimeout)  return 1;
+    }
+    return 0;
+}
 
 
 
@@ -204,7 +224,8 @@ void RegisterNativeHandlers(duk_context *ctx){
 
 int __stdcall DukCreate(){
 #pragma EXPORT
-	duk_context *ctx = duk_create_heap_default();
+	//duk_context *ctx = duk_create_heap_default();
+	duk_context *ctx = duk_create_heap(0, 0, 0, ScriptTimeoutCheck, 0);
 	RegisterNativeHandlers(ctx);
 	return (int)ctx;
 }
@@ -214,6 +235,7 @@ int __stdcall AddFile(duk_context *ctx, char* pth){
 #pragma EXPORT
 	int rv;
 	if(ctx == 0) return -1;
+	startTime = GetTickCount();
 	rv = duk_peval_file(ctx, pth); //0 = success
 	if(rv != 0){
 		setLastString(duk_safe_to_string(ctx, -1)); //error message..
@@ -231,6 +253,7 @@ int __stdcall Eval(duk_context *ctx, char* js ){
 
 	//safe to call eval to avoid fatal panic handler on syntax error
 	duk_push_string(ctx, js);
+	startTime = GetTickCount();
 	if (duk_peval(ctx) != 0) {
 		setLastString(duk_safe_to_string(ctx, -1));
 		rv = -1;
