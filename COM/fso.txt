@@ -1,0 +1,27 @@
+Property Get Drives  As IDriveCollection
+Function BuildPath ( ByVal Path  As String ,  ByVal Name  As String )  As String
+Function GetDriveName ( ByVal Path  As String )  As String
+Function GetParentFolderName ( ByVal Path  As String )  As String
+Function GetFileName ( ByVal Path  As String )  As String
+Function GetBaseName ( ByVal Path  As String )  As String
+Function GetExtensionName ( ByVal Path  As String )  As String
+Function GetAbsolutePathName ( ByVal Path  As String )  As String
+Function GetTempName  As String
+Function DriveExists ( ByVal DriveSpec  As String )  As Boolean
+Function FileExists ( ByVal FileSpec  As String )  As Boolean
+Function FolderExists ( ByVal FolderSpec  As String )  As Boolean
+Function GetDrive ( ByVal DriveSpec  As String )  As IDrive
+Function GetFile ( ByVal FilePath  As String )  As IFile
+Function GetFolder ( ByVal FolderPath  As String )  As IFolder
+Function GetSpecialFolder ( ByVal SpecialFolder As Long )  As IFolder
+Sub DeleteFile ( ByVal FileSpec  As String ,  ByVal Force  As Boolean )
+Sub DeleteFolder ( ByVal FolderSpec  As String ,  ByVal Force  As Boolean )
+Sub MoveFile ( ByVal Source  As String ,  ByVal Destination  As String )
+Sub MoveFolder ( ByVal Source  As String ,  ByVal Destination  As String )
+Sub CopyFile ( ByVal Source  As String ,  ByVal Destination  As String ,  ByVal OverWriteFiles  As Boolean )
+Sub CopyFolder ( ByVal Source  As String ,  ByVal Destination  As String ,  ByVal OverWriteFiles  As Boolean )
+Function CreateFolder ( ByVal Path  As String )  As IFolder
+Function CreateTextFile ( ByVal FileName  As String ,  ByVal Overwrite  As Boolean ,  ByVal Unicode  As Boolean )  As ITextStream
+Function OpenTextFile ( ByVal FileName  As String ,  ByVal IOMode As Long ,  ByVal Create  As Boolean ,  ByVal Format As Long )  As ITextStream
+Function GetStandardStream ( ByVal StandardStreamType As Long ,  ByVal Unicode  As Boolean )  As ITextStream
+Function GetFileVersion ( ByVal FileName  As String )  As String

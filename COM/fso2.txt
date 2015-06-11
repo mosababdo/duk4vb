@@ -1,0 +1,25 @@
+Function FolderExists ( ByRef path  As String )  As Boolean
+Function FileExists ( ByRef path  As String )  As Boolean
+Function GetParentFolder ( ByRef path  As Variant )  As String
+Function CreateFolder ( ByRef path  As String )  As Boolean
+Function FileNameFromPath ( ByRef fullpath  As String )  As String
+Function WebFileNameFromPath ( ByRef fullpath  As String )
+Function DeleteFile ( ByRef fpath  As String )  As Boolean
+Sub Rename ( ByRef fullpath  As String ,  ByRef newName  As String )
+Sub SetAttribute ( ByRef fpath  As Variant ,  ByRef it As VBA.VbFileAttribute )
+Function GetExtension ( ByRef path  As Variant )  As String
+Function GetBaseName ( ByRef path  As String )  As String
+Function ChangeExt ( ByRef path  As String ,  ByRef ext  As String )
+Function SafeFileName ( ByRef proposed  As String )  As String
+Function RandomNum  As Long
+Function GetFreeFileName ( ByVal folder  As String ,  ByRef extension  As Variant )  As String
+Function GetFreeFolderName ( ByVal parentFolder  As String ,  ByRef prefix  As String )  As String
+Function buildPath ( ByRef folderPath  As String )  As Boolean
+Function ReadFile ( ByRef filename  As Variant )
+Sub WriteFile ( ByRef path  As String ,  ByRef it  As Variant )
+Sub AppendFile ( ByRef path  As Variant ,  ByRef it  As Variant )
+Function Copy ( ByRef fpath  As String ,  ByRef toFolder  As String )
+Function Move ( ByRef fpath  As String ,  ByRef toFolder  As String )
+Function CreateFile ( ByRef fpath  As String )  As Boolean
+Function DeleteFolder ( ByRef folderPath  As String ,  ByRef force  As Boolean )  As Boolean
+Function FolderName ( ByRef folderPath  As Variant )  As String

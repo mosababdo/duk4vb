@@ -34,6 +34,7 @@ enum opDuk{
 };
 
 int watchdogTimeout = 0;
+int inCreate = 0 ;
 unsigned int startTime = 0;
 unsigned int lastRefresh = 0;
 
@@ -82,7 +83,10 @@ int __stdcall setLastString(const char* s){ //accepts null string to just free l
 
 int ScriptTimeoutCheck(const void*udata)
 {
+
 	unsigned int tick = GetTickCount();
+
+	if(inCreate) return 0; //fatal exception if this returns 1 during heap creation..
 
 	if(vbStdOut){
 		if(tick - lastRefresh > 500){
@@ -248,7 +252,10 @@ void RegisterNativeHandlers(duk_context *ctx){
 int __stdcall DukCreate(){
 #pragma EXPORT
 	//duk_context *ctx = duk_create_heap_default();
-	duk_context *ctx = duk_create_heap(0, 0, 0, ScriptTimeoutCheck, sandbox_fatal);
+	duk_context *ctx = 0;
+	inCreate = 1;
+	ctx = duk_create_heap(0, 0, 0, ScriptTimeoutCheck, sandbox_fatal);
+	inCreate = 0;
 	RegisterNativeHandlers(ctx);
 	return (int)ctx;
 }

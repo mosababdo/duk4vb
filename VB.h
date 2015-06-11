@@ -10,7 +10,8 @@ typedef enum{
     cb_Fatal = 2,
 	cb_engine = 3,
 	cb_error = 4,
-	cb_ReleaseObj = 5
+	cb_ReleaseObj = 5,
+	cb_StringReturn = 6
 } cb_type;
 
 //Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)

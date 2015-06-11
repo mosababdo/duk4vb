@@ -20,8 +20,6 @@ Public hadError As Boolean
 Public LastError As String
 Public LastErrorLine As Long
 
-
-
 Event Error(ByVal line As Long, ByVal desc As String)
 
 Property Get Running() As Boolean
@@ -40,6 +38,30 @@ End Property
 Property Get Context() As Long
     Context = hDuk
 End Property
+
+Function AddObject(obj As Object, name As String, Optional ByRef outErrList As Collection) As Boolean
+    Dim cc As CCOMType
+    Dim jsFile
+    Dim result As Boolean
+    
+    result = ParseObjectToCache(name, obj)
+    Set cc = comTypes(name) 'always added even with errors
+       
+    If Not result Then
+       Set outErrList = cc.errors
+       Exit Function
+    End If
+        
+    For Each jsFile In cc.js_files
+        If Not Me.AddFile(jsFile) Then
+            outErrList.Add "Error loading js File: " & LastError
+            Exit Function
+        End If
+    Next
+    
+    AddObject = True
+    
+End Function
 
 Private Sub Class_Initialize()
     If mDuk.hDukLib = 0 Then
@@ -61,7 +83,7 @@ Private Sub Class_Terminate()
         'in the IDE we release it as soon as not needed..that way IDE doesnt
         'ever hang onto the dll after debugging. If it does we cant recompile the dll
         'without closing VB IDE which is annoying...
-        FreeLibrary mDuk.hDukLib
+        'FreeLibrary mDuk.hDukLib
     End If
 End Sub
 
