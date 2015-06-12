@@ -1,10 +1,11 @@
 Type=Exe
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\stdole2.tlb#OLE Automation
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\..\WINDOWS\system32\stdole2.tlb#OLE Automation
 Reference=*\G{DDC88AC2-2723-4C1B-9D61-C4F4D7CF5375}#2.7#0#D:\_code\libs\vbDevKit\vbDevKit.dll#Vb Developers Library From Sandsprite.com
 Form=Form1.frm
 Class=CMethod; CMethod.cls
 IconForm="Form1"
 Startup="Form1"
+ExeName32="bindGen.exe"
 Command32=""
 Name="Project1"
 HelpContextID="0"
@@ -33,3 +34,6 @@ MaxNumberOfThreads=1
 
 [MS Transaction Server]
 AutoRefresh=1
+
+[fastBuild]
+fullPath=C:\Documents and Settings\david\Desktop\vb_duk\comBindings\bindGen.exe

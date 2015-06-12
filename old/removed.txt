@@ -1,0 +1,278 @@
+/*
+
+'safe from invalid indexes..invalid context will crash
+'Public Declare Function DukGetInt Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long
+'Public Declare Function DukGetString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long 'returns string ptr..
+'Public Declare Function DukIsNullOrUndef Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal index As Long) As Long
+'Public Declare Sub DukPushNum Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal val As Long)
+'Public Declare Sub DukPushString Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal val As String)
+'Public Declare Sub DukPushUndefined Lib "Duk4VB.dll" (ByVal ctx As Long)
+Public Declare Sub DukDestroy Lib "Duk4VB.dll" ()
+Public Declare Function DukCreate Lib "Duk4VB.dll" () As Long
+Public Declare Function GetLastStringSize Lib "Duk4VB.dll" () As Long
+Public Declare Function LastString Lib "Duk4VB.dll" (ByVal buf As String, ByVal bufSz As Long) As Long
+'Public Declare Function SetLastString Lib "Duk4VB.dll" (ByVal buf As String) As Long
+
+
+Function GetLastString() As String
+    
+    Dim rv As Long
+    Dim tmp As String
+    
+    rv = GetLastStringSize()
+    If rv < 0 Then Exit Function
+    
+    rv = rv + 2
+    tmp = String(rv, " ")
+    rv = LastString(tmp, rv)
+    tmp = Mid(tmp, 1, rv)
+    
+    GetLastString = tmp
+        
+End Function
+
+int __stdcall LastString(char* buf, int sz){
+#pragma EXPORT
+	if(mLastString){
+		int a = strlen(mLastString);
+		if(a < sz) strcpy(buf, (char*)mLastString);
+		return a;
+	}
+
+	return 0;
+
+}
+
+void __stdcall DukPushUndefined(duk_context *ctx){ 
+#pragma EXPORT
+	duk_push_undefined(ctx);
+}
+
+void __stdcall DukPushNum(duk_context *ctx, int num){ 
+#pragma EXPORT
+	duk_push_number(ctx,num);
+}
+
+void __stdcall DukPushString(duk_context *ctx, char* str){ 
+#pragma EXPORT
+	duk_push_string(ctx,str);
+}
+
+int __stdcall DukGetInt(duk_context *ctx, int index){
+#pragma EXPORT
+	if(ctx == 0) return -1;
+	return (int)duk_to_number(ctx, index);
+}
+
+int __stdcall DukIsNullOrUndef(duk_context *ctx, int index){
+#pragma EXPORT
+	if(ctx == 0) return -1;
+	return (int)duk_is_null_or_undefined(ctx, index);
+}
+
+//so even numeric args can be returned here like .ToString()
+int __stdcall DukGetString(duk_context *ctx, int index){
+#pragma EXPORT
+	if(ctx == 0) return -1;
+	//return setLastString(duk_safe_to_string(ctx, index));
+	return (int)duk_safe_to_string(ctx, index);
+}
+*/
+
+int __stdcall GetLastStringSize(){ 
+#pragma EXPORT
+	if(mLastString == 0) return -1;
+	return strlen(mLastString);
+}
+
+/*
+int __stdcall DukGethInst(duk_context *ctx, int index){
+#pragma EXPORT
+	int hInst=0;
+	if(ctx == 0) return -1;
+	duk_get_prop_string(ctx, index, "hInst"); 
+	hInst = duk_to_number(ctx,index);
+	return hInst;
+}
+*/
+
+void __stdcall DukDestroy(){
+#pragma EXPORT
+	duk_destroy_heap(ctx);
+	ctx = 0;
+}
+
+[10:56] <svaarala_> dzz: true, i'll document that - it's calling the timeout because duk_create_heap() executes initialization js code
+[10:57] <svaarala_> dzz: it's not passed 'ctx' because users might be tempted to make duktape api calls from within the timeout function which is not supported
+[10:57] <svaarala_> dzz: but it does get the 'userdata' you pass in to duk_create_heap() so that you'll be able to distinguish between duktape heaps; the timeout is "heap wide"
+[10:58] <svaarala_> but yeah, it's pretty barebones at the moment, the plan is to implement something that works properly in a nested fashion and expose it to Ecmascript code too
+
+
+
+''this is used for script to host app object integration..
+'Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt As Long) As Long
+'
+'
+'    Dim b() As Byte
+'    Dim name As String
+'
+'    name = StringFromPointer(buf)
+'    dbg "HostResolver: ", name, ctx, argCnt
+'
+'    Dim rv As Long
+'
+'    On Error Resume Next
+'    Dim o As Object, tmp, args(), retVal As Variant, i As Long, hInst As Long, oo As Object
+'    Dim firstUserArg As Long
+'
+'    firstUserArg = 0
+'    tmp = Split(name, ":")
+'    If tmp(1) = "objptr" Then
+'        firstUserArg = 1
+'        hInst = DukOp(opd_GetInt, ctx, 2)
+'        For Each oo In objs
+'            If ObjPtr(oo) = hInst Then
+'                Set o = oo
+'                Exit For
+'            End If
+'        Next
+'    Else
+'        Set o = objs(tmp(1))
+'    End If
+'
+'    If o Is Nothing Then
+'        dbg "Host resolver could not find object!"
+'        Exit Function
+'    End If
+'
+'    If argCnt > 0 Then
+'        For i = firstUserArg To argCnt - 1
+'            'If DukIsNullOrUndef(ctx, i) = 1 Then
+'            '    Exit For
+'            'End If
+'            If InStr(1, tmp(i + 3), "string") > 0 Then
+'                 push args, GetArgAsString(ctx, i + 2)
+'            ElseIf InStr(1, tmp(i + 3), "long") > 0 Then
+'                push args, DukOp(opd_GetInt, ctx, i + 2)
+'            ElseIf InStr(1, tmp(i + 3), "bool") > 0 Then
+'                push args, CBool(GetArgAsString(ctx, i + 2))
+'            End If
+'        Next
+'
+'
+'    End If
+'
+'    Err.Clear
+'    'callbyname obj, method, type, args() as variant
+'    'retVal = CallByName(o, CStr(tmp(2)), VbMethod, args()) 'nope wont work this way.. :(
+'
+'    Dim t As VbCallType, isObj As Boolean
+'
+'    If tmp(0) = "call" Then t = VbMethod
+'    If tmp(0) = "let" Then t = VbLet
+'    If tmp(0) = "get" Then t = VbGet
+'    If VBA.Left(tmp(UBound(tmp)), 5) = "r_obj" Then
+'        isObj = True
+'        tmp(UBound(tmp)) = Mid(tmp(UBound(tmp)), 6)
+'    End If
+'
+'    If isObj Then
+'        Set retVal = CallByNameEx(o, CStr(tmp(2)), t, args(), isObj)
+'    Else
+'        retVal = CallByNameEx(o, CStr(tmp(2)), t, args(), isObj)
+'    End If
+'
+'    HostResolver = 0 'are we setting a return value (doesnt seem to be critical)
+'
+'    If InStr(1, tmp(UBound(tmp)), "string") > 0 Then
+'        dbg "returning string"
+'        DukOp opd_PushStr, ctx, 0, CStr(retVal)
+'        If t <> VbLet Then HostResolver = 1
+'    ElseIf InStr(1, tmp(UBound(tmp)), "long") > 0 Then
+'        dbg "returning long"
+'        DukOp opd_PushNum, ctx, CLng(retVal)
+'        If t <> VbLet Then HostResolver = 1
+'    End If
+'
+'    If isObj Then
+'        dbg "returning new js class " & tmp(UBound(tmp))
+'        DukPushNewJSClass ctx, tmp(UBound(tmp)), ObjPtr(retVal)
+'        objs.Add retVal, "obj:" & ObjPtr(retVal)
+'        HostResolver = 1
+'    End If
+'
+'    'If Err.Number <> 0 Then MsgBox Err.Description Else MsgBox retVal
+'
+'
+'End Function
+
+
+
+function dlgClass(){
+	
+	this.ShowOpen = function(filt,initDir,title,hwnd){ 
+		return resolver("call:cmndlg:OpenDialog:long:[string]:[string]:[long]:r_string", arguments.length, filt,initDir,title,hwnd); 
+	}	
+	
+}
+
+function fsoClass(){
+	this.ReadFile = function(fname){
+		return resolver("call:fso:ReadFile:string:r_string", arguments.length, fname); 	
+	}	
+}
+
+var fso2 = {
+	OpenTextFile : function(FileName,IOMode,Create,Format){
+		//if (arguments.length < 4) alert(arguments.length) 
+		//this gives us the actual number of args passed into the script function
+		//duk_get_top(ctx) padds missing arguments with null/undef I need the raw value for this..
+		return resolver("call:fso2:OpenTextFile:string:[long]:[bool]:[long]:r_objTextStreamClass", arguments.length, FileName,IOMode,Create,Format); 	
+	}
+	
+}
+
+function TextStreamClass(){
+	this.hInst=0;
+	this.ReadAll = function(){
+		return resolver("call:objptr:ReadAll:r_string", arguments.length, this.hInst); 	
+	}
+}
+
+
+function TextBoxClass(){
+	this.hInst=0;
+}
+
+TextBoxClass.prototype = {
+	get Text (){
+		return resolver("get:objptr:Text:r_string", arguments.length, this.hInst); 	
+	},
+	set Text (val){
+		resolver("let:objptr:Text", arguments.length, this.hInst, val); 
+	}
+};
+
+function FormClass(){
+	//dummy
+}
+
+FormClass.prototype = {
+	  set caption (str) {
+	    	resolver("let:form:caption:string", arguments.length, str); 
+	  }, 
+	  
+	  get caption() {
+	    	return resolver("get:form:caption:string", arguments.length); 
+	  },
+	  
+	  get Text1 (){
+			return resolver("get:form:Text1:r_objTextBoxClass", arguments.length); 	
+	  }
+	  
+};
+
+var cmndlg = new dlgClass();
+var fso = new fsoClass();
+var form = new FormClass();
+

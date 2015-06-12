@@ -15,7 +15,7 @@ Public name As String
 Public methods As New Collection
 Public dependancies As New Collection
 Public errors As New Collection
-Public js_files As New Collection
+Public js_file As String
 
 Function GetMethod(key As String, outMeth As CMethod) As Boolean
     If KeyExistsInCollection(methods, key) Then
@@ -36,19 +36,19 @@ Function LoadType(modname As String) As Boolean
     Set errors = New Collection
     
     pd = App.path & "\COM\"
-    If Not fso.FolderExists(pd) Then
+    If Not FolderExists(pd) Then
         errors.Add "COM sub folder does not exist.."
         Exit Function
     End If
         
-    If Not fso.FileExists(pd & name & ".js") Then
+    If Not FileExists(pd & name & ".js") Then
         errors.Add "No js bindings for " & name
         Exit Function
     End If
     
-    js_files.Add pd & name & ".js"
+    js_file = pd & name & ".js"
     
-    dat = fso.ReadFile(pd & name & ".js")
+    dat = ReadFile(pd & name & ".js")
     protoEnd = InStr(dat, "*/")
     
     If protoEnd < 1 Then
@@ -67,7 +67,7 @@ Function LoadType(modname As String) As Boolean
             VBA.Left(d, 1) <> "#" And _
             VBA.Left(d, 1) <> ";" _
         Then 'its not a comment line..
-            Debug.Print "Parsing: " & d
+            'Debug.Print "Parsing: " & d
             Set m = New CMethod
             If Not m.parse(name, d) Then
                 errors.Add "Failed to parse: " & d 'lets build and show all errors at once for sanity sake..
@@ -88,12 +88,7 @@ Function LoadType(modname As String) As Boolean
             End If
         End If
     Next
-    
-    
-    For Each d In dependancies
-        LoadType CStr(d) 'global errors object still being built up..
-    Next
-    
+        
     If errors.Count > 0 Then Exit Function
     LoadType = True
     

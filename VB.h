@@ -21,7 +21,7 @@ typedef void (__stdcall *vbCallback)(cb_type, char*);
 typedef int (__stdcall *vbDbgCallback)(char*, int);
 
 
-typedef int (__stdcall *vbHostResolverCallback)(char*, int, int); //*string, dukCtx, arg_cnt
+typedef int (__stdcall *vbHostResolverCallback)(char*, int, int, int); //*string, dukCtx, arg_cnt, hInst
 
 extern vbCallback vbStdOut;
 extern vbDbgCallback vbDbgHandler;

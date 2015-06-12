@@ -40,11 +40,12 @@ Property Get Context() As Long
 End Property
 
 Function AddObject(obj As Object, name As String, Optional ByRef outErrList As Collection) As Boolean
-    Dim cc As CCOMType
-    Dim jsFile
-    Dim result As Boolean
     
-    result = ParseObjectToCache(name, obj)
+    Dim d
+    Dim cc As CCOMType
+    Dim result As Boolean
+        
+    result = ParseObjectToCache(name, obj, Me)
     Set cc = comTypes(name) 'always added even with errors
        
     If Not result Then
@@ -52,9 +53,13 @@ Function AddObject(obj As Object, name As String, Optional ByRef outErrList As C
        Exit Function
     End If
         
-    For Each jsFile In cc.js_files
-        If Not Me.AddFile(jsFile) Then
-            outErrList.Add "Error loading js File: " & LastError
+    If Not Me.AddFile(cc.js_file) Then
+        outErrList.Add "Error loading js File: " & cc.js_file & " " & LastError
+        Exit Function
+    End If
+        
+    For Each d In cc.dependancies
+        If Not AddObject(Nothing, CStr(d), outErrList) Then
             Exit Function
         End If
     Next

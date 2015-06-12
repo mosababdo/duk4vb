@@ -169,48 +169,17 @@ int comResolver(duk_context *ctx) {
 	int i, hasRetVal ;
 	const char* meth = 0;
 	int realArgCount = 0;
+	int hInst = 0;
 
 	int n = duk_get_top(ctx);  //padded number of args..not usable for us here..
 	
-	if(n < 2) return 0; //we require at least 2 args for this function..
+	if(n < 3) return 0; //we require at least 3 args for this function..
 	if(vbHostResolver==NULL) return 0; 
 	
-	/*
-	duk_push_this(ctx);
-	duk_push_string(ctx, "this.arguments");
-	duk_get_var(ctx);
-	duk_push_string(ctx, "length");
-	duk_get_prop(ctx,-1);
-	meth = duk_safe_to_string(ctx, 0);
-
-	//duk_push_string(ctx, "length");
-	if(duk_pcall_prop(ctx, 0, -1)==DUK_EXEC_SUCCESS){
-		
-	}
-	i = duk_to_number(ctx,0);
-	i=0;
-	*/
-
-	//duk_eval_string(ctx, "this.arguments.length");
-	//meth = duk_safe_to_string(ctx, -1);
-
-	/*duk_push_string(ctx, "arguments");
-	duk_push_string(ctx, "length");
-    duk_call_prop(ctx, -1, 1);
-	meth = duk_safe_to_string(ctx, -1);
-
-	duk_get_prop_string(ctx, -2, "arguments");
-	meth = duk_safe_to_string(ctx, -1);
-	//duk_push_object(ctx);
-	duk_get_prop_string(ctx, 0, "length");
-	realArgCount = duk_to_number(ctx,-1);
-	duk_pop(ctx);
-	duk_pop(ctx);
-	*/
-
 	meth = duk_safe_to_string(ctx, 0);   //arg0 is obj.method string
 	realArgCount = duk_to_number(ctx,1); //arg1 is arguments.length
-	hasRetVal = vbHostResolver(meth, ctx, realArgCount);
+	hInst = duk_to_number(ctx,2);       //arg2 is this com objects hinst variable if not a top level obj (0 if not)
+	hasRetVal = vbHostResolver(meth, ctx, realArgCount, hInst);
 
 	if(hasRetVal != 0 && hasRetVal != 1){
 			MessageBox(0,"comresolver","vbdev the hasRetVal must be 0 or 1",0);

@@ -84,6 +84,8 @@ Function parse(parentObjName As String, ByVal proto As String) As Boolean
     parentName = parentObjName
     proto = Replace(proto, vbCrLf, Empty)
     proto = Replace(proto, vbTab, Empty)
+    proto = Replace(proto, "[", "")
+    proto = Replace(proto, "]", "")
     proto = Replace(proto, "  ", " ")
     proto = Trim(proto)
     raw = proto
@@ -167,7 +169,11 @@ Function parse(parentObjName As String, ByVal proto As String) As Boolean
                 For Each arg In args
                     tmp = Split(arg, " As ", , vbTextCompare)
                     ArgNames.Add Trim(tmp(0))
-                    ArgTypes.Add Trim(LCase(tmp(1)))
+                    If UBound(tmp) = 0 Then
+                        ArgTypes.Add "variant"
+                    Else
+                        ArgTypes.Add Trim(LCase(tmp(1)))
+                    End If
                 Next
             Else
                 tmp = Split(args, " As ", , vbTextCompare)
@@ -235,24 +241,28 @@ End Sub
 '    }
 '};
 
-Function GenerateJS()
+Function GenerateJS(Optional requiresHInst As Long = 0)
     Dim t As String
+    Dim hi As String
+    
+    hi = 0
+    If requiresHInst Then hi = " this.hInst"
     
     't = vbTab & "//" & Me.raw & vbCrLf
     
     If ctype = "call" Then
         t = t & vbTab & "this." & Name & " = function(" & c2s(ArgNames) & "){" & vbCrLf & _
-            vbTab & vbTab & "return resolver('" & parentName & "." & Name & "', arguments.length" & IIf(ArgNames.Count = 0, "", ", ") & c2s(ArgNames) & ");" & vbCrLf & _
+            vbTab & vbTab & "return resolver('" & parentName & "." & Name & "', arguments.length," & hi & IIf(ArgNames.Count = 0, "", ", ") & c2s(ArgNames) & ");" & vbCrLf & _
             vbTab & "}" & vbCrLf
             
     ElseIf ctype = "let" Then
         t = t & vbTab & "set " & Name & "(val){" & vbCrLf & _
-            vbTab & vbTab & "return resolver('" & parentName & "." & Name & ".let', arguments.length, val);" & vbCrLf & _
+            vbTab & vbTab & "return resolver('" & parentName & "." & Name & ".let', 1," & hi & ", val);" & vbCrLf & _
             vbTab & "}," & vbCrLf
             
     ElseIf ctype = "get" Then
         t = t & vbTab & "get " & Name & "(){" & vbCrLf & _
-            vbTab & vbTab & "return resolver('" & parentName & "." & Name & ".get', arguments.length);" & vbCrLf & _
+            vbTab & vbTab & "return resolver('" & parentName & "." & Name & ".get', 0," & hi & ");" & vbCrLf & _
             vbTab & "}," & vbCrLf
             
     End If

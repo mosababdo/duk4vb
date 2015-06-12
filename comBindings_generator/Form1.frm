@@ -18,6 +18,14 @@ Begin VB.Form Form1
    ScaleHeight     =   10740
    ScaleWidth      =   15705
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CheckBox chkHinst 
+      Caption         =   "requires hInst"
+      Height          =   330
+      Left            =   5040
+      TabIndex        =   7
+      Top             =   3915
+      Width           =   3120
+   End
    Begin VB.CommandButton Command3 
       Caption         =   "save"
       Height          =   420
@@ -125,17 +133,24 @@ Private Sub Command1_Click()
     push protos, "/*"
     Dim m As CMethod
     For Each t In tmp
-        Set m = New CMethod
-        If Len(t) > 0 Then
-            If Not m.parse(txtClassName, t) Then
-                push o, "Failed: " & t
-            Else
-                push protos, vbTab & t
-                push o, m.DescribeSelf()
-                If m.ctype = "call" Then
-                    push funcs, m.GenerateJS()
+        t = Trim(t)
+        If Len(t) > 0 And _
+            VBA.Left(t, 1) <> "/" And _
+            VBA.Left(t, 1) <> "#" And _
+            VBA.Left(t, 1) <> ";" _
+        Then
+            Set m = New CMethod
+            If Len(t) > 0 Then
+                If Not m.parse(txtClassName, t) Then
+                    push o, "Failed: " & t
                 Else
-                    push props, m.GenerateJS()
+                    push protos, vbTab & t
+                    push o, m.DescribeSelf()
+                    If m.ctype = "call" Then
+                        push funcs, m.GenerateJS(chkHinst.value)
+                    Else
+                        push props, m.GenerateJS(chkHinst.value)
+                    End If
                 End If
             End If
         End If
@@ -143,7 +158,10 @@ Private Sub Command1_Click()
     push protos, "*/" & vbCrLf & vbCrLf
     
     js = Join(protos, vbCrLf)
-    js = js & "function " & txtClassName & "Class(){" & vbCrLf & vbCrLf & Join(funcs, vbCrLf) & vbCrLf & "}"
+    js = js & "function " & txtClassName & "Class(){" & vbCrLf & vbCrLf
+    If chkHinst.value = 1 Then js = js & vbTab & "this.hInst = 0"
+
+    js = js & vbCrLf & vbCrLf & Join(funcs, vbCrLf) & vbCrLf & "}"
     
     If Not AryIsEmpty(props) Then
         a = InStrRev(props(UBound(props)), ",")

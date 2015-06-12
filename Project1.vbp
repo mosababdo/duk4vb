@@ -1,7 +1,5 @@
 Type=Exe
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\stdole2.tlb#OLE Automation
-Reference=*\G{DDC88AC2-2723-4C1B-9D61-C4F4D7CF5375}#2.7#0#D:\_code\libs\vbDevKit\vbDevKit.dll#Vb Developers Library From Sandsprite.com
-Reference=*\G{8B217740-717D-11CE-AB5B-D41203C10000}#1.0#0#..\..\..\..\WINDOWS\system32\TLBINF32.DLL#TypeLib Information
 Reference=*\G{420B2830-E718-11CF-893D-00A0C9054228}#1.0#0#..\..\..\..\WINDOWS\system32\scrrun.dll#Microsoft Scripting Runtime
 Form=Form1.frm
 Module=mDuk; Module1.bas

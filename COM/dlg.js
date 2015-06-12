@@ -13,34 +13,34 @@
 function dlgClass(){
 
 	this.SetCustomFilter = function(displayText, wildCardExtMatch){
-		return resolver('dlg.SetCustomFilter', arguments.length, displayText, wildCardExtMatch);
+		return resolver('dlg.SetCustomFilter', arguments.length, 0, displayText, wildCardExtMatch);
 	}
 
 	this.OpenDialog = function(filt, initDir, title, pHwnd){
-		return resolver('dlg.OpenDialog', arguments.length, filt, initDir, title, pHwnd);
+		return resolver('dlg.OpenDialog', arguments.length, 0, filt, initDir, title, pHwnd);
 	}
 
 	this.SaveDialog = function(filt, initDir, title, ConfirmOvewrite, pHwnd, defaultFileName){
-		return resolver('dlg.SaveDialog', arguments.length, filt, initDir, title, ConfirmOvewrite, pHwnd, defaultFileName);
+		return resolver('dlg.SaveDialog', arguments.length, 0, filt, initDir, title, ConfirmOvewrite, pHwnd, defaultFileName);
 	}
 
 	this.ColorDialog = function(pHwnd){
-		return resolver('dlg.ColorDialog', arguments.length, pHwnd);
+		return resolver('dlg.ColorDialog', arguments.length, 0, pHwnd);
 	}
 
 	this.FolderDialog = function(initDir, pHwnd){
-		return resolver('dlg.FolderDialog', arguments.length, initDir, pHwnd);
+		return resolver('dlg.FolderDialog', arguments.length, 0, initDir, pHwnd);
 	}
 
 }
 /*
 dlgClass.prototype = {
 	set ErrorOnCancel(val){
-		return resolver('dlg.ErrorOnCancel.let', arguments.length, val);
+		return resolver('dlg.ErrorOnCancel.let', arguments.length, 0, val);
 	},
 
 	get ErrorOnCancel(){
-		return resolver('dlg.ErrorOnCancel.get', arguments.length);
+		return resolver('dlg.ErrorOnCancel.get', arguments.length, 0);
 	}
 }
 */

@@ -145,103 +145,6 @@ Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
 End Sub
 
 
-''this is used for script to host app object integration..
-'Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt As Long) As Long
-'
-'
-'    Dim b() As Byte
-'    Dim name As String
-'
-'    name = StringFromPointer(buf)
-'    dbg "HostResolver: ", name, ctx, argCnt
-'
-'    Dim rv As Long
-'
-'    On Error Resume Next
-'    Dim o As Object, tmp, args(), retVal As Variant, i As Long, hInst As Long, oo As Object
-'    Dim firstUserArg As Long
-'
-'    firstUserArg = 0
-'    tmp = Split(name, ":")
-'    If tmp(1) = "objptr" Then
-'        firstUserArg = 1
-'        hInst = DukOp(opd_GetInt, ctx, 2)
-'        For Each oo In objs
-'            If ObjPtr(oo) = hInst Then
-'                Set o = oo
-'                Exit For
-'            End If
-'        Next
-'    Else
-'        Set o = objs(tmp(1))
-'    End If
-'
-'    If o Is Nothing Then
-'        dbg "Host resolver could not find object!"
-'        Exit Function
-'    End If
-'
-'    If argCnt > 0 Then
-'        For i = firstUserArg To argCnt - 1
-'            'If DukIsNullOrUndef(ctx, i) = 1 Then
-'            '    Exit For
-'            'End If
-'            If InStr(1, tmp(i + 3), "string") > 0 Then
-'                 push args, GetArgAsString(ctx, i + 2)
-'            ElseIf InStr(1, tmp(i + 3), "long") > 0 Then
-'                push args, DukOp(opd_GetInt, ctx, i + 2)
-'            ElseIf InStr(1, tmp(i + 3), "bool") > 0 Then
-'                push args, CBool(GetArgAsString(ctx, i + 2))
-'            End If
-'        Next
-'
-'
-'    End If
-'
-'    Err.Clear
-'    'callbyname obj, method, type, args() as variant
-'    'retVal = CallByName(o, CStr(tmp(2)), VbMethod, args()) 'nope wont work this way.. :(
-'
-'    Dim t As VbCallType, isObj As Boolean
-'
-'    If tmp(0) = "call" Then t = VbMethod
-'    If tmp(0) = "let" Then t = VbLet
-'    If tmp(0) = "get" Then t = VbGet
-'    If VBA.Left(tmp(UBound(tmp)), 5) = "r_obj" Then
-'        isObj = True
-'        tmp(UBound(tmp)) = Mid(tmp(UBound(tmp)), 6)
-'    End If
-'
-'    If isObj Then
-'        Set retVal = CallByNameEx(o, CStr(tmp(2)), t, args(), isObj)
-'    Else
-'        retVal = CallByNameEx(o, CStr(tmp(2)), t, args(), isObj)
-'    End If
-'
-'    HostResolver = 0 'are we setting a return value (doesnt seem to be critical)
-'
-'    If InStr(1, tmp(UBound(tmp)), "string") > 0 Then
-'        dbg "returning string"
-'        DukOp opd_PushStr, ctx, 0, CStr(retVal)
-'        If t <> VbLet Then HostResolver = 1
-'    ElseIf InStr(1, tmp(UBound(tmp)), "long") > 0 Then
-'        dbg "returning long"
-'        DukOp opd_PushNum, ctx, CLng(retVal)
-'        If t <> VbLet Then HostResolver = 1
-'    End If
-'
-'    If isObj Then
-'        dbg "returning new js class " & tmp(UBound(tmp))
-'        DukPushNewJSClass ctx, tmp(UBound(tmp)), ObjPtr(retVal)
-'        objs.Add retVal, "obj:" & ObjPtr(retVal)
-'        HostResolver = 1
-'    End If
-'
-'    'If Err.Number <> 0 Then MsgBox Err.Description Else MsgBox retVal
-'
-'
-'End Function
-
 Public Function VbLineInput(ByVal buf As Long, ByVal ctx As Long) As Long
     Dim b() As Byte
     Dim retVal As String
@@ -274,46 +177,123 @@ End Function
 '--------------------------------------------------------------------
 
 
-'http://www.vbforums.com/showthread.php?405366-RESOLVED-Using-CallByName-with-variable-number-of-arguments
-Public Function CallByNameEx(obj As Object, ProcName As String, CallType As VbCallType, Optional vArgsArray As Variant, Optional isObj As Boolean = False)
-    
-        Dim oTLI As New TLIApplication
+''http://www.vbforums.com/showthread.php?405366-RESOLVED-Using-CallByName-with-variable-number-of-arguments
+'Public Function CallByNameEx(obj As Object, ProcName As String, CallType As VbCallType, Optional vArgsArray As Variant, Optional isObj As Boolean = False)
+'
+'        Dim oTLI As object 'New TLIApplication
+'        Dim ProcID As Long
+'        Dim numArgs As Long
+'        Dim i As Long
+'        Dim v()
+'
+'        On Error GoTo Handler
+'
+'        Set oTLI = CreateObject("TLI.TLIApplication")
+'        ProcID = oTLI.InvokeID(obj, ProcName)
+'
+'        If Not IsArray(vArgsArray) Or AryIsEmpty(vArgsArray) Then
+'            dbg "CallByName: ", obj, ProcName, isObj
+'            If isObj Then
+'                Set CallByNameEx = oTLI.InvokeHook(obj, ProcID, CallType)
+'            Else
+'                CallByNameEx = oTLI.InvokeHook(obj, ProcID, CallType)
+'            End If
+'        Else
+'            numArgs = UBound(vArgsArray)
+'            dbg "CallByName: ", obj, ProcName, isObj, Join(vArgsArray, ", ")
+'            ReDim v(numArgs)
+'            For i = 0 To numArgs
+'                v(i) = vArgsArray(numArgs - i)
+'            Next i
+'            If isObj Then
+'                Set CallByNameEx = oTLI.InvokeHookArray(obj, ProcID, CallType, v)
+'            Else
+'                CallByNameEx = oTLI.InvokeHookArray(obj, ProcID, CallType, v)
+'            End If
+'        End If
+'
+'    Exit Function
+'
+'Handler:
+'        dbg "Error in CallByNameEx: ", Err.Number, Err.Description
+'End Function
+
+'listbox.additem ..even if the v(0) is String..its adding it as a strptr pointer..(must be taking as a long unless i wrap outter in cstr() fuck you..
+'this is stupid..but tli.invokehook doesnt always work where the built in one does (listbox.additem)
+'and it adds another external dependancy..so screw it..
+Public Function CallByNameEx(obj As Object, ProcName As String, CallType As VbCallType, Optional v As Variant, Optional isObj As Boolean = False)
+
         Dim ProcID As Long
         Dim numArgs As Long
-        Dim i As Long
-        Dim v()
-        
+
         On Error GoTo Handler
         
-        'Set oTLI = CreateObject("TLI.TLIApplication")
-        ProcID = oTLI.InvokeID(obj, ProcName)
-        
-        If Not IsArray(vArgsArray) Or AryIsEmpty(vArgsArray) Then
+        'callbyName has some weird nuances..apparently v(0) as variant is
+        'not the same as a as variant even if both contain a string..
+        Dim a, b, c, d, e, f, g, h, i, j
+    
+        If Not IsArray(v) Or AryIsEmpty(v) Then
             dbg "CallByName: ", obj, ProcName, isObj
             If isObj Then
-                Set CallByNameEx = oTLI.InvokeHook(obj, ProcID, CallType)
+                Set CallByNameEx = CallByName(obj, ProcName, CallType)
             Else
-                CallByNameEx = oTLI.InvokeHook(obj, ProcID, CallType)
+                CallByNameEx = CallByName(obj, ProcName, CallType)
             End If
         Else
-            numArgs = UBound(vArgsArray)
-            dbg "CallByName: ", obj, ProcName, isObj, Join(vArgsArray, ", ")
-            ReDim v(numArgs)
-            For i = 0 To numArgs
-                v(i) = vArgsArray(numArgs - i)
-            Next i
+            numArgs = UBound(v)
+            
+            If numArgs > 9 Then
+                MsgBox "CallByNameEx does not support more than 10 args.. method: " & ProcName, vbCritical
+            End If
+            
+            dbg "CallByName: ", obj, ProcName, isObj, Join(v, ", ")
+            
+            If numArgs >= 0 Then a = v(0)
+            If numArgs >= 1 Then b = v(1)
+            If numArgs >= 2 Then c = v(2)
+            If numArgs >= 3 Then d = v(3)
+            If numArgs >= 4 Then e = v(4)
+            If numArgs >= 5 Then f = v(5)
+            If numArgs >= 6 Then g = v(6)
+            If numArgs >= 7 Then h = v(7)
+            If numArgs >= 8 Then i = v(8)
+            If numArgs >= 9 Then j = v(9)
+            
             If isObj Then
-                Set CallByNameEx = oTLI.InvokeHookArray(obj, ProcID, CallType, v)
+                Select Case numArgs
+                    Case 0: Set CallByNameEx = CallByName(obj, ProcName, CallType, a)
+                    Case 1: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b)
+                    Case 2: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c)
+                    Case 3: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d)
+                    Case 4: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e)
+                    Case 5: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f)
+                    Case 6: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g)
+                    Case 7: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g, h)
+                    Case 8: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g, h, i)
+                    Case 9: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g, h, i, j)
+                End Select
             Else
-                CallByNameEx = oTLI.InvokeHookArray(obj, ProcID, CallType, v)
+                Select Case numArgs
+                    Case 0:  CallByNameEx = CallByName(obj, ProcName, CallType, a)
+                    Case 1:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b)
+                    Case 2:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c)
+                    Case 3:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d)
+                    Case 4:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e)
+                    Case 5:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f)
+                    Case 6:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g)
+                    Case 7:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g, h)
+                    Case 8:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g, h, i)
+                    Case 9:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g, h, i, j)
+                End Select
             End If
         End If
-        
+
     Exit Function
-     
+
 Handler:
         dbg "Error in CallByNameEx: ", Err.Number, Err.Description
 End Function
+
 
 
 
@@ -364,11 +344,11 @@ Function GetParentFolder(path) As String
     GetParentFolder = Replace(Join(tmp, "\"), "\" & ub, "")
 End Function
 
-Function FileExists(path) As Boolean
-  On Error Resume Next
-  If Len(path) = 0 Then Exit Function
-  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
-End Function
+'Function FileExists(path) As Boolean
+'  On Error Resume Next
+'  If Len(path) = 0 Then Exit Function
+'  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
+'End Function
 
 Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
@@ -419,4 +399,37 @@ Function c2s(c As Collection) As String
     Next
     y = Mid(y, 1, Len(y) - 2)
     c2s = y
+End Function
+
+Function FolderExists(path As String) As Boolean
+  On Error GoTo hell
+  Dim tmp As String
+  tmp = path & "\"
+  If Len(tmp) = 1 Then Exit Function
+  If Dir(tmp, vbDirectory) <> "" Then FolderExists = True
+  Exit Function
+hell:
+    FolderExists = False
+End Function
+
+Function FileExists(path As String) As Boolean
+  On Error GoTo hell
+    
+  If Len(path) = 0 Then Exit Function
+  If Right(path, 1) = "\" Then Exit Function
+  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
+  
+  Exit Function
+hell: FileExists = False
+End Function
+
+Function ReadFile(filename) As Variant
+  Dim f As Long
+  Dim temp As Variant
+  f = FreeFile
+  temp = ""
+   Open filename For Binary As #f        ' Open file.(can be text or image)
+     temp = Input(FileLen(filename), #f) ' Get entire Files data
+   Close #f
+   ReadFile = temp
 End Function

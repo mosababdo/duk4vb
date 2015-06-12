@@ -88,6 +88,8 @@ Function parse(parentObjName As String, ByVal proto As String) As Boolean
     parentName = parentObjName
     proto = Replace(proto, vbCrLf, Empty)
     proto = Replace(proto, vbTab, Empty)
+    proto = Replace(proto, "[", "")
+    proto = Replace(proto, "]", "")
     proto = Replace(proto, "  ", " ")
     proto = Trim(proto)
     raw = proto
@@ -171,7 +173,11 @@ Function parse(parentObjName As String, ByVal proto As String) As Boolean
                 For Each arg In args
                     tmp = Split(arg, " As ", , vbTextCompare)
                     ArgNames.Add Trim(tmp(0))
-                    ArgTypes.Add Trim(LCase(tmp(1)))
+                    If UBound(tmp) = 0 Then
+                        ArgTypes.Add "variant"
+                    Else
+                        ArgTypes.Add Trim(LCase(tmp(1)))
+                    End If
                 Next
             Else
                 tmp = Split(args, " As ", , vbTextCompare)
