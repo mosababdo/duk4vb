@@ -230,12 +230,12 @@ Attribute VB_Exposed = False
 Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
 
     Select Case Button.key
-        Case "Run":               If running Then DebuggerCmd dc_RESUME_REQ Else ExecuteScript
-        Case "Start Debugger":    If running Then DebuggerCmd dc_RESUME_REQ Else ExecuteScript True
+        Case "Run":               If running Then DebuggerCmd dc_run Else ExecuteScript
+        Case "Start Debugger":    If running Then DebuggerCmd dc_run Else ExecuteScript True
 '        Case "Stop":              DebuggerCmd dc_
-        Case "Step In":           DebuggerCmd dc_STEP_INTO_REQ
-        Case "Step Over":         DebuggerCmd dc_STEP_OVER_REQ
-        Case "Step Out":          DebuggerCmd dc_STEP_OUT_REQ
+        Case "Step In":           DebuggerCmd dc_stepInto
+        Case "Step Over":         DebuggerCmd dc_StepOver
+        Case "Step Out":          DebuggerCmd dc_Stepout
 '        Case "Run to Cursor":     RunToLine scivb.CurrentLine + 1
 '        Case "Toggle Breakpoint": ToggleBreakPoint
 '        Case "Clear All Breakpoints": RemoveAllBreakpoints
@@ -307,7 +307,7 @@ Private Sub Form_Load()
 
     SetToolBarIcons
     
-    Text1 = Replace("a=0;\na++\na++", "\n", vbCrLf)
+    Text1 = Replace(Replace("function b(c){\n\treturn c++\n}\na=0;\na = b(a)\na=b(a)", "\n", vbCrLf), "\t", vbTab)
             
 End Sub
  

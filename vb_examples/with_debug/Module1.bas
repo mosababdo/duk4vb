@@ -42,28 +42,43 @@ Enum opDuk
 End Enum
 
 Enum Debug_Commands
-    dc_STATUS_NOTIFICATION = &H1
-    dc_PRINT_NOTIFICATION = &H2
-    dc_ALERT_NOTIFICATION = &H3
-    dc_LOG_NOTIFICATION = &H4
-    dc_BASIC_INFO_REQ = &H10
-    dc_TRIGGER_STATUS_REQ = &H11
-    dc_PAUSE_REQ = &H12
-    dc_RESUME_REQ = &H13
-    dc_STEP_INTO_REQ = &H14
-    dc_STEP_OVER_REQ = &H15
-    dc_STEP_OUT_REQ = &H16
-    dc_LIST_BREAK_REQ = &H17
-    dc_ADD_BREAK_REQ = &H18
-    dc_DEL_BREAK_REQ = &H19
-    dc_GET_VAR_REQ = &H1A
-    dc_PUT_VAR_REQ = &H1B
-    dc_GET_CALL_STACK_REQ = &H1C
-    dc_GET_LOCALS_REQ = &H1D
-    dc_EVAL_REQ = &H1E
-    dc_DETACH_REQ = &H1F
-    dc_DUMP_HEAP_REQ = &H20
+    dc_NotSet = 0
+    dc_run = 1
+    dc_stepInto = 3
+    dc_Stepout = 4
+    dc_StepOver = 5
+    dc_RunToLine = 6
+    dc_Quit = 7
+    dc_Manual = 8
 End Enum
+
+Global Const STATUS_NOTIFICATION = &H1
+Global Const PRINT_NOTIFICATION = &H2
+Global Const ALERT_NOTIFICATION = &H3
+Global Const LOG_NOTIFICATION = &H4
+Global Const BASIC_INFO_REQ = &H10
+Global Const TRIGGER_STATUS_REQ = &H11
+Global Const PAUSE_REQ = &H12
+Global Const RESUME_REQ = &H13
+Global Const STEP_INTO_REQ = &H14
+Global Const STEP_OVER_REQ = &H15
+Global Const STEP_OUT_REQ = &H16
+Global Const LIST_BREAK_REQ = &H17
+Global Const ADD_BREAK_REQ = &H18
+Global Const DEL_BREAK_REQ = &H19
+Global Const GET_VAR_REQ = &H1A
+Global Const PUT_VAR_REQ = &H1B
+Global Const GET_CALL_STACK_REQ = &H1C
+Global Const GET_LOCALS_REQ = &H1D
+Global Const EVAL_REQ = &H1E
+Global Const DETACH_REQ = &H1F
+Global Const DUMP_HEAP_REQ = &H20
+    
+Global Const DUK_DBG_MARKER_EOM = 0
+Global Const DUK_DBG_MARKER_REQUEST = 1
+Global Const DUK_DBG_MARKER_REPLY = 2
+Global Const DUK_DBG_MARKER_ERROR = 3
+Global Const DUK_DBG_MARKER_NOTIFY = 4
 
 Global running As Boolean
 Public LastStringReturn As String
@@ -71,6 +86,9 @@ Public readyToReturn As Boolean
 Public ActiveDebuggerClass As CDukTape
 Public dbg_cmd As Debug_Commands
 Private dbg_response() As Byte
+Private dbgBufOffset As Long
+
+Dim mResponseBuffer As New CResponseBuffer
 
 Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
 
@@ -123,16 +141,18 @@ Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt 
         End If
     End If
     
-    If key = "text2.text" Then
-        DukOp opd_PushStr, ctx, 0, Form1.Text2.text
-        HostResolver = 1
-    End If
+'    If key = "text2.text" Then
+'        DukOp opd_PushStr, ctx, 0, Form1.Text2.text
+'        HostResolver = 1
+'    End If
             
 End Function
     
 Public Sub DebuggerCmd(cmd As Debug_Commands)
     
     Dim startPos As Long, endPos As Long
+    
+    Debug.Print String(70, "-")
     
 '    With frmMain
 '        .scivb.DeleteMarker .lastEIP, 1 'remove the yellow arrow
@@ -144,10 +164,13 @@ Public Sub DebuggerCmd(cmd As Debug_Commands)
 '        .scivb.DirectSCI.Colourise startPos, endPos
 '
 '    End With
+
+    If Not mResponseBuffer.ConstructMessage(cmd) Then
+        Debug.Print "Failed to construct message for " & cmd
+    Else
+        readyToReturn = True
+    End If
     
-    bpush dbg_response, CByte(cmd), True
-    dbg_cmd = cmd
-    readyToReturn = True
 End Sub
 
 Function GetLastString() As String
@@ -247,8 +270,20 @@ Public Function GetDebuggerCommand(ByVal buf As Long, ByVal sz As Long) As Long
     
     Dim i As Long
     Dim cmd_length As Long
+    Dim b() As Byte
     
         'frmMain.SyncUI
+        
+        If Not mResponseBuffer.isEmpty Then
+            
+            If mResponseBuffer.GetBuf(sz, b) Then
+                CopyMemory ByVal buf, ByVal VarPtr(b(0)), sz
+                GetDebuggerCommand = sz
+            End If
+            
+            Exit Function
+        End If
+        
         
         'we block here until the UI sets the readyToReturn = true
         'this is not a CPU hog, and form remains responsive to user actions..
@@ -265,14 +300,15 @@ Public Function GetDebuggerCommand(ByVal buf As Long, ByVal sz As Long) As Long
             End If
         Wend
         
-        cmd_length = UBound(dbg_response) + 1
-        
-        If cmd_length <= sz Then
-            CopyMemory ByVal buf, dbg_response(0), cmd_length
-            GetDebuggerCommand = cmd_length
+        If Not mResponseBuffer.isEmpty Then
+            
+            If mResponseBuffer.GetBuf(sz, b) Then
+                CopyMemory ByVal buf, ByVal VarPtr(b(0)), sz
+                GetDebuggerCommand = sz
+            End If
+            
+            Exit Function
         End If
-        
-        GetDebuggerCommand = 0
         
         
 End Function
