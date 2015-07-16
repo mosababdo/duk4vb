@@ -6,7 +6,7 @@ Public Declare Function DukCreate Lib "Duk4VB.dll" () As Long
 Public Declare Function AddFile Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal jsFile As String) As Long
 Public Declare Function Eval Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal js As String) As Long
 Public Declare Function DukPushNewJSClass Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal jsClassName As String, ByVal hInst As Long) As Long 'returns 0/-1
-Public Declare Sub SetCallBacks Lib "Duk4VB.dll" (ByVal msgProc As Long, ByVal dbgCmdProc As Long, ByVal hostResolverProc As Long, ByVal lineInputfunc As Long)
+Public Declare Sub SetCallBacks Lib "Duk4VB.dll" (ByVal msgProc As Long, ByVal dbgCmdProc As Long, ByVal hostResolverProc As Long, ByVal lineInputfunc As Long, Optional ByVal dbgWrite As Long)
 Public Declare Function DukOp Lib "Duk4VB.dll" (ByVal operation As opDuk, Optional ByVal ctx As Long = 0, Optional ByVal arg1 As Long, Optional ByVal sArg As String) As Long
 
 'misc windows api..
@@ -70,6 +70,31 @@ Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
     
 End Function
 
+'this is used for script to host app object integration..
+Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt As Long, ByVal hInst As Long) As Long
+    Dim key As String
+    Dim v1 As Variant
+    
+    On Error Resume Next
+    'we could switch to numeric ids..but it would be harder to manage/debug when more complex..
+    key = StringFromPointer(buf)
+    
+    'this is just a quick demo not the full setup see duk4vb project for a full COM relay using same structure
+    If key = "list1.additem" Then
+        If argCnt > 1 Then
+            v1 = GetArgAsString(ctx, i + 3)
+            Form1.List1.AddItem CStr(v1)
+        End If
+    End If
+    
+    If key = "text2.text" Then
+        DukOp opd_PushStr, ctx, 0, Form1.Text2.text
+        HostResolver = 1
+    End If
+            
+End Function
+    
+    
 Function GetLastString() As String
     Dim rv As Long
     rv = DukOp(opd_LastString)
@@ -77,13 +102,7 @@ Function GetLastString() As String
     GetLastString = StringFromPointer(rv)
 End Function
 
-Function AddObject(o As Object, name As String) As Boolean
-    On Error GoTo hell
-    objs.Add o, name
-    AddObject = True
-    Exit Function
-hell:
-End Function
+
 
 Function GetArgAsString(ctx As Long, index As Long) As String
     
@@ -138,7 +157,7 @@ Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
     
     Select Case t
         Case cb_StringReturn: LastStringReturn = msg
-        Case cb_ReleaseObj: ReleaseObj CLng(msg)
+        'Case cb_ReleaseObj: ReleaseObj CLng(msg)
         Case cb_output, cb_error:  MsgBox msg, vbInformation, "Script Output"
     End Select
     
@@ -167,135 +186,6 @@ Public Function VbLineInput(ByVal buf As Long, ByVal ctx As Long) As Long
         
   
 End Function
-
-
-
-
-
-
-'utility functions..
-'--------------------------------------------------------------------
-
-
-''http://www.vbforums.com/showthread.php?405366-RESOLVED-Using-CallByName-with-variable-number-of-arguments
-'Public Function CallByNameEx(obj As Object, ProcName As String, CallType As VbCallType, Optional vArgsArray As Variant, Optional isObj As Boolean = False)
-'
-'        Dim oTLI As object 'New TLIApplication
-'        Dim ProcID As Long
-'        Dim numArgs As Long
-'        Dim i As Long
-'        Dim v()
-'
-'        On Error GoTo Handler
-'
-'        Set oTLI = CreateObject("TLI.TLIApplication")
-'        ProcID = oTLI.InvokeID(obj, ProcName)
-'
-'        If Not IsArray(vArgsArray) Or AryIsEmpty(vArgsArray) Then
-'            dbg "CallByName: ", obj, ProcName, isObj
-'            If isObj Then
-'                Set CallByNameEx = oTLI.InvokeHook(obj, ProcID, CallType)
-'            Else
-'                CallByNameEx = oTLI.InvokeHook(obj, ProcID, CallType)
-'            End If
-'        Else
-'            numArgs = UBound(vArgsArray)
-'            dbg "CallByName: ", obj, ProcName, isObj, Join(vArgsArray, ", ")
-'            ReDim v(numArgs)
-'            For i = 0 To numArgs
-'                v(i) = vArgsArray(numArgs - i)
-'            Next i
-'            If isObj Then
-'                Set CallByNameEx = oTLI.InvokeHookArray(obj, ProcID, CallType, v)
-'            Else
-'                CallByNameEx = oTLI.InvokeHookArray(obj, ProcID, CallType, v)
-'            End If
-'        End If
-'
-'    Exit Function
-'
-'Handler:
-'        dbg "Error in CallByNameEx: ", Err.Number, Err.Description
-'End Function
-
-'listbox.additem ..even if the v(0) is String..its adding it as a strptr pointer..(must be taking as a long unless i wrap outter in cstr() fuck you..
-'this is stupid..but tli.invokehook doesnt always work where the built in one does (listbox.additem)
-'and it adds another external dependancy..so screw it..
-Public Function CallByNameEx(obj As Object, ProcName As String, CallType As VbCallType, Optional v As Variant, Optional isObj As Boolean = False)
-
-        Dim ProcID As Long
-        Dim numArgs As Long
-
-        On Error GoTo Handler
-        
-        'callbyName has some weird nuances..apparently v(0) as variant is
-        'not the same as a as variant even if both contain a string..
-        Dim a, b, c, d, e, f, g, h, i, j
-    
-        If Not IsArray(v) Or AryIsEmpty(v) Then
-            dbg "CallByName: ", obj, ProcName, isObj
-            If isObj Then
-                Set CallByNameEx = CallByName(obj, ProcName, CallType)
-            Else
-                CallByNameEx = CallByName(obj, ProcName, CallType)
-            End If
-        Else
-            numArgs = UBound(v)
-            
-            If numArgs > 9 Then
-                MsgBox "CallByNameEx does not support more than 10 args.. method: " & ProcName, vbCritical
-            End If
-            
-            dbg "CallByName: ", obj, ProcName, isObj, Join(v, ", ")
-            
-            If numArgs >= 0 Then a = v(0)
-            If numArgs >= 1 Then b = v(1)
-            If numArgs >= 2 Then c = v(2)
-            If numArgs >= 3 Then d = v(3)
-            If numArgs >= 4 Then e = v(4)
-            If numArgs >= 5 Then f = v(5)
-            If numArgs >= 6 Then g = v(6)
-            If numArgs >= 7 Then h = v(7)
-            If numArgs >= 8 Then i = v(8)
-            If numArgs >= 9 Then j = v(9)
-            
-            If isObj Then
-                Select Case numArgs
-                    Case 0: Set CallByNameEx = CallByName(obj, ProcName, CallType, a)
-                    Case 1: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b)
-                    Case 2: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c)
-                    Case 3: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d)
-                    Case 4: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e)
-                    Case 5: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f)
-                    Case 6: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g)
-                    Case 7: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g, h)
-                    Case 8: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g, h, i)
-                    Case 9: Set CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g, h, i, j)
-                End Select
-            Else
-                Select Case numArgs
-                    Case 0:  CallByNameEx = CallByName(obj, ProcName, CallType, a)
-                    Case 1:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b)
-                    Case 2:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c)
-                    Case 3:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d)
-                    Case 4:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e)
-                    Case 5:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f)
-                    Case 6:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g)
-                    Case 7:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g, h)
-                    Case 8:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g, h, i)
-                    Case 9:  CallByNameEx = CallByName(obj, ProcName, CallType, a, b, c, d, e, f, g, h, i, j)
-                End Select
-            End If
-        End If
-
-    Exit Function
-
-Handler:
-        dbg "Error in CallByNameEx: ", Err.Number, Err.Description
-End Function
-
-
-
 
 Function StringFromPointer(buf As Long) As String
     Dim sz As Long

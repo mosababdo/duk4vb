@@ -168,6 +168,7 @@ extern "C" {
 
 #define DUK_OPT_EXEC_TIMEOUT_CHECK  ScriptTimeoutCheck
 #define DUK_OPT_INTERRUPT_COUNTER  1
+#define DUK_OPT_DEBUGGER_SUPPORT   1
 
 //----------------------------------------------------------------------------------
 

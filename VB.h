@@ -11,7 +11,8 @@ typedef enum{
 	cb_engine = 3,
 	cb_error = 4,
 	cb_ReleaseObj = 5,
-	cb_StringReturn = 6
+	cb_StringReturn = 6,
+	cb_debugger = 7
 } cb_type;
 
 //Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
@@ -20,11 +21,11 @@ typedef void (__stdcall *vbCallback)(cb_type, char*);
 //Public Function GetDebuggerCommand(ByVal buf As Long, ByVal sz As Long) As Long
 typedef int (__stdcall *vbDbgCallback)(char*, int);
 
-
 typedef int (__stdcall *vbHostResolverCallback)(char*, int, int, int); //*string, dukCtx, arg_cnt, hInst
 
 extern vbCallback vbStdOut;
-extern vbDbgCallback vbDbgHandler;
+extern vbDbgCallback vbDbgReadHandler;
+extern vbDbgCallback vbDbgWriteHandler;
 extern vbHostResolverCallback vbHostResolver;
 extern vbDbgCallback vbLineInput;  
 

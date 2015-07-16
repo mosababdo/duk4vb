@@ -18,6 +18,8 @@ api tidbits:
 vbCallback vbStdOut = 0;
 vbHostResolverCallback vbHostResolver = 0;
 vbDbgCallback vbLineInput = 0;
+vbDbgCallback vbDbgWriteHandler = 0;
+vbDbgCallback vbDbgReadHandler;
 
 char* mLastString = 0;
 
@@ -30,13 +32,19 @@ enum opDuk{
 	opd_GetString=5,
 	opd_Destroy=6,
 	opd_LastString=7,
-	opd_ScriptTimeout=8
+	opd_ScriptTimeout=8,
+	opd_debugAttach=9,
+	opd_dbgCoOp = 10
 };
 
 int watchdogTimeout = 0;
 int inCreate = 0 ;
 unsigned int startTime = 0;
 unsigned int lastRefresh = 0;
+
+duk_size_t DebugRead(void *udata, char *buffer, duk_size_t length);
+duk_size_t DebugWrite(void *udata, const char *buffer, duk_size_t length);
+void DebugDetached(void *udata);
 
 int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 #pragma EXPORT
@@ -57,6 +65,14 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 		case opd_IsNullUndef: return (int)duk_is_null_or_undefined(ctx, arg1);
 		case opd_GetString: return (int)duk_safe_to_string(ctx, arg1);
 		case opd_Destroy: duk_destroy_heap(ctx); ctx = 0; return 0;
+		case opd_dbgCoOp: duk_debugger_cooperate(ctx); return 0;
+		case opd_debugAttach:
+			if(arg1==1){
+				if(vbDbgReadHandler==0 || vbStdOut==0 || vbDbgWriteHandler==0) return -1;
+				duk_debugger_attach(ctx, DebugRead, DebugWrite, 0, 0,0, DebugDetached,0);
+			}
+  		    else duk_debugger_detach(ctx);
+			return 0;
 	}
 
 	return -1;
@@ -64,12 +80,13 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 }
 
 
-void __stdcall SetCallBacks(void* lpfnMsgHandler, void* lpfnDbgHandler, void* lpfnHostResolver, void* lpfnLineInput){
+void __stdcall SetCallBacks(void* lpfnMsgHandler, void* lpfnDbgHandler, void* lpfnHostResolver, void* lpfnLineInput, void* lpfnDbgWriteHandler){
 #pragma EXPORT
 	vbStdOut     = (vbCallback)lpfnMsgHandler;
-	//vbDbgHandler = (vbDbgCallback)lpfnDbgHandler;
+	vbDbgReadHandler = (vbDbgCallback)lpfnDbgHandler;
 	vbHostResolver = (vbHostResolverCallback)lpfnHostResolver;
 	vbLineInput = (vbDbgCallback)lpfnLineInput;
+	vbDbgWriteHandler = (vbDbgCallback)lpfnDbgWriteHandler;
 }
 
 int __stdcall setLastString(const char* s){ //accepts null string to just free last buffer
@@ -265,8 +282,24 @@ int __stdcall Eval(duk_context *ctx, char* js ){
 
 }
 
+static void DebugDetached(void *udata) {
+	char tmp[200];
+	if(vbStdOut==0) return;
+	sprintf(tmp, "Debugger-Detached:%d\n", (int)udata);
+	vbStdOut(cb_debugger, tmp);
+}
 
- 
+//debugger is requesting a command to operate on..vb blocks until user enters command..
+duk_size_t DebugRead(void *udata, char *buffer, duk_size_t length){	 
+	return vbDbgReadHandler(buffer, length);
+}
+
+//debugger is sending our interface data 
+duk_size_t DebugWrite(void *udata, const char *buffer, duk_size_t length){
+	return vbDbgWriteHandler(buffer, length);
+}
+
+
 int my_fwrite( const void *buf, size_t size, size_t count, FILE* fp){
 	
 	int sz = size * count;
