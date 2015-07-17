@@ -170,6 +170,8 @@ extern "C" {
 #define DUK_OPT_INTERRUPT_COUNTER  1
 #define DUK_OPT_DEBUGGER_SUPPORT   1
 
+//i added ifdef DUK_DBG_USE_PACKED_PROTOCOL to simplify unpacking of ints and strings in debugger protocol..(i dont need compact protocol)
+
 //----------------------------------------------------------------------------------
 
 /*

@@ -1,5 +1,8 @@
 Attribute VB_Name = "modUtil"
 Global Const LANG_US = &H409
+Public Declare Function htonl Lib "ws2_32.dll" (ByVal hostlong As Long) As Long
+
+
 Private Declare Function FindWindow Lib "User32" Alias "FindWindowA" _
     (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
 Private Declare Function FindWindowEx Lib "User32" Alias "FindWindowExA" _
@@ -138,7 +141,7 @@ Sub dbg(prefix As String, ParamArray args())
         End If
     Next
     
-    Form1.List1.AddItem tmp
+    'Form1.List1.AddItem tmp
     Debug.Print tmp
     
 End Sub
@@ -157,23 +160,23 @@ End Function
 '  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
 'End Function
 
-Sub push(ary, value) 'this modifies parent ary object
-    On Error GoTo init
+Sub push(ary, Value) 'this modifies parent ary object
+    On Error GoTo Init
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+Init:     ReDim ary(0): ary(0) = Value
 End Sub
 
-Sub bpush(ary, value As Byte, Optional freshStart As Boolean = False)   'this modifies parent ary object
-    On Error GoTo init
+Sub bpush(ary, Value As Byte, Optional freshStart As Boolean = False)   'this modifies parent ary object
+    On Error GoTo Init
     If freshStart Then Erase ary
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+Init:     ReDim ary(0): ary(0) = Value
 End Sub
 
 
@@ -211,7 +214,7 @@ End Function
 
 Function c2s(c As Collection) As String
     Dim x, y
-    If c.Count = 0 Then Exit Function
+    If c.count = 0 Then Exit Function
     For Each x In c
         y = y & x & ", "
     Next

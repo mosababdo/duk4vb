@@ -88,7 +88,7 @@ Private Sub Class_Terminate()
         'in the IDE we release it as soon as not needed..that way IDE doesnt
         'ever hang onto the dll after debugging. If it does we cant recompile the dll
         'without closing VB IDE which is annoying...
-        'FreeLibrary mDuk.hDukLib
+        FreeLibrary mDuk.hDukLib
     End If
 End Sub
 

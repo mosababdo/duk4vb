@@ -1,39 +1,160 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{FBE17B58-A1F0-4B91-BDBD-C9AB263AC8B0}#78.0#0"; "scivb_lite.ocx"
 Begin VB.Form Form1 
    Caption         =   "Simple DukTape JS Example"
-   ClientHeight    =   7755
+   ClientHeight    =   9795
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   9990
+   ClientWidth     =   13845
    LinkTopic       =   "Form1"
-   ScaleHeight     =   7755
-   ScaleWidth      =   9990
+   ScaleHeight     =   9795
+   ScaleWidth      =   13845
    StartUpPosition =   2  'CenterScreen
-   Begin VB.ListBox List1 
-      Height          =   1425
-      Left            =   180
-      TabIndex        =   1
-      Top             =   5400
-      Width           =   9780
+   Begin VB.TextBox txtOut 
+      Height          =   1185
+      Left            =   5670
+      MultiLine       =   -1  'True
+      ScrollBars      =   2  'Vertical
+      TabIndex        =   7
+      Top             =   6705
+      Width           =   3165
    End
-   Begin VB.TextBox Text1 
-      BeginProperty Font 
+   Begin MSComctlLib.ListView lvErrors 
+      Height          =   1050
+      Left            =   3645
+      TabIndex        =   4
+      Top             =   6795
+      Width           =   1860
+      _ExtentX        =   3281
+      _ExtentY        =   1852
+      View            =   3
+      LabelEdit       =   1
+      LabelWrap       =   -1  'True
+      HideSelection   =   -1  'True
+      FullRowSelect   =   -1  'True
+      GridLines       =   -1  'True
+      _Version        =   393217
+      ForeColor       =   -2147483640
+      BackColor       =   -2147483643
+      BorderStyle     =   1
+      Appearance      =   1
+      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
          Name            =   "Courier"
-         Size            =   12
+         Size            =   9.75
          Charset         =   0
          Weight          =   400
          Underline       =   0   'False
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   4605
-      Left            =   90
-      MultiLine       =   -1  'True
-      ScrollBars      =   3  'Both
-      TabIndex        =   0
-      Top             =   675
-      Width           =   9825
+      NumItems        =   3
+      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         Text            =   "Line"
+         Object.Width           =   1411
+      EndProperty
+      BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   1
+         Text            =   "File"
+         Object.Width           =   3881
+      EndProperty
+      BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   2
+         Text            =   "Error"
+         Object.Width           =   2540
+      EndProperty
+   End
+   Begin MSComctlLib.ListView lvVars 
+      Height          =   1050
+      Left            =   10890
+      TabIndex        =   5
+      Top             =   6840
+      Width           =   1860
+      _ExtentX        =   3281
+      _ExtentY        =   1852
+      View            =   3
+      LabelEdit       =   1
+      LabelWrap       =   -1  'True
+      HideSelection   =   -1  'True
+      FullRowSelect   =   -1  'True
+      _Version        =   393217
+      ForeColor       =   -2147483640
+      BackColor       =   -2147483643
+      BorderStyle     =   1
+      Appearance      =   1
+      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+         Name            =   "Courier"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      NumItems        =   4
+      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         Text            =   "scope"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   1
+         Text            =   "name"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   2
+         Text            =   "type"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(4) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   3
+         Text            =   "value"
+         Object.Width           =   2540
+      EndProperty
+   End
+   Begin MSComctlLib.ListView lvCallStack 
+      Height          =   1185
+      Left            =   8955
+      TabIndex        =   6
+      Top             =   6795
+      Width           =   1815
+      _ExtentX        =   3201
+      _ExtentY        =   2090
+      View            =   3
+      LabelEdit       =   1
+      LabelWrap       =   -1  'True
+      HideSelection   =   -1  'True
+      FullRowSelect   =   -1  'True
+      _Version        =   393217
+      ForeColor       =   -2147483640
+      BackColor       =   -2147483643
+      BorderStyle     =   1
+      Appearance      =   1
+      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+         Name            =   "Courier"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      NumItems        =   2
+      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         Text            =   "Line"
+         Object.Width           =   1235
+      EndProperty
+      BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   1
+         Text            =   "Function"
+         Object.Width           =   2540
+      EndProperty
+   End
+   Begin VB.Timer tmrHideCallTip 
+      Enabled         =   0   'False
+      Interval        =   600
+      Left            =   8010
+      Top             =   135
    End
    Begin MSComctlLib.ImageList ilToolbars_Disabled 
       Left            =   9225
@@ -150,7 +271,7 @@ Begin VB.Form Form1
    Begin MSComctlLib.Toolbar tbarDebug 
       Height          =   330
       Left            =   135
-      TabIndex        =   2
+      TabIndex        =   0
       Top             =   270
       Width           =   3870
       _ExtentX        =   6826
@@ -212,11 +333,59 @@ Begin VB.Form Form1
          EndProperty
       EndProperty
    End
+   Begin SCIVB_LITE.SciSimple scivb 
+      Height          =   5865
+      Left            =   90
+      TabIndex        =   2
+      Top             =   675
+      Width           =   13650
+      _ExtentX        =   24077
+      _ExtentY        =   10345
+   End
+   Begin MSComctlLib.TabStrip ts 
+      Height          =   3120
+      Left            =   90
+      TabIndex        =   3
+      Top             =   6570
+      Width           =   13695
+      _ExtentX        =   24156
+      _ExtentY        =   5503
+      Placement       =   1
+      _Version        =   393216
+      BeginProperty Tabs {1EFB6598-857C-11D1-B16A-00C0F0283628} 
+         NumTabs         =   4
+         BeginProperty Tab1 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
+            Caption         =   "Output"
+            ImageVarType    =   2
+         EndProperty
+         BeginProperty Tab2 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
+            Caption         =   "Errors"
+            ImageVarType    =   2
+         EndProperty
+         BeginProperty Tab3 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
+            Caption         =   "Variables"
+            ImageVarType    =   2
+         EndProperty
+         BeginProperty Tab4 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
+            Caption         =   "CallStack"
+            ImageVarType    =   2
+         EndProperty
+      EndProperty
+      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+         Name            =   "Courier"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+   End
    Begin VB.Label lblStatus 
       Caption         =   "Status: Idle"
       Height          =   375
       Left            =   4095
-      TabIndex        =   3
+      TabIndex        =   1
       Top             =   270
       Width           =   4560
    End
@@ -226,20 +395,75 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+Dim duk As CDukTape
+Dim WithEvents sciext As CSciExtender
+Attribute sciext.VB_VarHelpID = -1
  
+Const SC_MARK_CIRCLE = 0
+Const SC_MARK_ARROW = 2
+Const SC_MARK_BACKGROUND = 22
+'http://www.scintilla.org/aprilw/SciLexer.bas
+ 
+Public lastEIP As Long
+Private forceStop As Boolean
+
+Public Sub SyncUI()
+    
+    Dim curline As Long
+    ClearLastLineMarkers
+    
+    curline = CurrentLineInDebugger - 1
+    scivb.SetMarker curline, 1
+    scivb.SetMarker curline, 3
+    lastEIP = curline
+    
+    scivb.GotoLine curline
+    scivb.SetFocus
+    
+    RefreshVariables
+    'RefreshCallStack
+    
+End Sub
+ 
+
+
+Private Sub ClearLastLineMarkers()
+    Dim startPos As Long, endPos As Long
+
+    scivb.DeleteMarker lastEIP, 1 'remove the yellow arrow
+    scivb.DeleteMarker lastEIP, 3 'remove the yellow line backcolor
+
+    'force a refresh of the specified line or it might not catch it..
+    startPos = scivb.PositionFromLine(lastEIP)
+    endPos = scivb.PositionFromLine(lastEIP + 1)
+    scivb.DirectSCI.Colourise startPos, endPos
+    
+End Sub
+
+Private Sub Form_Unload(Cancel As Integer)
+    If Not duk Is Nothing Then
+        If duk.isDebugging Then duk.DebugAttach False
+        Set duk = Nothing
+    End If
+End Sub
+
 Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
 
     Select Case Button.key
-        Case "Run":               If running Then DebuggerCmd dc_run Else ExecuteScript
-        Case "Start Debugger":    If running Then DebuggerCmd dc_run Else ExecuteScript True
-'        Case "Stop":              DebuggerCmd dc_
+        Case "Run":               If running Then DebuggerCmd dc_Resume Else ExecuteScript
+        Case "Start Debugger":    If running Then DebuggerCmd dc_Resume Else ExecuteScript True
         Case "Step In":           DebuggerCmd dc_stepInto
         Case "Step Over":         DebuggerCmd dc_StepOver
         Case "Step Out":          DebuggerCmd dc_Stepout
 '        Case "Run to Cursor":     RunToLine scivb.CurrentLine + 1
 '        Case "Toggle Breakpoint": ToggleBreakPoint
 '        Case "Clear All Breakpoints": RemoveAllBreakpoints
-'        Case "Break":                 dbg_Break hDebugObject
+        Case "Break":                 DebuggerCmd dc_break
+        Case "Stop":
+                        duk.Timeout = 1
+                        forceStop = True
+                        DebuggerCmd dc_stepInto
+                        
         
     End Select
     
@@ -248,15 +472,17 @@ End Sub
 Private Sub ExecuteScript(Optional withDebugger As Boolean)
  
     Dim rv
-    Dim duk As CDukTape
+   
     
-    List1.Clear
+    'List1.Clear
     
     running = True
     SetToolBarIcons
     lblStatus = "Status: " & IIf(withDebugger, "Debugging...", "Running...")
     
+    forceStop = False
     Set duk = New CDukTape
+    Set RecvBuffer = New CWriteBuffer
     
     If withDebugger Then
         duk.Timeout = 0
@@ -265,23 +491,27 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
         duk.Timeout = 7000 'set to 0 to disabled
     End If
       
-    WriteFile "c:\test.js", Text1.text
+    WriteFile "c:\test.js", scivb.Text
     rv = duk.AddFile("c:\test.js")
     
-    If withDebugger Then duk.DebugAttach False
-   
-    If duk.hadError Then
-        MsgBox "Error: " & duk.LastError
-    Else
-        If Len(rv) > 0 And rv <> "undefined" Then MsgBox "eval returned: " & rv
+    If Not duk Is Nothing Then 'form closing?
+         If withDebugger Then duk.DebugAttach False
+        
+         If duk.hadError Then
+             If Not forceStop Then
+                MsgBox "Error: " & duk.LastError
+             End If
+         Else
+             If Len(rv) > 0 And rv <> "undefined" Then MsgBox "eval returned: " & rv
+         End If
+         
+         Set duk = Nothing
+         ClearLastLineMarkers
+         lblStatus = "Status: Idle" 'these would call form_load again if closing down..
+         running = False
+         SetToolBarIcons
+    
     End If
-    
-    Set duk = Nothing
-    
-    lblStatus = "Status: Idle"
-    running = False
-    SetToolBarIcons
-    
     
 End Sub
 
@@ -306,8 +536,104 @@ End Sub
 Private Sub Form_Load()
 
     SetToolBarIcons
+    lvVars.Visible = False
+    lvCallStack.Visible = False
+    lvErrors.Visible = False
+
+
+    scivb.DirectSCI.HideSelection False
+    scivb.DirectSCI.MarkerDefine 2, SC_MARK_CIRCLE
+    scivb.DirectSCI.MarkerSetFore 2, vbRed 'set breakpoint color
+    scivb.DirectSCI.MarkerSetBack 2, vbRed
+
+    scivb.DirectSCI.MarkerDefine 1, SC_MARK_ARROW
+    scivb.DirectSCI.MarkerSetFore 1, vbBlack 'current eip
+    scivb.DirectSCI.MarkerSetBack 1, vbYellow
+
+    scivb.DirectSCI.MarkerDefine 3, SC_MARK_BACKGROUND
+    scivb.DirectSCI.MarkerSetFore 3, vbBlack 'current eip
+    scivb.DirectSCI.MarkerSetBack 3, vbYellow
+
+    scivb.DirectSCI.AutoCSetIgnoreCase True
+    scivb.DisplayCallTips = True
+    Call scivb.LoadCallTips(App.path & "\dependancies\calltips.txt")
+    scivb.ReadOnly = False
+
+    Set sciext = New CSciExtender
+    sciext.Init scivb
     
-    Text1 = Replace(Replace("function b(c){\n\treturn c++\n}\na=0;\na = b(a)\na=b(a)", "\n", vbCrLf), "\t", vbTab)
-            
+    scivb.Text = Replace(Replace("function b(c){\n\treturn c++\n}\na=0;\na = b(a)\na=b(a)", "\n", vbCrLf), "\t", vbTab)
+    
 End Sub
+
+Private Sub Form_Resize()
+    On Error Resume Next
+    With scivb
+        .Width = Me.Width - .Left - 200
+        ts.Width = .Width
+        txtOut.Width = .Width - 200
+        ts.Top = Me.Height - ts.Height - 800
+        .Height = Me.Height - .Top - ts.Height - 1000
+        With txtOut
+            .Move ts.Left + 100, ts.Top + 150, ts.Width - 200, ts.Height - 500
+            lvVars.Move .Left, .Top, .Width, .Height
+            lvCallStack.Move .Left, .Top, .Width, .Height
+            lvErrors.Move .Left, .Top, .Width, .Height
+        End With
+        SetLastColumnWidth lvCallStack
+        SetLastColumnWidth lvVars
+        SetLastColumnWidth lvErrors
+    End With
+End Sub
+
+Private Sub SetLastColumnWidth(lv As ListView)
+    lv.ColumnHeaders(lv.ColumnHeaders.count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).Left - 100
+End Sub
+
+Private Sub ts_Click()
+    Dim i As Long
+    i = ts.SelectedItem.Index
+    txtOut.Visible = IIf(i = 1, True, False)
+    lvErrors.Visible = IIf(i = 2, True, False)
+    lvVars.Visible = IIf(i = 3, True, False)
+    lvCallStack.Visible = IIf(i = 4, True, False)
+End Sub
+
+''we use a timer for this to give them a chance to click on the calltip to edit the variable..
+'Private Sub tmrHideCallTip_Timer()
+'    If sciext.isMouseOverCallTip() Then Exit Sub
+'    tmrHideCallTip.Enabled = False
+'    scivb.StopCallTip
+'    Set selVariable = Nothing
+'End Sub
  
+'Private Sub sciext_MarginClick(lline As Long, Position As Long, margin As Long, modifiers As Long)
+'    'Debug.Print "MarginClick: line,pos,margin,modifiers", lLine, Position, margin, modifiers
+'    ToggleBreakPoint lline
+'End Sub
+'
+'Private Sub sciext_MouseDwellEnd(lline As Long, Position As Long)
+'   If running Then tmrHideCallTip.Enabled = True
+'End Sub
+
+'Private Sub sciext_MouseDwellStart(lline As Long, Position As Long)
+'    'Debug.Print "MouseDwell: " & lLine & " CurWord: " & sciext.WordUnderMouse(Position)
+'
+'    Dim li As ListItem
+'    Dim curWord As String
+'
+'    If running Then
+'         curWord = sciext.WordUnderMouse(Position)
+'         For Each li In lvVars.ListItems
+'            If LCase(li.SubItems(1)) = LCase(curWord) Then 'they have moused over a variable..
+'                Set selVariable = li
+'                scivb.SelStart = Position 'so call tip shows right under it..
+'                scivb.SelLength = 0
+'                scivb.ShowCallTip curWord & " = " & li.SubItems(3)
+'                Exit For
+'            End If
+'         Next
+'    End If
+'
+'
+'End Sub

@@ -528,6 +528,7 @@ DUK_INTERNAL void duk_debug_write_int(duk_hthread *thr, duk_int32_t x) {
 
 	DUK_ASSERT(thr != NULL);
 
+#ifdef DUK_DBG_USE_PACKED_PROTOCOL
 	if (x >= 0 && x <= 0x3fL) {
 		buf[0] = (duk_uint8_t) (0x80 + x);
 		len = 1;
@@ -535,7 +536,9 @@ DUK_INTERNAL void duk_debug_write_int(duk_hthread *thr, duk_int32_t x) {
 		buf[0] = (duk_uint8_t) (0xc0 + (x >> 8));
 		buf[1] = (duk_uint8_t) (x & 0xff);
 		len = 2;
-	} else {
+	} else
+#endif
+	{
 		/* Signed integers always map to 4 bytes now. */
 		buf[0] = (duk_uint8_t) 0x10;
 		buf[1] = (duk_uint8_t) ((x >> 24) & 0xff);
@@ -563,6 +566,7 @@ DUK_INTERNAL void duk_debug_write_strbuf(duk_hthread *thr, const char *data, duk
 	DUK_ASSERT(thr != NULL);
 	DUK_ASSERT(length == 0 || data != NULL);
 
+#ifdef DUK_DBG_USE_PACKED_PROTOCOL
 	if (length <= 0x1fUL && marker_base == 0x11) {
 		/* For strings, special form for short lengths. */
 		buf[0] = (duk_uint8_t) (0x60 + length);
@@ -572,7 +576,9 @@ DUK_INTERNAL void duk_debug_write_strbuf(duk_hthread *thr, const char *data, duk
 		buf[1] = (duk_uint8_t) (length >> 8);
 		buf[2] = (duk_uint8_t) (length & 0xff);
 		buflen = 3;
-	} else {
+	} else 
+#endif	
+	{
 		buf[0] = (duk_uint8_t) marker_base;
 		buf[1] = (duk_uint8_t) (length >> 24);
 		buf[2] = (duk_uint8_t) ((length >> 16) & 0xff);
@@ -765,7 +771,11 @@ DUK_INTERNAL void duk_debug_write_notify(duk_hthread *thr, duk_small_uint_t comm
 }
 
 DUK_INTERNAL void duk_debug_write_eom(duk_hthread *thr) {
+	
 	duk_debug_write_byte(thr, DUK_DBG_MARKER_EOM);
+	
+	//char* eom = "-END-OF-MESSAGE-";
+	//duk_debug_write_bytes(thr, eom, strlen(eom));
 
 	/* As an initial implementation, write flush after every EOM (and the
 	 * version identifier).  A better implementation would flush only when

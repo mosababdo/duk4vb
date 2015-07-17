@@ -283,10 +283,8 @@ int __stdcall Eval(duk_context *ctx, char* js ){
 }
 
 static void DebugDetached(void *udata) {
-	char tmp[200];
 	if(vbStdOut==0) return;
-	sprintf(tmp, "Debugger-Detached:%d\n", (int)udata);
-	vbStdOut(cb_debugger, tmp);
+	vbStdOut(cb_debugger, "Debugger-Detached");
 }
 
 //debugger is requesting a command to operate on..vb blocks until user enters command..
