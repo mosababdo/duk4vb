@@ -77,19 +77,19 @@ Function ReadDouble() As Double
 End Function
 
 Sub WriteBuf(b() As Byte)
+    Dim wasFirst As Boolean
     
     'Const eom = "-END-OF-MESSAGE-"
     
     If UBound(b) = 0 And b(0) = 0 Then
-    'If UBound(b) = Len(eom) Then
-    '    If StrConv(b, vbUnicode) = eom Then
-            mPosition = 0
-            Call DebuggerMessageReceived
-            firstMessage = False
-            replyReceived = True
-            Erase buf
-            Exit Sub
-    '    End If
+        wasFirst = firstMessage
+        mPosition = 0
+        Call DebuggerMessageReceived
+        firstMessage = False
+        replyReceived = True
+        If wasFirst Then InitDebuggerBpx
+        Erase buf
+        Exit Sub
     End If
     
     For i = 0 To UBound(b)
@@ -98,11 +98,18 @@ Sub WriteBuf(b() As Byte)
     
 End Sub
 
+'we use a property here since VB6 IDE will auto evaluate its value (ie run this code)
+'just when you mouse over it at debug time..so you can wrap in if false to only
+'see on demand..on mouse hover..fancy..thanks dillatante for the idea from your hexdump class :)
 Function DebugDump(Optional prefix As String)
     Debug.Print "MessageReceived: " & prefix
     Debug.Print bHexDump(buf)
     Debug.Print String(50, "-")
 End Function
+
+Property Get Hint()
+    Hint = bHexDump(buf)
+End Property
 
 Private Sub Class_Initialize()
     DisplayDebugOutput = True

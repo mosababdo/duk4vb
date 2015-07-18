@@ -169,6 +169,24 @@ Sub push(ary, Value) 'this modifies parent ary object
 Init:     ReDim ary(0): ary(0) = Value
 End Sub
 
+Sub papush(ary, ParamArray Value()) 'this modifies parent ary object
+    
+    Dim i As Long
+    
+    If AryIsEmpty(ary) Then
+        ReDim ary(0)
+    Else
+        push ary, ""
+    End If
+    
+    i = UBound(ary)
+    
+    For Each v In Value
+        ary(i) = ary(i) & " " & v
+    Next
+    
+End Sub
+
 Sub bpush(ary, Value As Byte, Optional freshStart As Boolean = False)   'this modifies parent ary object
     On Error GoTo Init
     If freshStart Then Erase ary
@@ -244,13 +262,13 @@ Function FileExists(path As String) As Boolean
 hell: FileExists = False
 End Function
 
-Function ReadFile(filename) As Variant
+Function ReadFile(fileName) As Variant
   Dim f As Long
   Dim temp As Variant
   f = FreeFile
   temp = ""
-   Open filename For Binary As #f        ' Open file.(can be text or image)
-     temp = Input(FileLen(filename), #f) ' Get entire Files data
+   Open fileName For Binary As #f        ' Open file.(can be text or image)
+     temp = Input(FileLen(fileName), #f) ' Get entire Files data
    Close #f
    ReadFile = temp
 End Function

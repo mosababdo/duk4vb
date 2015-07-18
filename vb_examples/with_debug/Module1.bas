@@ -12,9 +12,12 @@ Public Declare Function DukOp Lib "Duk4VB.dll" (ByVal operation As opDuk, Option
 'misc windows api..
 Public Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Public Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
-Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, Source As Any, ByVal length As Long)
+Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, source As Any, ByVal length As Long)
 Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Declare Function lstrlen Lib "kernel32.dll" Alias "lstrlenA" (ByVal lpString As Long) As Long
+
+
+
 
 Enum cb_type
     cb_output = 0
@@ -26,6 +29,10 @@ Enum cb_type
     cb_StringReturn = 6
     cb_debugger = 7
 End Enum
+
+Const DUK_DBG_CMD_ADDBREAK = &H18
+Const DUK_DBG_CMD_DELBREAK = &H19
+Const DUK_DBG_CMD_GETVAR = &H1A
 
 Enum opDuk
     opd_PushUndef = 0
@@ -39,7 +46,9 @@ Enum opDuk
     opd_ScriptTimeout = 8
     opd_debugAttach = 9
     opd_dbgCoOp = 10
-    opd_dbgManuallyTriggerGetVar = 11
+    opd_dbgSyncGetVar = DUK_DBG_CMD_GETVAR
+    opd_dbgSyncSetBreak = DUK_DBG_CMD_ADDBREAK
+    opd_dbgSyncDelBreak = DUK_DBG_CMD_DELBREAK
 End Enum
 
 Enum Debug_Commands
@@ -54,7 +63,10 @@ Enum Debug_Commands
     dc_Resume = 9
     dc_GetLocals = 10
     dc_GetVar = 11
+    dc_SetBreakpoint = 12
+    dc_delBreakpoint = 13
 End Enum
+
 
 Global Const STATUS_NOTIFICATION = &H1
 Global Const PRINT_NOTIFICATION = &H2
@@ -96,6 +108,7 @@ Global Const DUK_DBG_ERR_TOOMANY = &H2
 Global Const DUK_DBG_ERR_NOTFOUND = &H3
 Global Const DUK_VAR_NOT_FOUND = "DUK_VAR_NOT_FOUND"
 
+
 Global running As Boolean
 Public LastStringReturn As String
 Public readyToReturn As Boolean
@@ -110,16 +123,17 @@ Public RecvBuffer As New CWriteBuffer
 Private variables As Collection
 Private dbgStopNext As Boolean
 
-Public Type stats
+Public Type Stats
     state As Long
-    filename As String
+    fileName As String
     curFunc As String
     lineNumber As Long
     pc As Long
 End Type
 
-Public status As stats
-Public VarReturn As CVariable
+Public status As Stats
+Private VarReturn As CVariable 'because we have to work across callbacks...
+Public tmpBreakPoint As CBreakpoint 'because we have to work across callbacks..
 
 Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
 
@@ -205,18 +219,37 @@ Function SyncronousGetVariableValue(name As String) As CVariable
     VarReturn.name = name
     LastCommand = dc_GetVar
     replyReceived = False
-    RespBuffer.ConstructMessage dc_GetVar, name, True   'build custom packet
-    DukOp opd_dbgManuallyTriggerGetVar, ActiveDebuggerClass.Context
+    RespBuffer.ConstructMessage dc_GetVar, name, , False  'build custom packet
+    DukOp opd_dbgSyncGetVar, ActiveDebuggerClass.Context
     Set SyncronousGetVariableValue = VarReturn
 End Function
 
-Public Sub DebuggerCmd(cmd As Debug_Commands, Optional arg1)
+Function SyncronousSetBreakPoint(b As CBreakpoint) As Boolean
+    Set tmpBreakPoint = b
+    LastCommand = dc_SetBreakpoint
+    replyReceived = False
+    RespBuffer.ConstructMessage dc_SetBreakpoint, b.fileName, b.lineNo, False  'build custom packet
+    DukOp opd_dbgSyncSetBreak, ActiveDebuggerClass.Context
+    SyncronousSetBreakPoint = CBool(Len(b.errText) = 0)
+End Function
+
+Function SyncDelBreakPoint(b As CBreakpoint) As Boolean
+    Set tmpBreakPoint = b
+    b.errText = Empty
+    LastCommand = dc_delBreakpoint
+    replyReceived = False
+    RespBuffer.ConstructMessage dc_delBreakpoint, b.index, False   'build custom packet
+    DukOp opd_dbgSyncDelBreak, ActiveDebuggerClass.Context
+    SyncDelBreakPoint = CBool(Len(b.errText) = 0)
+End Function
+
+Public Sub DebuggerCmd(cmd As Debug_Commands, Optional arg1, Optional arg2)
     
     If Not replyReceived Then Exit Sub ' we are still waiting for last commands response..
     replyReceived = False
     
     LastCommand = cmd
-    If Not RespBuffer.ConstructMessage(cmd, arg1) Then
+    If Not RespBuffer.ConstructMessage(cmd, arg1, arg2) Then
         Debug.Print "Failed to construct message for " & cmd
     Else
         readyToReturn = True
@@ -233,14 +266,14 @@ End Function
 
 
 
-Function GetArgAsString(ctx As Long, Index As Long) As String
+Function GetArgAsString(ctx As Long, index As Long) As String
     
     'an invalid index here would trigger a script error and aborting the eval call..weird.. <---
     'as long as the native function is added with expected arg count, and you dont surpass it your ok
     'even if the js function ommitted args in its call, empty ones will just be retrieved as 'undefined'
     
     Dim ptr As Long
-    ptr = DukOp(opd_GetString, ctx, Index)
+    ptr = DukOp(opd_GetString, ctx, index)
     
     If ptr <> 0 Then
         GetArgAsString = StringFromPointer(ptr)
@@ -407,6 +440,8 @@ Public Function DebuggerMessageReceived()
         
     With RecvBuffer
         
+        h = .Hint 'just for mouse over test..
+        
         b = .ReadByte()
         
         If .firstMessage Then
@@ -428,7 +463,18 @@ Public Function DebuggerMessageReceived()
             '0x01    Unsupported command
             '0x02    Too many (e.g. too many breakpoints, cannot add new)
             '0x03    Not found (e.g. invalid breakpoint index)
-            Case DUK_DBG_MARKER_ERROR: .DebugDump ("Error")
+            Case DUK_DBG_MARKER_ERROR:
+                     
+                     Select Case LastCommand
+                        Case dc_SetBreakpoint:
+                                                .ReadInt 'discard errorcode
+                                                tmpBreakPoint.errText = .ReadString
+                        Case dc_delBreakpoint:
+                                                .ReadInt 'discard errorcode
+                                                tmpBreakPoint.errText = .ReadString
+                        Case Else:
+                            .DebugDump ("Error")
+                    End Select
             
             Case DUK_DBG_MARKER_REPLY:
             
@@ -440,6 +486,7 @@ Public Function DebuggerMessageReceived()
                     'the reply is specific to the last command we issued..
                     Select Case LastCommand
                         Case dc_GetVar: HandleGetVar
+                        Case dc_SetBreakpoint: tmpBreakPoint.index = .ReadInt 'REP <int: breakpoint index> EOM
                         'Case dc_GetLocals:
                         Case Else:
                             .DebugDump ("Reply last cmd: " & LastCommand)
@@ -450,8 +497,7 @@ Public Function DebuggerMessageReceived()
     End With
     
 End Function
-                                            
-                                            
+                                                                                        
 Function HandleNotify()
     Dim fname As String, func As String
     Dim msg As Long, state As Long, lno As Long, pc As Long
@@ -465,7 +511,7 @@ Function HandleNotify()
                    'NFY <int: 1> <int: state> <str: filename> <str: funcname> <int: linenumber> <int: pc> EOM
               Case STATUS_NOTIFICATION:
                     status.state = .ReadInt
-                    status.filename = .ReadString
+                    status.fileName = .ReadString
                     status.curFunc = .ReadString
                     status.lineNumber = .ReadInt
                     status.pc = .ReadInt

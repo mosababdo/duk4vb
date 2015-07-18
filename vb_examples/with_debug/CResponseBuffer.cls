@@ -93,7 +93,7 @@ Sub AddString(s As String)
 End Sub
 
 
-Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional isManualCall As Boolean = False) As Boolean
+Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2, Optional isNormalCall As Boolean = True) As Boolean
     
     Clear
     Dim b As Byte
@@ -118,11 +118,11 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional isManualC
     
     If d = dc_GetVar Then
         'REQ <int: 0x1a> <str: varname> EOM
-        If Not isManualCall Then
+        If isNormalCall Then
             AddByte DUK_DBG_MARKER_REQUEST
             AddByte &H80 + &H1A                   'DUK_DBG_CMD_GETVAR
         Else
-            'this is messed up see notes in DukOp for opd_dbgManuallyTriggerGetVar
+            'opd_dbgManuallyTriggerGetVar
         End If
         AddString CStr(arg1)
         AddByte DUK_DBG_MARKER_EOM
@@ -133,7 +133,37 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional isManualC
         'MsgBox "now"
         Exit Function
     End If
-   
+    
+    If d = dc_SetBreakpoint Then
+        'REQ <int: 0x18> <str: fileName> <int: line> EOM
+        If isNormalCall Then
+            AddByte DUK_DBG_MARKER_REQUEST
+            AddByte &H80 + &H18
+        Else
+            'opd_dbgManuallyTriggerGetVar
+        End If
+        AddString CStr(arg1) 'filename
+        AddIntVal CLng(arg2) 'line number
+        AddByte DUK_DBG_MARKER_EOM
+        ConstructMessage = True
+        Exit Function
+    End If
+    
+    If d = dc_delBreakpoint Then
+        'REQ <int: 0x19> <int: index> EOM
+        If isNormalCall Then
+            AddByte DUK_DBG_MARKER_REQUEST
+            AddByte &H80 + &H19
+        Else
+            'opd_dbgManuallyTriggerGetVar
+        End If
+        AddIntVal CLng(arg1) 'line number
+        AddByte DUK_DBG_MARKER_EOM
+        ConstructMessage = True
+        Exit Function
+    End If
+    
+    
 End Function
 
 

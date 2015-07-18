@@ -1,9 +1,10 @@
 function b(c){
-	return c+1
+	return c++
 }
 
 function main(){
-	v1 = parseInt(0);
+	var a = 1
+    v1 = parseInt(0);
 	v1 = b(v1)
 	v1 = b(v1)
 	c = false
@@ -13,3 +14,19 @@ function main(){
 }
 
 main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

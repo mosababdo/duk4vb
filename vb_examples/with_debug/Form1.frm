@@ -422,6 +422,7 @@ Const SC_MARK_BACKGROUND = 22
  
 Public lastEIP As Long
 Private forceStop As Boolean
+Public curFile As String
 
 Public Sub SyncUI()
     
@@ -457,9 +458,13 @@ Private Sub ClearLastLineMarkers()
 End Sub
 
 Private Sub Command1_Click()
-    Dim v As CVariable
-    Set v = SyncronousGetVariableValue(Text1.Text)
-    MsgBox v.Value & " (" & v.varType & ")"
+    'Dim v As CVariable
+    'Set v = SyncronousGetVariableValue(Text1.Text)
+    'MsgBox v.Value & " (" & v.varType & ")"
+    
+    DebuggerCmd dc_SetBreakpoint, "c:\test.js", 1
+    
+    
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
@@ -512,9 +517,9 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     Else
         duk.Timeout = 7000 'set to 0 to disabled
     End If
-      
-    WriteFile "c:\test.js", scivb.Text
-    rv = duk.AddFile("c:\test.js")
+     
+    WriteFile curFile, scivb.Text
+    rv = duk.AddFile(curFile)
     
     If Not duk Is Nothing Then 'form closing?
          If withDebugger Then duk.DebugAttach False
@@ -562,7 +567,7 @@ Private Sub Form_Load()
     lvCallStack.Visible = False
     lvErrors.Visible = False
 
-
+    
     scivb.DirectSCI.HideSelection False
     scivb.DirectSCI.MarkerDefine 2, SC_MARK_CIRCLE
     scivb.DirectSCI.MarkerSetFore 2, vbRed 'set breakpoint color
@@ -586,6 +591,8 @@ Private Sub Form_Load()
     
     'scivb.Text = Replace(Replace("function b(c){\n\treturn c++\n}\na=0;\na = b(a)\na=b(a)", "\n", vbCrLf), "\t", vbTab)
     scivb.LoadFile App.path & "\test.js"
+    curFile = App.path & "\test.js"
+    
     
 End Sub
 
@@ -615,7 +622,7 @@ End Sub
 
 Private Sub ts_Click()
     Dim i As Long
-    i = ts.SelectedItem.Index
+    i = ts.SelectedItem.index
     txtOut.Visible = IIf(i = 1, True, False)
     lvErrors.Visible = IIf(i = 2, True, False)
     lvVars.Visible = IIf(i = 3, True, False)
@@ -630,11 +637,11 @@ Private Sub tmrHideCallTip_Timer()
     Set selVariable = Nothing
 End Sub
  
-'Private Sub sciext_MarginClick(lline As Long, Position As Long, margin As Long, modifiers As Long)
-'    'Debug.Print "MarginClick: line,pos,margin,modifiers", lLine, Position, margin, modifiers
-'    ToggleBreakPoint lline
-'End Sub
-'
+Private Sub sciext_MarginClick(lline As Long, Position As Long, margin As Long, modifiers As Long)
+    'Debug.Print "MarginClick: line,pos,margin,modifiers", lLine, Position, margin, modifiers
+    ToggleBreakPoint curFile, lline, scivb.GetLineText(lline)
+End Sub
+
 Private Sub sciext_MouseDwellEnd(lline As Long, Position As Long)
    If running Then tmrHideCallTip.Enabled = True
 End Sub
@@ -648,6 +655,7 @@ Private Sub sciext_MouseDwellStart(lline As Long, Position As Long)
     
     If running Then
          curWord = sciext.WordUnderMouse(Position)
+         If Len(curWord) = 0 Then Exit Sub
          Set cv = SyncronousGetVariableValue(curWord)
          If cv.varType <> DUK_VAR_NOT_FOUND Then
             scivb.SelStart = Position 'so call tip shows right under it..

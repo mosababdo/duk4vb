@@ -37,7 +37,6 @@ enum opDuk{
 	opd_ScriptTimeout=8,
 	opd_debugAttach=9,
 	opd_dbgCoOp = 10,
-	opd_dbgManuallyTriggerGetVar = 11
 };
 
 int watchdogTimeout = 0;
@@ -49,7 +48,7 @@ duk_size_t DebugRead(void *udata, char *buffer, duk_size_t length);
 duk_size_t DebugWrite(void *udata, const char *buffer, duk_size_t length);
 void DebugDetached(void *udata);
 
-extern void ManuallyTriggerGetVar(duk_context* ctx);
+//extern void ManuallyTriggerDebuggerFunction(duk_context*, int);
 
 int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 #pragma EXPORT
@@ -79,13 +78,15 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
   		    else duk_debugger_detach(ctx);
 			return 0;
 
-		case opd_dbgManuallyTriggerGetVar:
+		case 0x1a: //DUK_DBG_CMD_GETVAR
+		case 0x18: //DUK_DBG_CMD_ADDBREAK
+		case 0x19: //DUK_DBG_CMD_DELBREAK
 				//ok this one is a pure hack..debugger read request is blocking some way down the call stack
 				//however due to a ui event..we need to trigger the debugger read/writes again for syncronous data
 				//callback from our current callstack (that sits on top of the blocking call)..soo.. before getting
 				//here..we created a customized getvar packet request that skips the single byte DUK_DBG_CMD_GETVAR prefix
 			    //because we are calling directly into duk__debug_handle_get_var..
-				ManuallyTriggerGetVar(ctx);
+				ManuallyTriggerDebuggerFunction(ctx,operation);
 				return 0;
 
 	}

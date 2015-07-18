@@ -1758,7 +1758,7 @@ DUK_INTERNAL duk_bool_t duk_debug_remove_breakpoint(duk_hthread *thr, duk_small_
 	return 1;
 }
 
-void ManuallyTriggerGetVar(duk_context* ctx){
+void ManuallyTriggerDebuggerFunction(duk_context* ctx, int cmdID){
 	duk_hthread *thr = (duk_hthread *)ctx;
 	duk_heap *heap;
 
@@ -1766,8 +1766,13 @@ void ManuallyTriggerGetVar(duk_context* ctx){
 	heap = thr->heap;
 	DUK_ASSERT(heap != NULL);
 	DUK_UNREF(ctx);
+	
+	switch(cmdID){
+		case DUK_DBG_CMD_GETVAR:   duk__debug_handle_get_var(thr, heap); break;   
+		case DUK_DBG_CMD_ADDBREAK: duk__debug_handle_add_break(thr,heap); break;  
+		case DUK_DBG_CMD_DELBREAK: duk__debug_handle_del_break(thr, heap); break;
+	}
 
-	duk__debug_handle_get_var(thr, heap);
 }
 
 
