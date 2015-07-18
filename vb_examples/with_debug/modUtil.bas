@@ -262,4 +262,21 @@ Sub WriteFile(path, it)
     Close f
 End Sub
 
+Function hto64(d As Double) As Double
+    Dim a As Long
+    Dim b As Long
+    Dim dd As Double
+    
+    CopyMemory ByVal VarPtr(a), ByVal VarPtr(d), 4
+    CopyMemory ByVal VarPtr(b), ByVal VarPtr(d) + 4, 4
+    
+    a = htonl(a)
+    b = htonl(b)
+    
+    CopyMemory ByVal VarPtr(dd), ByVal VarPtr(b), 4
+    CopyMemory ByVal VarPtr(dd) + 4, ByVal VarPtr(a), 4
+    
+    hto64 = dd
+    
+End Function
  

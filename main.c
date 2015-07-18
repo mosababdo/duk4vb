@@ -3,6 +3,8 @@
 #include "vb.h"
 #include <windows.h>
 
+//#include "./duk/duk_hthread.h"
+
 /*
 api tidbits:
 	DUK_EXTERNAL_DECL duk_int_t duk_get_type(duk_context *ctx, duk_idx_t index);
@@ -10,7 +12,7 @@ api tidbits:
 	is not needed; duk_is_valid_index() gives the same information.
 */
 
-
+#pragma comment(lib, "ws2_32.lib")
 #define EXPORT comment(linker, "/EXPORT:"__FUNCTION__"="__FUNCDNAME__)
 
 #define real_fwrite fwrite
@@ -34,7 +36,8 @@ enum opDuk{
 	opd_LastString=7,
 	opd_ScriptTimeout=8,
 	opd_debugAttach=9,
-	opd_dbgCoOp = 10
+	opd_dbgCoOp = 10,
+	opd_dbgManuallyTriggerGetVar = 11
 };
 
 int watchdogTimeout = 0;
@@ -45,6 +48,8 @@ unsigned int lastRefresh = 0;
 duk_size_t DebugRead(void *udata, char *buffer, duk_size_t length);
 duk_size_t DebugWrite(void *udata, const char *buffer, duk_size_t length);
 void DebugDetached(void *udata);
+
+extern void ManuallyTriggerGetVar(duk_context* ctx);
 
 int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 #pragma EXPORT
@@ -73,6 +78,16 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 			}
   		    else duk_debugger_detach(ctx);
 			return 0;
+
+		case opd_dbgManuallyTriggerGetVar:
+				//ok this one is a pure hack..debugger read request is blocking some way down the call stack
+				//however due to a ui event..we need to trigger the debugger read/writes again for syncronous data
+				//callback from our current callstack (that sits on top of the blocking call)..soo.. before getting
+				//here..we created a customized getvar packet request that skips the single byte DUK_DBG_CMD_GETVAR prefix
+			    //because we are calling directly into duk__debug_handle_get_var..
+				ManuallyTriggerGetVar(ctx);
+				return 0;
+
 	}
 
 	return -1;
@@ -294,6 +309,14 @@ duk_size_t DebugRead(void *udata, char *buffer, duk_size_t length){
 
 //debugger is sending our interface data 
 duk_size_t DebugWrite(void *udata, const char *buffer, duk_size_t length){
+	
+	/*we are stealing it for a UI initited call which must be synchronous, 
+	//main ui thread is blocking at a previous point in call stack..
+	if(redirectOutput){
+		for(int i=0; i < length;i++) tmpbuf.push_back(buffer[i]);
+		return length;
+	}*/
+	
 	return vbDbgWriteHandler(buffer, length);
 }
 

@@ -1758,6 +1758,20 @@ DUK_INTERNAL duk_bool_t duk_debug_remove_breakpoint(duk_hthread *thr, duk_small_
 	return 1;
 }
 
+void ManuallyTriggerGetVar(duk_context* ctx){
+	duk_hthread *thr = (duk_hthread *)ctx;
+	duk_heap *heap;
+
+	DUK_ASSERT(thr != NULL);
+	heap = thr->heap;
+	DUK_ASSERT(heap != NULL);
+	DUK_UNREF(ctx);
+
+	duk__debug_handle_get_var(thr, heap);
+}
+
+
+
 #undef DUK__SET_CONN_BROKEN
 
 #else  /* DUK_USE_DEBUGGER_SUPPORT */

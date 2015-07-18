@@ -68,6 +68,13 @@ Function ReadString(Optional withPrefix As Boolean = True) As String
     ReadString = StrConv(m, vbUnicode, LANG_US)
 End Function
 
+Function ReadDouble() As Double
+    Dim d As Double
+    If Me.BytesLeft < 8 Then Exit Function
+    CopyMemory ByVal VarPtr(d), ByVal VarPtr(buf(mPosition)), 8
+    mPosition = mPosition + 8
+    ReadDouble = hto64(d)
+End Function
 
 Sub WriteBuf(b() As Byte)
     
@@ -79,6 +86,7 @@ Sub WriteBuf(b() As Byte)
             mPosition = 0
             Call DebuggerMessageReceived
             firstMessage = False
+            replyReceived = True
             Erase buf
             Exit Sub
     '    End If

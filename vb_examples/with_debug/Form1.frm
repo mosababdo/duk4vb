@@ -11,6 +11,22 @@ Begin VB.Form Form1
    ScaleHeight     =   9795
    ScaleWidth      =   13845
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command1 
+      Caption         =   "Command1"
+      Height          =   285
+      Left            =   11205
+      TabIndex        =   9
+      Top             =   270
+      Width           =   690
+   End
+   Begin VB.TextBox Text1 
+      Height          =   285
+      Left            =   10170
+      TabIndex        =   8
+      Text            =   "v1"
+      Top             =   270
+      Width           =   915
+   End
    Begin VB.TextBox txtOut 
       Height          =   1185
       Left            =   5670
@@ -412,7 +428,7 @@ Public Sub SyncUI()
     Dim curline As Long
     ClearLastLineMarkers
     
-    curline = CurrentLineInDebugger - 1
+    curline = status.lineNumber - 1
     scivb.SetMarker curline, 1
     scivb.SetMarker curline, 3
     lastEIP = curline
@@ -440,6 +456,12 @@ Private Sub ClearLastLineMarkers()
     
 End Sub
 
+Private Sub Command1_Click()
+    Dim v As CVariable
+    Set v = SyncronousGetVariableValue(Text1.Text)
+    MsgBox v.Value & " (" & v.varType & ")"
+End Sub
+
 Private Sub Form_Unload(Cancel As Integer)
     If Not duk Is Nothing Then
         If duk.isDebugging Then duk.DebugAttach False
@@ -454,7 +476,7 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
         Case "Start Debugger":    If running Then DebuggerCmd dc_Resume Else ExecuteScript True
         Case "Step In":           DebuggerCmd dc_stepInto
         Case "Step Over":         DebuggerCmd dc_StepOver
-        Case "Step Out":          DebuggerCmd dc_Stepout
+        Case "Step Out":          DebuggerCmd dc_stepout
 '        Case "Run to Cursor":     RunToLine scivb.CurrentLine + 1
 '        Case "Toggle Breakpoint": ToggleBreakPoint
 '        Case "Clear All Breakpoints": RemoveAllBreakpoints
@@ -562,7 +584,8 @@ Private Sub Form_Load()
     Set sciext = New CSciExtender
     sciext.Init scivb
     
-    scivb.Text = Replace(Replace("function b(c){\n\treturn c++\n}\na=0;\na = b(a)\na=b(a)", "\n", vbCrLf), "\t", vbTab)
+    'scivb.Text = Replace(Replace("function b(c){\n\treturn c++\n}\na=0;\na = b(a)\na=b(a)", "\n", vbCrLf), "\t", vbTab)
+    scivb.LoadFile App.path & "\test.js"
     
 End Sub
 
@@ -600,40 +623,46 @@ Private Sub ts_Click()
 End Sub
 
 ''we use a timer for this to give them a chance to click on the calltip to edit the variable..
-'Private Sub tmrHideCallTip_Timer()
-'    If sciext.isMouseOverCallTip() Then Exit Sub
-'    tmrHideCallTip.Enabled = False
-'    scivb.StopCallTip
-'    Set selVariable = Nothing
-'End Sub
+Private Sub tmrHideCallTip_Timer()
+    If sciext.isMouseOverCallTip() Then Exit Sub
+    tmrHideCallTip.Enabled = False
+    scivb.StopCallTip
+    Set selVariable = Nothing
+End Sub
  
 'Private Sub sciext_MarginClick(lline As Long, Position As Long, margin As Long, modifiers As Long)
 '    'Debug.Print "MarginClick: line,pos,margin,modifiers", lLine, Position, margin, modifiers
 '    ToggleBreakPoint lline
 'End Sub
 '
-'Private Sub sciext_MouseDwellEnd(lline As Long, Position As Long)
-'   If running Then tmrHideCallTip.Enabled = True
-'End Sub
+Private Sub sciext_MouseDwellEnd(lline As Long, Position As Long)
+   If running Then tmrHideCallTip.Enabled = True
+End Sub
 
-'Private Sub sciext_MouseDwellStart(lline As Long, Position As Long)
-'    'Debug.Print "MouseDwell: " & lLine & " CurWord: " & sciext.WordUnderMouse(Position)
-'
-'    Dim li As ListItem
-'    Dim curWord As String
-'
-'    If running Then
-'         curWord = sciext.WordUnderMouse(Position)
-'         For Each li In lvVars.ListItems
-'            If LCase(li.SubItems(1)) = LCase(curWord) Then 'they have moused over a variable..
-'                Set selVariable = li
-'                scivb.SelStart = Position 'so call tip shows right under it..
-'                scivb.SelLength = 0
-'                scivb.ShowCallTip curWord & " = " & li.SubItems(3)
-'                Exit For
-'            End If
-'         Next
-'    End If
-'
-'
-'End Sub
+Private Sub sciext_MouseDwellStart(lline As Long, Position As Long)
+    'Debug.Print "MouseDwell: " & lLine & " CurWord: " & sciext.WordUnderMouse(Position)
+
+    Dim txt As String
+    Dim curWord As String
+    Dim cv As CVariable
+    
+    If running Then
+         curWord = sciext.WordUnderMouse(Position)
+         Set cv = SyncronousGetVariableValue(curWord)
+         If cv.varType <> DUK_VAR_NOT_FOUND Then
+            scivb.SelStart = Position 'so call tip shows right under it..
+            scivb.SelLength = 0
+            txt = cv.Value
+            If Len(txt) = 0 Then
+                txt = cv.varType
+            ElseIf Len(txt) > 25 Then
+                txt = Mid(txt, 1, 20) & "..."
+            End If
+            If cv.varType = "string" Then txt = """" & txt & """"
+            scivb.ShowCallTip curWord & " = " & txt
+         End If
+        
+    End If
+
+
+End Sub

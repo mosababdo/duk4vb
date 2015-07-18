@@ -39,19 +39,21 @@ Enum opDuk
     opd_ScriptTimeout = 8
     opd_debugAttach = 9
     opd_dbgCoOp = 10
+    opd_dbgManuallyTriggerGetVar = 11
 End Enum
 
 Enum Debug_Commands
     dc_NotSet = 0
     dc_break = 2
     dc_stepInto = 3
-    dc_Stepout = 4
+    dc_stepout = 4
     dc_StepOver = 5
     'dc_RunToLine = 6
     'dc_Quit = 7
     'dc_Manual = 8
     dc_Resume = 9
     dc_GetLocals = 10
+    dc_GetVar = 11
 End Enum
 
 Global Const STATUS_NOTIFICATION = &H1
@@ -92,14 +94,14 @@ Global Const DUK_DBG_ERR_UNKNOWN = &H0
 Global Const DUK_DBG_ERR_UNSUPPORTED = &H1
 Global Const DUK_DBG_ERR_TOOMANY = &H2
 Global Const DUK_DBG_ERR_NOTFOUND = &H3
-
+Global Const DUK_VAR_NOT_FOUND = "DUK_VAR_NOT_FOUND"
 
 Global running As Boolean
 Public LastStringReturn As String
 Public readyToReturn As Boolean
 Public LastCommand As Debug_Commands
-Public CurrentLineInDebugger As Long
 Dim varsLoaded As Boolean
+Public replyReceived As Boolean
 
 Public ActiveDebuggerClass As CDukTape
 Public RespBuffer As New CResponseBuffer
@@ -107,6 +109,17 @@ Public RecvBuffer As New CWriteBuffer
 
 Private variables As Collection
 Private dbgStopNext As Boolean
+
+Public Type stats
+    state As Long
+    filename As String
+    curFunc As String
+    lineNumber As Long
+    pc As Long
+End Type
+
+Public status As stats
+Public VarReturn As CVariable
 
 Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
 
@@ -171,25 +184,39 @@ Sub RefreshVariables()
     Dim li As ListItem
     Dim v As CVariable
     
-    Set variables = New Collection
-     
-    Form1.lvVars.ListItems.Clear
-    DebuggerCmd dc_GetLocals
-    
-    For Each v In variables
-        Set li = Form1.lvVars.ListItems.Add(, , IIf(v.isGlobal, "Global", "Local"))
-        li.SubItems(1) = v.name
-        li.SubItems(2) = v.varType
-        li.SubItems(3) = v.Value
-        Set li.Tag = v
-    Next
+'    Set variables = New Collection
+'
+'    Form1.lvVars.ListItems.Clear
+'    DebuggerCmd dc_GetLocals
+'
+'    For Each v In variables
+'        Set li = Form1.lvVars.ListItems.Add(, , IIf(v.isGlobal, "Global", "Local"))
+'        li.SubItems(1) = v.name
+'        li.SubItems(2) = v.varType
+'        li.SubItems(3) = v.Value
+'        Set li.Tag = v
+'    Next
     
 End Sub
 
-Public Sub DebuggerCmd(cmd As Debug_Commands)
+'this is messed up but it works...see notes in DukOp for opd_dbgManuallyTriggerGetVar
+Function SyncronousGetVariableValue(name As String) As CVariable
+    Set VarReturn = New CVariable
+    VarReturn.name = name
+    LastCommand = dc_GetVar
+    replyReceived = False
+    RespBuffer.ConstructMessage dc_GetVar, name, True   'build custom packet
+    DukOp opd_dbgManuallyTriggerGetVar, ActiveDebuggerClass.Context
+    Set SyncronousGetVariableValue = VarReturn
+End Function
 
+Public Sub DebuggerCmd(cmd As Debug_Commands, Optional arg1)
+    
+    If Not replyReceived Then Exit Sub ' we are still waiting for last commands response..
+    replyReceived = False
+    
     LastCommand = cmd
-    If Not RespBuffer.ConstructMessage(cmd) Then
+    If Not RespBuffer.ConstructMessage(cmd, arg1) Then
         Debug.Print "Failed to construct message for " & cmd
     Else
         readyToReturn = True
@@ -316,7 +343,7 @@ topLine:
             Form1.lvVars.ListItems.Clear
             dbgStopNext = True
             DebuggerCmd dc_GetLocals
-            GoTo topLine
+            GoTo topLine 'immediate send of response buffer..
         End If
         
         'we block here until the UI sets the readyToReturn = true
@@ -361,7 +388,7 @@ Public Function DebugDataIncoming(ByVal buf As Long, ByVal sz As Long) As Long
     Dim b() As Byte
     ReDim b(sz - 1) 'b is 0 based,
     CopyMemory b(0), ByVal buf, sz
-    Debug.Print bHexDump(b)
+    'Debug.Print bHexDump(b)
      
     RecvBuffer.WriteBuf b()
     DebugDataIncoming = sz
@@ -377,13 +404,17 @@ Public Function DebuggerMessageReceived()
     Dim i As Long
     
     'If dbgStopNext Then Stop
-    
+        
     With RecvBuffer
         
         b = .ReadByte()
         
         If .firstMessage Then
             If b <> Asc(1) Then MsgBox "Bad debugger protocol version!"
+            '<protocolversion> <SP (0x20)> <additional text, no LF> <LF (0x0a)>
+            '1 <DUK_VERSION> <DUK_GIT_DESCRIBE> <target string> <LF>
+            '1 10099 v1.0.0-254-g2459e88 duk command built from Duktape repo
+            'todo: HandleInitMessage
             Exit Function
         End If
         
@@ -391,24 +422,35 @@ Public Function DebuggerMessageReceived()
             Case DUK_DBG_MARKER_NOTIFY: HandleNotify
             
             Case DUK_DBG_MARKER_REQUEST: .DebugDump ("Request")
+            
+            'ERR <int: error code> <str: error message or empty string> EOM
+            '0x00    Unknown or unspecified error
+            '0x01    Unsupported command
+            '0x02    Too many (e.g. too many breakpoints, cannot add new)
+            '0x03    Not found (e.g. invalid breakpoint index)
             Case DUK_DBG_MARKER_ERROR: .DebugDump ("Error")
             
             Case DUK_DBG_MARKER_REPLY:
             
                     If .BytesLeft = 0 Then
-                        Debug.Print "Success Reply"
-                        Exit Function 'just a success message..
+                        'Debug.Print "Success Reply"
+                        Exit Function
                     End If
                     
-                    .DebugDump ("Reply")
-
-                    
+                    'the reply is specific to the last command we issued..
+                    Select Case LastCommand
+                        Case dc_GetVar: HandleGetVar
+                        'Case dc_GetLocals:
+                        Case Else:
+                            .DebugDump ("Reply last cmd: " & LastCommand)
+                    End Select
                     
         End Select
         
     End With
     
 End Function
+                                            
                                             
 Function HandleNotify()
     Dim fname As String, func As String
@@ -420,30 +462,93 @@ Function HandleNotify()
         msg = .ReadInt
         
         Select Case msg
-              Case STATUS_NOTIFICATION: 'NFY <int: 1> <int: state> <str: filename> <str: funcname> <int: linenumber> <int: pc> EOM
-                    state = .ReadInt
-                    fname = .ReadString
-                    func = .ReadString
-                    lno = .ReadInt
-                    pc = .ReadInt
-                    CurrentLineInDebugger = lno
-                    Debug.Print "File: " & fname & " func: " & func & " Line: " & lno
+                   'NFY <int: 1> <int: state> <str: filename> <str: funcname> <int: linenumber> <int: pc> EOM
+              Case STATUS_NOTIFICATION:
+                    status.state = .ReadInt
+                    status.filename = .ReadString
+                    status.curFunc = .ReadString
+                    status.lineNumber = .ReadInt
+                    status.pc = .ReadInt
+                    'Debug.Print "File: " & fname & " func: " & func & " Line: " & lno
                     'we cant sync the UI until we get this message to show our line number were on...
                     varsLoaded = False
                     Form1.SyncUI
                     
-              Case PRINT_NOTIFICATION, ALERT_NOTIFICATION, LOG_NOTIFICATION:
-                    Debug.Print "PRINT_NOTIFICATION, ALERT_NOTIFICATION, LOG_NOTIFICATION"
-                    .DebugDump
-                    
+                   'NFY <int: 2> <str: message> EOM - String output redirected from the print() function.
+              Case PRINT_NOTIFICATION: .DebugDump "Print Notify"
+              
+                   'NFY <int: 3> <str: message> EOM - String output redirected from the alert() function.
+              Case ALERT_NOTIFICATION: .DebugDump "Alert Notify"
+              
+                   'NFY <int: 4> <int: log level> <str: message> EOM - Logger output redirected from Duktape logger calls.
+              Case LOG_NOTIFICATION:   .DebugDump "Log Notify"
         End Select
+        
     End With
     
     
 End Function
 
 
+Function HandleGetVar()
+    
+    Dim b As Byte
+    Dim found As Long
+    
+    'REP <int: 0/1, found> <tval: value> EOM
+    found = RecvBuffer.ReadInt
+    If found = 0 Then
+        VarReturn.varType = DUK_VAR_NOT_FOUND
+        Exit Function
+    End If
+        
+    With VarReturn
+        b = RecvBuffer.ReadByte
+        Select Case b
+                
+            Case &H10: '0x10 <int32>    integer     4-byte integer, signed 32-bit integer in network order follows initial byte
+                    .varType = "integer"
+                    .Value = RecvBuffer.ReadInt(False)
+            
+            Case &H11: '0x11 <uint32> <data>    string  4-byte string, unsigned 32-bit string length in network order and string data follows initial byte
+                    .varType = "string"
+                    .Value = RecvBuffer.ReadString(False)
+            
+            Case &H16: .varType = "undefined"                 '0x16    undefined   Ecmascript "undefined"
+            Case &H17: .varType = "null"                      '0x17    null    Ecmascript "null"
+            Case &H18: .varType = "boolean": .Value = True    '0x18    true    Ecmascript "true"
+            Case &H19:  .varType = "boolean": .Value = False  '0x19    false   Ecmascript "false"
+            Case &H1A: .varType = "double":                   '0x1a <8 bytes>  number  IEEE double (network endian)
+                       .Value = RecvBuffer.ReadDouble()
+                       
+            '0x1b <uint8> <uint8> <data>     object  Class number, pointer length, and pointer data (network endian)
+            Case &H1B: .varType = "object": .Value = "[Object]"
+            
+            '0x1c <uint8> <data>     pointer     Pointer length, pointer data (network endian)
+            '0x1d <uint16> <uint8> <data>    lightfunc   Lightfunc flags, pointer length, pointer data (network endian)
+            '0x1e <uint8> <data>     heapptr     Pointer to a heap object (used by DumpHeap, network endian)
+            
+            '0x13 <uint32> <data>    buffer  4-byte buffer, unsigned 32-bit buffer length in network order and buffer data follows initial byte
+            '0x14 <uint16> <data>    buffer  2-byte buffer, unsigned 16-bit buffer length in network order and buffer data follows initial byte
+            
+            
+            'these ones we dont have to worry about..(not using packed protocol)
+                '0x12 <uint16> <data>    string  2-byte string, unsigned 16-bit string length in network order and string data follows initial byte
+                '0x60...0x7f <data>  string  String with length [0,31], string length is IB - 0x60, data follows
+                '0x80...0xbf     integer     Integer [0,63], integer value is IB - 0x80
+                '0xc0...0xff <uint8>     integer     Integer [0,16383], integer value is ((IB - 0xc0) << 8) + followup_byte
+            
+            'unused:
+                '0x15    unused  Represents the internal "undefined unused" type which used to e.g. mark unused (unmapped) array entries
+                '0x1f reserved
+                '0x20...0x5f     reserved
+            
+            Case Else: .varType = "VarType: 0x" & Hex(b)
+        End Select
+        
+    End With
 
+End Function
 
 
 
