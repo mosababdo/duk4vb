@@ -1,4 +1,7 @@
-callstack
+eval
+putvar?
+use getlocals or not? (seems only valid within a function body..and we have mouseover var lookup so optional)
+listbreak - we manage our own list (with compact on delete)
 
 test debugger with multiple files and calling to a external function..
   99% of the time initial addfile calls will only be libraries i want to hide from user

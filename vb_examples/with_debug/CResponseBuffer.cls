@@ -97,11 +97,12 @@ End Sub
 'for a discussion on isNormalCall see: (last section after "The answer is yes!")
 '  http://sandsprite.com/blogs/index.php?uid=11&pid=353
 '
-Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2, Optional isNormalCall As Boolean = True) As Boolean
+Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2) As Boolean
     
     Clear
     Dim b As Byte
     
+    isNormalCall = True
     
     Select Case d
         Case dc_stepInto: b = STEP_INTO_REQ
@@ -122,12 +123,8 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2, Opt
     
     If d = dc_GetVar Then
         'REQ <int: 0x1a> <str: varname> EOM
-        If isNormalCall Then
-            AddByte DUK_DBG_MARKER_REQUEST
-            AddByte &H80 + &H1A                   'DUK_DBG_CMD_GETVAR
-        Else
-            'opd_dbgManuallyTriggerGetVar
-        End If
+        AddByte DUK_DBG_MARKER_REQUEST
+        AddByte &H80 + &H1A                   'DUK_DBG_CMD_GETVAR
         AddString CStr(arg1)
         AddByte DUK_DBG_MARKER_EOM
         ConstructMessage = True
@@ -136,12 +133,8 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2, Opt
     
     If d = dc_SetBreakpoint Then
         'REQ <int: 0x18> <str: fileName> <int: line> EOM
-        If isNormalCall Then
-            AddByte DUK_DBG_MARKER_REQUEST
-            AddByte &H80 + &H18
-        Else
-            'opd_dbgManuallyTriggerGetVar
-        End If
+        AddByte DUK_DBG_MARKER_REQUEST
+        AddByte &H80 + &H18
         AddString CStr(arg1) 'filename
         AddIntVal CLng(arg2) 'line number
         AddByte DUK_DBG_MARKER_EOM
@@ -151,12 +144,8 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2, Opt
     
     If d = dc_delBreakpoint Then
         'REQ <int: 0x19> <int: index> EOM
-        If isNormalCall Then
-            AddByte DUK_DBG_MARKER_REQUEST
-            AddByte &H80 + &H19
-        Else
-            'opd_dbgManuallyTriggerGetVar
-        End If
+        AddByte DUK_DBG_MARKER_REQUEST
+        AddByte &H80 + &H19
         AddIntVal CLng(arg1) 'index
         AddByte DUK_DBG_MARKER_EOM
         ConstructMessage = True
@@ -165,12 +154,8 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2, Opt
     
     If d = dc_GetCallStack Then
         'REQ <int: 0x1c> EOM
-        If isNormalCall Then
-            AddByte DUK_DBG_MARKER_REQUEST
-            AddByte &H80 + &H1C
-        Else
-            'opd_dbgManuallyTriggerGetVar
-        End If
+        AddByte DUK_DBG_MARKER_REQUEST
+        AddByte &H80 + &H1C
         AddByte DUK_DBG_MARKER_EOM
         ConstructMessage = True
         Exit Function

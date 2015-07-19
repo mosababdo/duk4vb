@@ -30,11 +30,6 @@ Enum cb_type
     cb_debugger = 7
 End Enum
 
-Const DUK_DBG_CMD_ADDBREAK = &H18
-Const DUK_DBG_CMD_DELBREAK = &H19
-Const DUK_DBG_CMD_GETVAR = &H1A
-Const DUK_DBG_CMD_GETCALLSTACK = &H1C
-
 'DukOp declare operation codes..
 Enum opDuk
     opd_PushUndef = 0
@@ -48,11 +43,8 @@ Enum opDuk
     opd_ScriptTimeout = 8
     opd_debugAttach = 9
     opd_dbgCoOp = 10
-    opd_dbgSyncGetVar = DUK_DBG_CMD_GETVAR
-    opd_dbgSyncSetBreak = DUK_DBG_CMD_ADDBREAK
-    opd_dbgSyncDelBreak = DUK_DBG_CMD_DELBREAK
     opd_dbgCurLine = 11
-    opd_dbgSyncGetCallStack = DUK_DBG_CMD_GETCALLSTACK
+    opd_dbgTriggerRead = 12
 End Enum
 
 'commands we create to send to duktape
@@ -127,7 +119,7 @@ Public RespBuffer As New CResponseBuffer
 Public RecvBuffer As New CWriteBuffer
 
 'Private variables As Collection
-Private dbgStopNext As Boolean
+Private dbgStopNext As Boolean 'for debugging a specific message/event..
 
 Public Type Stats
     state As Long
@@ -140,7 +132,7 @@ End Type
 
 Public status As Stats
 Private VarReturn As CVariable 'because we have to work across callbacks...
-Public tmpBreakPoint As CBreakpoint 'because we have to work across callbacks..
+Public tmpBreakPoint As CBreakpoint 'because we have to work across callbacks..(used from with modBreakpoints to so public)
 Private tmpCol As Collection 'because we have to work across callbacks..
 
 Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
@@ -243,8 +235,8 @@ Function SyncronousGetVariableValue(name As String) As CVariable
     VarReturn.name = name
     LastCommand = dc_GetVar
     replyReceived = False
-    RespBuffer.ConstructMessage dc_GetVar, name, , False  'build custom packet
-    DukOp opd_dbgSyncGetVar, ActiveDebuggerClass.Context
+    RespBuffer.ConstructMessage dc_GetVar, name
+    DukOp opd_dbgTriggerRead, ActiveDebuggerClass.Context
     Set SyncronousGetVariableValue = VarReturn
 End Function
 
@@ -252,8 +244,8 @@ Function SyncronousSetBreakPoint(b As CBreakpoint) As Boolean
     Set tmpBreakPoint = b
     LastCommand = dc_SetBreakpoint
     replyReceived = False
-    RespBuffer.ConstructMessage dc_SetBreakpoint, b.fileName, b.lineNo + 1, False 'build custom packet
-    DukOp opd_dbgSyncSetBreak, ActiveDebuggerClass.Context
+    RespBuffer.ConstructMessage dc_SetBreakpoint, b.fileName, b.lineNo + 1
+    DukOp opd_dbgTriggerRead, ActiveDebuggerClass.Context
     SyncronousSetBreakPoint = CBool(Len(b.errText) = 0)
 End Function
 
@@ -262,8 +254,8 @@ Function SyncDelBreakPoint(b As CBreakpoint) As Boolean
     b.errText = Empty
     LastCommand = dc_delBreakpoint
     replyReceived = False
-    RespBuffer.ConstructMessage dc_delBreakpoint, b.index, , False  'build custom packet
-    DukOp opd_dbgSyncDelBreak, ActiveDebuggerClass.Context
+    RespBuffer.ConstructMessage dc_delBreakpoint, b.index
+    DukOp opd_dbgTriggerRead, ActiveDebuggerClass.Context
     SyncDelBreakPoint = CBool(Len(b.errText) = 0)
 End Function
 
@@ -271,8 +263,8 @@ Function SyncGetCallStack() As Collection 'of cCallStack
     Set tmpCol = New Collection
     LastCommand = dc_GetCallStack
     replyReceived = False
-    RespBuffer.ConstructMessage dc_GetCallStack, , , False    'build custom packet
-    DukOp opd_dbgSyncGetCallStack, ActiveDebuggerClass.Context
+    RespBuffer.ConstructMessage dc_GetCallStack
+    DukOp opd_dbgTriggerRead, ActiveDebuggerClass.Context
     Set SyncGetCallStack = tmpCol
 End Function
 

@@ -37,7 +37,8 @@ enum opDuk{
 	opd_ScriptTimeout=8,
 	opd_debugAttach=9,
 	opd_dbgCoOp = 10,
-	opd_dbgCurLine = 11
+	opd_dbgCurLine = 11,
+	opd_dbgTriggerRead = 12
 };
 
 int watchdogTimeout = 0;
@@ -49,7 +50,6 @@ duk_size_t DebugRead(void *udata, char *buffer, duk_size_t length);
 duk_size_t DebugWrite(void *udata, const char *buffer, duk_size_t length);
 void DebugDetached(void *udata);
 
-//extern void ManuallyTriggerDebuggerFunction(duk_context*, int);
 
 //returns 0 for success, -1 for error
 int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
@@ -80,18 +80,8 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
   		    else duk_debugger_detach(ctx);
 			return 0;
 
-		case opd_dbgCurLine:
-		case 0x1a: //DUK_DBG_CMD_GETVAR
-		case 0x18: //DUK_DBG_CMD_ADDBREAK
-		case 0x19: //DUK_DBG_CMD_DELBREAK
-		case 0x1c: //DUK_DBG_CMD_GETCALLSTACK
-				//ok this one is a pure hack..debugger read request is blocking some way down the call stack
-				//however due to a ui event..we need to trigger the debugger read/writes again for syncronous data
-				//callback from our current callstack (that sits on top of the blocking call)..soo.. before getting
-				//here..we created a customized getvar packet request that skips the single byte DUK_DBG_CMD_GETVAR prefix
-			    //because we are calling directly into its internal functions like duk__debug_handle_get_var..
-				//see following for more details: http://sandsprite.com/blogs/index.php?uid=11&pid=353
-				return ManuallyTriggerDebuggerFunction(ctx,operation);
+		case opd_dbgCurLine: return duk_debug_curr_line(ctx); 
+		case opd_dbgTriggerRead: duk__debug_process_message(ctx); return 0;
 	}
 
 	return -1;
