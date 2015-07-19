@@ -86,6 +86,7 @@ End Function
 Public Sub RemoveBreakpoint(fileName As String, lineNo As Long)
     Dim b As CBreakpoint
     Dim colIndex As Long
+    Dim cur_b As CBreakpoint
     
     If Not BreakPointExists(fileName, lineNo, b, colIndex) Then Exit Sub
     
@@ -94,6 +95,14 @@ Public Sub RemoveBreakpoint(fileName As String, lineNo As Long)
             dbg "Failed to delete bp from duktape?: " & b.Stats
             Exit Sub
         End If
+        
+        'we have to compact our duktape bp indexes - technically we should call relist...
+        'note we specifically dont check filename its a flat array currently
+        For Each cur_b In breakpoints
+            If cur_b.index > b.index Then
+                cur_b.index = cur_b.index - 1
+            End If
+        Next
     End If
         
     If Form1.curFile = fileName Then Form1.scivb.DeleteMarker lineNo
