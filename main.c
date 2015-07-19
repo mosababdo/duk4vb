@@ -84,11 +84,13 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 		case 0x1a: //DUK_DBG_CMD_GETVAR
 		case 0x18: //DUK_DBG_CMD_ADDBREAK
 		case 0x19: //DUK_DBG_CMD_DELBREAK
+		case 0x1c: //DUK_DBG_CMD_GETCALLSTACK
 				//ok this one is a pure hack..debugger read request is blocking some way down the call stack
 				//however due to a ui event..we need to trigger the debugger read/writes again for syncronous data
 				//callback from our current callstack (that sits on top of the blocking call)..soo.. before getting
 				//here..we created a customized getvar packet request that skips the single byte DUK_DBG_CMD_GETVAR prefix
-			    //because we are calling directly into duk__debug_handle_get_var..
+			    //because we are calling directly into its internal functions like duk__debug_handle_get_var..
+				//see following for more details: http://sandsprite.com/blogs/index.php?uid=11&pid=353
 				return ManuallyTriggerDebuggerFunction(ctx,operation);
 	}
 

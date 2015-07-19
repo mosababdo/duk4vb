@@ -93,6 +93,10 @@ Sub AddString(s As String)
 End Sub
 
 
+
+'for a discussion on isNormalCall see: (last section after "The answer is yes!")
+'  http://sandsprite.com/blogs/index.php?uid=11&pid=353
+'
 Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2, Optional isNormalCall As Boolean = True) As Boolean
     
     Clear
@@ -159,6 +163,18 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2, Opt
         Exit Function
     End If
     
+    If d = dc_GetCallStack Then
+        'REQ <int: 0x1c> EOM
+        If isNormalCall Then
+            AddByte DUK_DBG_MARKER_REQUEST
+            AddByte &H80 + &H1C
+        Else
+            'opd_dbgManuallyTriggerGetVar
+        End If
+        AddByte DUK_DBG_MARKER_EOM
+        ConstructMessage = True
+        Exit Function
+    End If
     
 End Function
 

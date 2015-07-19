@@ -1,0 +1,12 @@
+callstack
+
+test debugger with multiple files and calling to a external function..
+  99% of the time initial addfile calls will only be libraries i want to hide from user
+  so i dont want to ever pause execution in side of them (what about an exception though?)
+  same way as msscript control just show an error message..
+  i also dont want complexity of having to show multiple files in UI switching, saving
+  etc..
+
+
+  
+

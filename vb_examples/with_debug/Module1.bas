@@ -18,7 +18,7 @@ Declare Function lstrlen Lib "kernel32.dll" Alias "lstrlenA" (ByVal lpString As 
 
 
 
-
+'call back message types we receive from duktape in vb_stdout
 Enum cb_type
     cb_output = 0
     cb_Refresh = 1
@@ -33,7 +33,9 @@ End Enum
 Const DUK_DBG_CMD_ADDBREAK = &H18
 Const DUK_DBG_CMD_DELBREAK = &H19
 Const DUK_DBG_CMD_GETVAR = &H1A
+Const DUK_DBG_CMD_GETCALLSTACK = &H1C
 
+'DukOp declare operation codes..
 Enum opDuk
     opd_PushUndef = 0
     opd_PushNum = 1
@@ -50,8 +52,10 @@ Enum opDuk
     opd_dbgSyncSetBreak = DUK_DBG_CMD_ADDBREAK
     opd_dbgSyncDelBreak = DUK_DBG_CMD_DELBREAK
     opd_dbgCurLine = 11
+    opd_dbgSyncGetCallStack = DUK_DBG_CMD_GETCALLSTACK
 End Enum
 
+'commands we create to send to duktape
 Enum Debug_Commands
     dc_NotSet = 0
     dc_break = 2
@@ -66,6 +70,7 @@ Enum Debug_Commands
     dc_GetVar = 11
     dc_SetBreakpoint = 12
     dc_delBreakpoint = 13
+    dc_GetCallStack = 14
 End Enum
 
 
@@ -130,11 +135,13 @@ Public Type Stats
     curFunc As String
     lineNumber As Long
     pc As Long
+    callStackLoaded As Boolean
 End Type
 
 Public status As Stats
 Private VarReturn As CVariable 'because we have to work across callbacks...
 Public tmpBreakPoint As CBreakpoint 'because we have to work across callbacks..
+Private tmpCol As Collection 'because we have to work across callbacks..
 
 Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
 
@@ -260,6 +267,34 @@ Function SyncDelBreakPoint(b As CBreakpoint) As Boolean
     SyncDelBreakPoint = CBool(Len(b.errText) = 0)
 End Function
 
+Function SyncGetCallStack() As Collection 'of cCallStack
+    Set tmpCol = New Collection
+    LastCommand = dc_GetCallStack
+    replyReceived = False
+    RespBuffer.ConstructMessage dc_GetCallStack, , , False    'build custom packet
+    DukOp opd_dbgSyncGetCallStack, ActiveDebuggerClass.Context
+    Set SyncGetCallStack = tmpCol
+End Function
+
+Public Sub LoadCallStack()
+    
+    Dim li As ListItem
+    Dim c As cCallStack
+    Dim callStack As Collection
+    
+    status.callStackLoaded = True
+    Set callStack = SyncGetCallStack()
+    
+    'columns line, function, file
+    Form1.lvCallStack.ListItems.Clear
+    For Each c In callStack
+        Set li = Form1.lvCallStack.ListItems.Add(, , c.lineNo)
+        li.SubItems(1) = c.func
+        li.SubItems(2) = FileNameFromPath(c.fPath)
+    Next
+    
+End Sub
+
 Public Sub DebuggerCmd(cmd As Debug_Commands, Optional arg1, Optional arg2)
     
     If Not replyReceived Then Exit Sub ' we are still waiting for last commands response..
@@ -352,10 +387,20 @@ End Sub
 
 Public Function doOutput(msg)
     Dim leng As Long
+    Dim tmp As String
+    Dim includeCRLF As Boolean
+    
+    tmp = Replace(msg, vbCr, Empty)
+    tmp = Replace(tmp, vbLf, Chr(5))
+    tmp = Replace(tmp, Chr(5), vbCrLf)
     leng = Len(Form1.txtOut.Text)
+    
+    If leng > 0 And Right(tmp, 2) <> vbCrLf Then includeCRLF = True
+    
     Form1.txtOut.SelLength = 0
-    Form1.txtOut = Form1.txtOut & vbCrLf & msg
+    Form1.txtOut = Form1.txtOut & IIf(includeCRLF, vbCrLf, "") & tmp
     Form1.txtOut.SelStart = leng + 2
+    
 End Function
 
 Public Function VbLineInput(ByVal buf As Long, ByVal ctx As Long) As Long
@@ -399,11 +444,18 @@ topLine:
             Exit Function
         End If
         
-        If Not RecvBuffer.firstMessage And Not RecvBuffer.breakPointsInitilized Then
-            RecvBuffer.breakPointsInitilized = True
-            On_DebuggerInilitize
-            'GoTo topLine 'immediate send of response buffer..
+        If Not RecvBuffer.firstMessage Then
+            If Not RecvBuffer.breakPointsInitilized Then 'only once at debugger start
+                RecvBuffer.breakPointsInitilized = True
+                On_DebuggerInilitize
+            ElseIf Not status.callStackLoaded Then 'every time we step/bp
+                LoadCallStack
+            End If
+            
+            'GoTo topLine 'immediate send of response buffer..(if not a synchrnous request..)
         End If
+        
+        
         
         'we block here until the UI sets the readyToReturn = true
         'this is not a CPU hog, and form remains responsive to user actions..
@@ -466,7 +518,7 @@ Public Function DebuggerMessageReceived()
         
     With RecvBuffer
         
-        h = .Hint 'just for mouse over test..
+        'h = .Hint 'just for mouse over test..
         
         b = .ReadByte()
         
@@ -513,6 +565,7 @@ Public Function DebuggerMessageReceived()
                     Select Case LastCommand
                         Case dc_GetVar: HandleGetVar
                         Case dc_SetBreakpoint: tmpBreakPoint.index = .ReadInt 'REP <int: breakpoint index> EOM
+                        Case dc_GetCallStack: HandleCallStack
                         'Case dc_GetLocals:
                         Case Else:
                             .DebugDump ("Reply last cmd: " & LastCommand)
@@ -541,6 +594,7 @@ Function HandleNotify()
                     status.curFunc = .ReadString
                     status.lineNumber = .ReadInt
                     status.pc = .ReadInt
+                    status.callStackLoaded = False
                     'Debug.Print "File: " & fname & " func: " & func & " Line: " & lno
                     'we cant sync the UI until we get this message to show our line number were on...
                     varsLoaded = False
@@ -623,6 +677,23 @@ Function HandleGetVar()
 End Function
 
 
-
+Function HandleCallStack()
+    'REP [ <str: fileName> <str: funcName> <int: lineNumber> <int: pc> ]* EOM
+    
+    Dim c As cCallStack
+    
+    With RecvBuffer
+        Do While 1
+            Set c = New cCallStack
+            c.fPath = .ReadString
+            c.func = .ReadString
+            c.lineNo = .ReadInt
+            c.pc = .ReadInt
+            tmpCol.Add c
+            If .BytesLeft = 0 Then Exit Do
+        Loop
+    End With
+    
+End Function
 
 

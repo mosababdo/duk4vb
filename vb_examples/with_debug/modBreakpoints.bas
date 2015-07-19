@@ -1,7 +1,4 @@
 Attribute VB_Name = "modBreakpoints"
-
-'nuance: if you remove a breakpoint of the current line of execution, it just runs
-
 Public breakpoints As New Collection
 
 Function isExecutableLine(sourceText As String) As Boolean
@@ -10,8 +7,11 @@ Function isExecutableLine(sourceText As String) As Boolean
 
     tmp = LCase(sourceText)
     tmp = Trim(Replace(tmp, vbTab, Empty))
-
+    tmp = Replace(tmp, vbCr, Empty)
+    tmp = Replace(tmp, vbLf, Empty)
+    
     If Len(tmp) = 0 Then GoTo fail
+    If tmp = "}" Then GoTo fail  'is end function/end if
     If Left(tmp, 1) = "/" Then GoTo fail 'is comment
     If Left(tmp, 8) = "function" Then GoTo fail  'functio/sub start lines are hit more than you expect, once as it skips over it, so we block it as bp cause confusing..
     

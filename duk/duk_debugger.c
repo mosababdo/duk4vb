@@ -1759,6 +1759,11 @@ DUK_INTERNAL duk_bool_t duk_debug_remove_breakpoint(duk_hthread *thr, duk_small_
 }
 
 int ManuallyTriggerDebuggerFunction(duk_context* ctx, int cmdID){
+	
+	//actually i should just be calling duk__debug_process_message
+	//without trimming off two bytes of request..then i can elimiate complexity..
+	//except for case 11 still special..
+	
 	duk_hthread *thr = (duk_hthread *)ctx;
 	duk_heap *heap;
 
@@ -1771,6 +1776,7 @@ int ManuallyTriggerDebuggerFunction(duk_context* ctx, int cmdID){
 		case DUK_DBG_CMD_GETVAR:   duk__debug_handle_get_var(thr, heap); break;   
 		case DUK_DBG_CMD_ADDBREAK: duk__debug_handle_add_break(thr,heap); break;  
 		case DUK_DBG_CMD_DELBREAK: duk__debug_handle_del_break(thr, heap); break;
+		case DUK_DBG_CMD_GETCALLSTACK: duk__debug_handle_get_call_stack(thr, heap);break;
 		case 11: return duk_debug_curr_line(thr);
 	}
 

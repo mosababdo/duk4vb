@@ -1,4 +1,4 @@
-
+print(1)
 a = b(0)
 
 function b(c){
@@ -18,6 +18,14 @@ function main(){
 
 main()
 print(1)
+
+
+
+
+
+
+
+
 
 
 

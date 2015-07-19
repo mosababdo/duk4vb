@@ -127,21 +127,21 @@ Function StringFromPointer(buf As Long) As String
 End Function
 
 Sub dbg(msg As String)
-'    Dim a, tmp As String
-'
-'    tmp = prefix
-'
-'    For Each a In args
-'        If IsNumeric(a) Then
-'            tmp = tmp & Hex(a) & ", "
-'        ElseIf IsObject(a) Then
-'            tmp = tmp & "Obj: " & TypeName(a) & ", "
-'        Else
-'            tmp = tmp & a & ", "
-'        End If
-'    Next
     
-    Form1.lvLog.ListItems.Add , , msg
+    Dim tmp As String
+    Dim disp As String
+    Dim li As ListItem
+    
+    tmp = Replace(msg, vbCr, Empty)
+    tmp = Replace(tmp, vbLf, Chr(5))
+    tmp = Replace(tmp, Chr(5), vbCrLf)
+    
+    disp = Replace(msg, vbCr, "\r")
+    disp = Replace(disp, vbLf, "\n")
+    disp = Replace(disp, vbTab, "\t")
+    
+    Set li = Form1.lvLog.ListItems.Add(, , disp)
+    li.Tag = tmp
     'Debug.Print tmp
     
 End Sub
@@ -260,6 +260,13 @@ Function FileExists(path As String) As Boolean
   
   Exit Function
 hell: FileExists = False
+End Function
+
+Function FileNameFromPath(fullpath) As String
+    If InStr(fullpath, "\") > 0 Then
+        tmp = Split(fullpath, "\")
+        FileNameFromPath = CStr(tmp(UBound(tmp)))
+    End If
 End Function
 
 Function ReadFile(fileName) As Variant

@@ -188,7 +188,7 @@ Begin VB.Form Form1
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      NumItems        =   2
+      NumItems        =   3
       BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          Text            =   "Line"
          Object.Width           =   1235
@@ -196,6 +196,11 @@ Begin VB.Form Form1
       BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          SubItemIndex    =   1
          Text            =   "Function"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   2
+         Text            =   "File"
          Object.Width           =   2540
       EndProperty
    End
@@ -474,8 +479,7 @@ Public Sub SyncUI()
     scivb.GotoLine curline
     scivb.SetFocus
     
-    RefreshVariables
-    'RefreshCallStack
+    'RefreshVariables
     
 End Sub
  
@@ -512,7 +516,8 @@ Private Sub Form_Unload(Cancel As Integer)
 End Sub
 
 Private Sub lvLog_DblClick()
-    MsgBox lvLog.SelectedItem.Text, vbInformation
+    If lvLog.SelectedItem Is Nothing Then Exit Sub
+    MsgBox lvLog.SelectedItem.Tag, vbInformation
 End Sub
 
 Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
@@ -547,6 +552,11 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     running = True
     SetToolBarIcons
     lblStatus = "Status: " & IIf(withDebugger, "Debugging...", "Running...")
+    txtOut.Text = Empty
+    lvLog.ListItems.Clear
+    lvErrors.ListItems.Clear
+    lvCallStack.ListItems.Clear
+    lvVars.ListItems.Clear
     
     forceStop = False
     Set duk = New CDukTape
