@@ -26,6 +26,7 @@ Private buf() As Byte
 Private mPosition As Long
 Public DisplayDebugOutput As Boolean
 Public firstMessage As Boolean
+Public breakPointsInitilized As Boolean
 
 Property Get BytesLeft() As Long
     BytesLeft = length - Position

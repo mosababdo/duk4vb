@@ -17,6 +17,11 @@ function main(){
 }
 
 main()
+print(1)
+
+
+
+
 
 
 

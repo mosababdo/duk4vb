@@ -550,7 +550,7 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     
     forceStop = False
     Set duk = New CDukTape
-    Set RecvBuffer = New CWriteBuffer
+    Set RecvBuffer = New CWriteBuffer 'this resets our flags like firstMessage and bpInitilized...
     
     If withDebugger Then
         duk.Timeout = 0

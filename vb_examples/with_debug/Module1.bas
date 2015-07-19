@@ -171,10 +171,19 @@ Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
 End Function
 
 'debugger is just starting up first message already received..
-Sub DoInilitization()
+Sub On_DebuggerInilitize()
     status.lineNumber = DukOp(opd_dbgCurLine, ActiveDebuggerClass.Context)
     Form1.SyncUI
     InitDebuggerBpx
+End Sub
+
+Private Sub On_DebuggerTerminate()
+
+    Dim b As CBreakpoint
+    For Each b In breakpoints
+        b.isSet = False
+    Next
+    
 End Sub
 
 'this is used for script to host app object integration..
@@ -328,17 +337,26 @@ Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
     Select Case t
         Case cb_StringReturn: LastStringReturn = msg
         'Case cb_ReleaseObj: ReleaseObj CLng(msg)
-        Case cb_output, cb_error:  MsgBox msg, vbInformation, "Script Output"
+        Case cb_output: doOutput (msg): dbg "Output received: " & msg
+        Case cb_error:  dbg "Script Error: " & msg
         Case cb_debugger:
                 If msg = "Debugger-Detached" Then
                     running = False
                     dbg "Debugger detached!"
+                    On_DebuggerTerminate
                 End If
                 
     End Select
     
 End Sub
 
+Public Function doOutput(msg)
+    Dim leng As Long
+    leng = Len(Form1.txtOut.Text)
+    Form1.txtOut.SelLength = 0
+    Form1.txtOut = Form1.txtOut & vbCrLf & msg
+    Form1.txtOut.SelStart = leng + 2
+End Function
 
 Public Function VbLineInput(ByVal buf As Long, ByVal ctx As Long) As Long
     Dim b() As Byte
@@ -381,10 +399,10 @@ topLine:
             Exit Function
         End If
         
-        If Not varsLoaded Then
-            varsLoaded = True
-            DoInilitization
-            GoTo topLine 'immediate send of response buffer..
+        If Not RecvBuffer.firstMessage And Not RecvBuffer.breakPointsInitilized Then
+            RecvBuffer.breakPointsInitilized = True
+            On_DebuggerInilitize
+            'GoTo topLine 'immediate send of response buffer..
         End If
         
         'we block here until the UI sets the readyToReturn = true
