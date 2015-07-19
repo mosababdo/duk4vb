@@ -69,8 +69,10 @@ Public Function SetBreakpoint(ByVal fileName As String, lineNo As Long, ByVal so
     
     If running Then
         If Not SyncronousSetBreakPoint(b) Then
-            Debug.Print "Failed to set breakpoint: " & b.Stats
+            dbg "Failed to set breakpoint: " & b.Stats
             Exit Function
+        Else
+            b.isSet = True
         End If
     End If
 
@@ -89,7 +91,7 @@ Public Sub RemoveBreakpoint(fileName As String, lineNo As Long)
     
     If running Then
         If Not SyncDelBreakPoint(b) Then
-            Debug.Print "Failed to delete bp from duktape?: " & b.Stats
+            dbg "Failed to delete bp from duktape?: " & b.Stats
             Exit Sub
         End If
     End If
@@ -113,24 +115,35 @@ Sub RemoveAllBreakpoints()
     Next
 End Sub
 
+Sub OnTermination_UnsetBreakpoints()
+    Dim b As CBreakpoint
+    For Each b In breakpoints
+        b.isSet = False
+    Next
+End Sub
+
 'called on debugger startup when first message received..
 'assumes only single source file ansd is still current..! todo:
 Sub InitDebuggerBpx()
-    Dim b As CBreakpoint
-    For Each b In breakpoints
-        If Form1.curFile = b.fileName Then
-            If b.sourceText = Form1.scivb.GetLineText(b.lineNo) Then
-                 'we cant do a sync call here..so need full protocol (to early in startup?)
-                 Set tmpBreakPoint = b
-                 DebuggerCmd dc_SetBreakpoint, b.fileName, b.lineNo
-                 If Len(b.errText) > 0 Then Debug.Print b.Stats
-            End If
-        Else
-            If Not SyncronousSetBreakPoint(b) Then
-                Debug.Print "Failed to set breakpoint: " & b.Stats
-            End If
-        End If
-    Next
+'    Dim b As CBreakpoint
+'    For Each b In breakpoints
+'        If Not b.isSet Then
+'            If Form1.curFile = b.fileName Then
+'                If b.sourceText = Form1.scivb.GetLineText(b.lineNo) Then
+'                     If Not SyncronousSetBreakPoint(b) Then
+'                        dbg "InitDebuggerBpx: Failed to set bp" & b.Stats
+'                     End If
+'                     'Set tmpBreakPoint = b
+'                     'DebuggerCmd dc_SetBreakpoint, b.fileName, b.lineNo
+'                     If Len(b.errText) > 0 Then dbg b.Stats
+'                End If
+'            Else
+'                If Not SyncronousSetBreakPoint(b) Then
+'                    dbg "Failed to set breakpoint: " & b.Stats
+'                End If
+'            End If
+'        End If
+'    Next
 End Sub
 
 

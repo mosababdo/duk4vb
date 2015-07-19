@@ -126,23 +126,23 @@ Function StringFromPointer(buf As Long) As String
  
 End Function
 
-Sub dbg(prefix As String, ParamArray args())
-    Dim a, tmp As String
+Sub dbg(msg As String)
+'    Dim a, tmp As String
+'
+'    tmp = prefix
+'
+'    For Each a In args
+'        If IsNumeric(a) Then
+'            tmp = tmp & Hex(a) & ", "
+'        ElseIf IsObject(a) Then
+'            tmp = tmp & "Obj: " & TypeName(a) & ", "
+'        Else
+'            tmp = tmp & a & ", "
+'        End If
+'    Next
     
-    tmp = prefix
-    
-    For Each a In args
-        If IsNumeric(a) Then
-            tmp = tmp & Hex(a) & ", "
-        ElseIf IsObject(a) Then
-            tmp = tmp & "Obj: " & TypeName(a) & ", "
-        Else
-            tmp = tmp & a & ", "
-        End If
-    Next
-    
-    'Form1.List1.AddItem tmp
-    Debug.Print tmp
+    Form1.lvLog.ListItems.Add , , msg
+    'Debug.Print tmp
     
 End Sub
 

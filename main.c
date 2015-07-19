@@ -37,6 +37,7 @@ enum opDuk{
 	opd_ScriptTimeout=8,
 	opd_debugAttach=9,
 	opd_dbgCoOp = 10,
+	opd_dbgCurLine = 11
 };
 
 int watchdogTimeout = 0;
@@ -50,6 +51,7 @@ void DebugDetached(void *udata);
 
 //extern void ManuallyTriggerDebuggerFunction(duk_context*, int);
 
+//returns 0 for success, -1 for error
 int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 #pragma EXPORT
 	
@@ -78,6 +80,7 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
   		    else duk_debugger_detach(ctx);
 			return 0;
 
+		case opd_dbgCurLine:
 		case 0x1a: //DUK_DBG_CMD_GETVAR
 		case 0x18: //DUK_DBG_CMD_ADDBREAK
 		case 0x19: //DUK_DBG_CMD_DELBREAK
@@ -86,9 +89,7 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 				//callback from our current callstack (that sits on top of the blocking call)..soo.. before getting
 				//here..we created a customized getvar packet request that skips the single byte DUK_DBG_CMD_GETVAR prefix
 			    //because we are calling directly into duk__debug_handle_get_var..
-				ManuallyTriggerDebuggerFunction(ctx,operation);
-				return 0;
-
+				return ManuallyTriggerDebuggerFunction(ctx,operation);
 	}
 
 	return -1;

@@ -1,3 +1,6 @@
+
+a = b(0)
+
 function b(c){
 	return c++
 }
@@ -14,6 +17,27 @@ function main(){
 }
 
 main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

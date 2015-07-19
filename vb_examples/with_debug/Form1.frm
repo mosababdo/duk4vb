@@ -11,6 +11,39 @@ Begin VB.Form Form1
    ScaleHeight     =   9795
    ScaleWidth      =   13845
    StartUpPosition =   2  'CenterScreen
+   Begin MSComctlLib.ListView lvLog 
+      Height          =   1050
+      Left            =   1575
+      TabIndex        =   10
+      Top             =   6795
+      Width           =   1860
+      _ExtentX        =   3281
+      _ExtentY        =   1852
+      View            =   3
+      LabelEdit       =   1
+      LabelWrap       =   -1  'True
+      HideSelection   =   -1  'True
+      FullRowSelect   =   -1  'True
+      _Version        =   393217
+      ForeColor       =   -2147483640
+      BackColor       =   -2147483643
+      BorderStyle     =   1
+      Appearance      =   1
+      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+         Name            =   "Courier"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      NumItems        =   1
+      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         Text            =   "Message"
+         Object.Width           =   1411
+      EndProperty
+   End
    Begin VB.CommandButton Command1 
       Caption         =   "Command1"
       Height          =   285
@@ -369,7 +402,7 @@ Begin VB.Form Form1
       Placement       =   1
       _Version        =   393216
       BeginProperty Tabs {1EFB6598-857C-11D1-B16A-00C0F0283628} 
-         NumTabs         =   4
+         NumTabs         =   5
          BeginProperty Tab1 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
             Caption         =   "Output"
             ImageVarType    =   2
@@ -384,6 +417,10 @@ Begin VB.Form Form1
          EndProperty
          BeginProperty Tab4 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
             Caption         =   "CallStack"
+            ImageVarType    =   2
+         EndProperty
+         BeginProperty Tab5 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
+            Caption         =   "Log"
             ImageVarType    =   2
          EndProperty
       EndProperty
@@ -472,6 +509,10 @@ Private Sub Form_Unload(Cancel As Integer)
         If duk.isDebugging Then duk.DebugAttach False
         Set duk = Nothing
     End If
+End Sub
+
+Private Sub lvLog_DblClick()
+    MsgBox lvLog.SelectedItem.Text, vbInformation
 End Sub
 
 Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
@@ -566,7 +607,7 @@ Private Sub Form_Load()
     lvVars.Visible = False
     lvCallStack.Visible = False
     lvErrors.Visible = False
-
+    lvLog.Visible = False
     
     scivb.DirectSCI.HideSelection False
     scivb.DirectSCI.MarkerDefine 2, SC_MARK_CIRCLE
@@ -593,6 +634,8 @@ Private Sub Form_Load()
     scivb.LoadFile App.path & "\test.js"
     curFile = App.path & "\test.js"
     
+    ts.Tabs(5).Selected = True
+    
     
 End Sub
 
@@ -609,10 +652,12 @@ Private Sub Form_Resize()
             lvVars.Move .Left, .Top, .Width, .Height
             lvCallStack.Move .Left, .Top, .Width, .Height
             lvErrors.Move .Left, .Top, .Width, .Height
+            lvLog.Move .Left, .Top, .Width, .Height
         End With
         SetLastColumnWidth lvCallStack
         SetLastColumnWidth lvVars
         SetLastColumnWidth lvErrors
+        SetLastColumnWidth lvLog
     End With
 End Sub
 
@@ -627,6 +672,7 @@ Private Sub ts_Click()
     lvErrors.Visible = IIf(i = 2, True, False)
     lvVars.Visible = IIf(i = 3, True, False)
     lvCallStack.Visible = IIf(i = 4, True, False)
+    lvLog.Visible = IIf(i = 5, True, False)
 End Sub
 
 ''we use a timer for this to give them a chance to click on the calltip to edit the variable..

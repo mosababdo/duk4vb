@@ -16,6 +16,7 @@ Public fileName As String
 Public sourceText As String
 Public index As Long
 Public errText As String
+Public isSet As Boolean
 
 Property Get Stats() As String
     

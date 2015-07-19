@@ -12,7 +12,7 @@ Public Declare Function DukOp Lib "Duk4VB.dll" (ByVal operation As opDuk, Option
 'misc windows api..
 Public Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Public Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
-Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, source As Any, ByVal length As Long)
+Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, Source As Any, ByVal length As Long)
 Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Declare Function lstrlen Lib "kernel32.dll" Alias "lstrlenA" (ByVal lpString As Long) As Long
 
@@ -49,6 +49,7 @@ Enum opDuk
     opd_dbgSyncGetVar = DUK_DBG_CMD_GETVAR
     opd_dbgSyncSetBreak = DUK_DBG_CMD_ADDBREAK
     opd_dbgSyncDelBreak = DUK_DBG_CMD_DELBREAK
+    opd_dbgCurLine = 11
 End Enum
 
 Enum Debug_Commands
@@ -120,7 +121,7 @@ Public ActiveDebuggerClass As CDukTape
 Public RespBuffer As New CResponseBuffer
 Public RecvBuffer As New CWriteBuffer
 
-Private variables As Collection
+'Private variables As Collection
 Private dbgStopNext As Boolean
 
 Public Type Stats
@@ -168,6 +169,13 @@ Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
     InitDukLib = True
     
 End Function
+
+'debugger is just starting up first message already received..
+Sub DoInilitization()
+    status.lineNumber = DukOp(opd_dbgCurLine, ActiveDebuggerClass.Context)
+    Form1.SyncUI
+    InitDebuggerBpx
+End Sub
 
 'this is used for script to host app object integration..
 Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt As Long, ByVal hInst As Long) As Long
@@ -228,7 +236,7 @@ Function SyncronousSetBreakPoint(b As CBreakpoint) As Boolean
     Set tmpBreakPoint = b
     LastCommand = dc_SetBreakpoint
     replyReceived = False
-    RespBuffer.ConstructMessage dc_SetBreakpoint, b.fileName, b.lineNo, False  'build custom packet
+    RespBuffer.ConstructMessage dc_SetBreakpoint, b.fileName, b.lineNo + 1, False 'build custom packet
     DukOp opd_dbgSyncSetBreak, ActiveDebuggerClass.Context
     SyncronousSetBreakPoint = CBool(Len(b.errText) = 0)
 End Function
@@ -238,7 +246,7 @@ Function SyncDelBreakPoint(b As CBreakpoint) As Boolean
     b.errText = Empty
     LastCommand = dc_delBreakpoint
     replyReceived = False
-    RespBuffer.ConstructMessage dc_delBreakpoint, b.index, False   'build custom packet
+    RespBuffer.ConstructMessage dc_delBreakpoint, b.index, , False  'build custom packet
     DukOp opd_dbgSyncDelBreak, ActiveDebuggerClass.Context
     SyncDelBreakPoint = CBool(Len(b.errText) = 0)
 End Function
@@ -250,7 +258,7 @@ Public Sub DebuggerCmd(cmd As Debug_Commands, Optional arg1, Optional arg2)
     
     LastCommand = cmd
     If Not RespBuffer.ConstructMessage(cmd, arg1, arg2) Then
-        Debug.Print "Failed to construct message for " & cmd
+        dbg "Failed to construct message for " & cmd
     Else
         readyToReturn = True
     End If
@@ -322,7 +330,10 @@ Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
         'Case cb_ReleaseObj: ReleaseObj CLng(msg)
         Case cb_output, cb_error:  MsgBox msg, vbInformation, "Script Output"
         Case cb_debugger:
-                If msg = "Debugger-Detached" Then running = False
+                If msg = "Debugger-Detached" Then
+                    running = False
+                    dbg "Debugger detached!"
+                End If
                 
     End Select
     
@@ -372,10 +383,7 @@ topLine:
         
         If Not varsLoaded Then
             varsLoaded = True
-            Set variables = New Collection
-            Form1.lvVars.ListItems.Clear
-            dbgStopNext = True
-            DebuggerCmd dc_GetLocals
+            DoInilitization
             GoTo topLine 'immediate send of response buffer..
         End If
         

@@ -127,10 +127,6 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2, Opt
         AddString CStr(arg1)
         AddByte DUK_DBG_MARKER_EOM
         ConstructMessage = True
-        'Form1.txtOut.Text = bHexDump(buf)
-        'Clipboard.Clear
-        'Clipboard.SetText Form1.txtOut.Text
-        'MsgBox "now"
         Exit Function
     End If
     
@@ -157,7 +153,7 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2, Opt
         Else
             'opd_dbgManuallyTriggerGetVar
         End If
-        AddIntVal CLng(arg1) 'line number
+        AddIntVal CLng(arg1) 'index
         AddByte DUK_DBG_MARKER_EOM
         ConstructMessage = True
         Exit Function

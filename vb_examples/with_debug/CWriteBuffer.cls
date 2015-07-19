@@ -77,17 +77,15 @@ Function ReadDouble() As Double
 End Function
 
 Sub WriteBuf(b() As Byte)
-    Dim wasFirst As Boolean
+ 
     
     'Const eom = "-END-OF-MESSAGE-"
     
     If UBound(b) = 0 And b(0) = 0 Then
-        wasFirst = firstMessage
         mPosition = 0
         Call DebuggerMessageReceived
         firstMessage = False
         replyReceived = True
-        If wasFirst Then InitDebuggerBpx
         Erase buf
         Exit Sub
     End If
@@ -102,9 +100,8 @@ End Sub
 'just when you mouse over it at debug time..so you can wrap in if false to only
 'see on demand..on mouse hover..fancy..thanks dillatante for the idea from your hexdump class :)
 Function DebugDump(Optional prefix As String)
-    Debug.Print "MessageReceived: " & prefix
-    Debug.Print bHexDump(buf)
-    Debug.Print String(50, "-")
+    dbg "MessageReceived: " & prefix
+    dbg bHexDump(buf)
 End Function
 
 Property Get Hint()
