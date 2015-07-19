@@ -2,10 +2,9 @@ print(1)
 a = b(0)
 
 function b(c){
-	return c++
+	return c+=1
 }
-';
-";/
+
 function main(){
 	var a = 1
     v1 = parseInt(0);
@@ -19,6 +18,12 @@ function main(){
 
 main()
 print(1)
+
+
+
+
+
+
 
 
 

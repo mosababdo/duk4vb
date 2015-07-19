@@ -2,7 +2,7 @@ VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Object = "{FBE17B58-A1F0-4B91-BDBD-C9AB263AC8B0}#78.0#0"; "scivb_lite.ocx"
 Begin VB.Form Form1 
-   Caption         =   "Simple DukTape JS Example"
+   Caption         =   "DukTape JS Debugger Example"
    ClientHeight    =   9795
    ClientLeft      =   60
    ClientTop       =   345
@@ -14,7 +14,7 @@ Begin VB.Form Form1
    Begin VB.Frame fraCmd 
       Height          =   600
       Left            =   225
-      TabIndex        =   10
+      TabIndex        =   8
       Top             =   8685
       Width           =   13155
       Begin VB.TextBox txtCmd 
@@ -29,7 +29,7 @@ Begin VB.Form Form1
          EndProperty
          Height          =   285
          Left            =   630
-         TabIndex        =   12
+         TabIndex        =   10
          Top             =   180
          Width           =   12255
       End
@@ -46,7 +46,7 @@ Begin VB.Form Form1
          EndProperty
          Height          =   240
          Left            =   90
-         TabIndex        =   11
+         TabIndex        =   9
          Top             =   225
          Width           =   510
       End
@@ -54,7 +54,7 @@ Begin VB.Form Form1
    Begin MSComctlLib.ListView lvLog 
       Height          =   1050
       Left            =   1575
-      TabIndex        =   9
+      TabIndex        =   7
       Top             =   6795
       Width           =   1860
       _ExtentX        =   3281
@@ -83,22 +83,6 @@ Begin VB.Form Form1
          Text            =   "Message"
          Object.Width           =   1411
       EndProperty
-   End
-   Begin VB.CommandButton Command1 
-      Caption         =   "Command1"
-      Height          =   285
-      Left            =   11205
-      TabIndex        =   8
-      Top             =   270
-      Width           =   690
-   End
-   Begin VB.TextBox Text1 
-      Height          =   285
-      Left            =   10170
-      TabIndex        =   7
-      Text            =   "v1"
-      Top             =   270
-      Width           =   915
    End
    Begin VB.TextBox txtOut 
       Height          =   1185
@@ -470,9 +454,7 @@ Public Sub SyncUI()
     
     scivb.GotoLine curline
     scivb.SetFocus
-    
-    'RefreshVariables
-    
+
 End Sub
  
 
@@ -529,16 +511,12 @@ End Sub
 Private Sub ExecuteScript(Optional withDebugger As Boolean)
  
     Dim rv
-   
-    
-    'List1.Clear
-    
+
     running = True
     SetToolBarIcons
     lblStatus = "Status: " & IIf(withDebugger, "Debugging...", "Running...")
     txtOut.Text = Empty
     lvLog.ListItems.Clear
-    lvErrors.ListItems.Clear
     lvCallStack.ListItems.Clear
     lvVars.ListItems.Clear
     
@@ -561,10 +539,8 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
         
          If duk.hadError Then
              If Not forceStop Then
-                MsgBox "Error: " & duk.LastError
+                doOutput duk.LastError
              End If
-         Else
-             If Len(rv) > 0 And rv <> "undefined" Then MsgBox "eval returned: " & rv
          End If
          
          Set duk = Nothing
