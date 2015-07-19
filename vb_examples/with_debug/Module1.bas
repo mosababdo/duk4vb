@@ -36,7 +36,7 @@ Enum opDuk
     opd_PushNum = 1
     opd_PushStr = 2
     opd_GetInt = 3
-    opd_IsNullUndef = 4
+    opd_IsNullUndef = 4 'unused apparently..dont even rememebr adding it! probably for the COM stuff which isnt in this project..
     opd_GetString = 5
     opd_Destroy = 6
     opd_LastString = 7
@@ -63,6 +63,7 @@ Enum Debug_Commands
     dc_SetBreakpoint = 12
     dc_delBreakpoint = 13
     dc_GetCallStack = 14
+    dc_Eval = 15
 End Enum
 
 
@@ -105,7 +106,6 @@ Global Const DUK_DBG_ERR_UNSUPPORTED = &H1
 Global Const DUK_DBG_ERR_TOOMANY = &H2
 Global Const DUK_DBG_ERR_NOTFOUND = &H3
 Global Const DUK_VAR_NOT_FOUND = "DUK_VAR_NOT_FOUND"
-
 
 Global running As Boolean
 Public LastStringReturn As String
@@ -266,6 +266,16 @@ Function SyncGetCallStack() As Collection 'of cCallStack
     RespBuffer.ConstructMessage dc_GetCallStack
     DukOp opd_dbgTriggerRead, ActiveDebuggerClass.Context
     Set SyncGetCallStack = tmpCol
+End Function
+
+Function SyncEval(js As String) As CVariable
+    Set VarReturn = New CVariable
+    VarReturn.name = "eval result"
+    LastCommand = dc_Eval
+    replyReceived = False
+    RespBuffer.ConstructMessage dc_Eval, js
+    DukOp opd_dbgTriggerRead, ActiveDebuggerClass.Context
+    Set SyncEval = VarReturn
 End Function
 
 Public Sub LoadCallStack()
@@ -555,7 +565,7 @@ Public Function DebuggerMessageReceived()
                     
                     'the reply is specific to the last command we issued..
                     Select Case LastCommand
-                        Case dc_GetVar: HandleGetVar
+                        Case dc_GetVar, dc_Eval: HandleGetVar
                         Case dc_SetBreakpoint: tmpBreakPoint.index = .ReadInt 'REP <int: breakpoint index> EOM
                         Case dc_GetCallStack: HandleCallStack
                         'Case dc_GetLocals:
@@ -612,13 +622,24 @@ Function HandleGetVar()
     
     Dim b As Byte
     Dim found As Long
+    Dim hadErr As Long
     
-    'REP <int: 0/1, found> <tval: value> EOM
-    found = RecvBuffer.ReadInt
-    If found = 0 Then
-        VarReturn.varType = DUK_VAR_NOT_FOUND
+    If LastCommand = dc_GetVar Then
+        'REP <int: 0/1, found> <tval: value> EOM
+        found = RecvBuffer.ReadInt
+        If found = 0 Then
+            VarReturn.varType = DUK_VAR_NOT_FOUND
+            Exit Function
+        End If
+    ElseIf LastCommand = dc_Eval Then
+        'REP <int: 0=success, 1=error> <tval: value> EOM
+        'on error tval will contain the error message as string
+        hadErr = RecvBuffer.ReadInt
+    Else
+        dbg "in HandleGetVar for unknown reason?"
         Exit Function
     End If
+    
         
     With VarReturn
         b = RecvBuffer.ReadByte

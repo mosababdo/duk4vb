@@ -4,7 +4,8 @@ a = b(0)
 function b(c){
 	return c++
 }
-
+';
+";/
 function main(){
 	var a = 1
     v1 = parseInt(0);
@@ -18,6 +19,13 @@ function main(){
 
 main()
 print(1)
+
+
+
+
+
+
+
 
 
 

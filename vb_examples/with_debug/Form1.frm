@@ -11,10 +11,50 @@ Begin VB.Form Form1
    ScaleHeight     =   9795
    ScaleWidth      =   13845
    StartUpPosition =   2  'CenterScreen
+   Begin VB.Frame fraCmd 
+      Height          =   600
+      Left            =   225
+      TabIndex        =   10
+      Top             =   8685
+      Width           =   13155
+      Begin VB.TextBox txtCmd 
+         BeginProperty Font 
+            Name            =   "System"
+            Size            =   9.75
+            Charset         =   0
+            Weight          =   700
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         Height          =   285
+         Left            =   630
+         TabIndex        =   12
+         Top             =   180
+         Width           =   12255
+      End
+      Begin VB.Label Label1 
+         Caption         =   "duk>"
+         BeginProperty Font 
+            Name            =   "System"
+            Size            =   9.75
+            Charset         =   0
+            Weight          =   700
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         Height          =   240
+         Left            =   90
+         TabIndex        =   11
+         Top             =   225
+         Width           =   510
+      End
+   End
    Begin MSComctlLib.ListView lvLog 
       Height          =   1050
       Left            =   1575
-      TabIndex        =   10
+      TabIndex        =   9
       Top             =   6795
       Width           =   1860
       _ExtentX        =   3281
@@ -48,14 +88,14 @@ Begin VB.Form Form1
       Caption         =   "Command1"
       Height          =   285
       Left            =   11205
-      TabIndex        =   9
+      TabIndex        =   8
       Top             =   270
       Width           =   690
    End
    Begin VB.TextBox Text1 
       Height          =   285
       Left            =   10170
-      TabIndex        =   8
+      TabIndex        =   7
       Text            =   "v1"
       Top             =   270
       Width           =   915
@@ -65,58 +105,14 @@ Begin VB.Form Form1
       Left            =   5670
       MultiLine       =   -1  'True
       ScrollBars      =   2  'Vertical
-      TabIndex        =   7
+      TabIndex        =   6
       Top             =   6705
       Width           =   3165
-   End
-   Begin MSComctlLib.ListView lvErrors 
-      Height          =   1050
-      Left            =   3645
-      TabIndex        =   4
-      Top             =   6795
-      Width           =   1860
-      _ExtentX        =   3281
-      _ExtentY        =   1852
-      View            =   3
-      LabelEdit       =   1
-      LabelWrap       =   -1  'True
-      HideSelection   =   -1  'True
-      FullRowSelect   =   -1  'True
-      GridLines       =   -1  'True
-      _Version        =   393217
-      ForeColor       =   -2147483640
-      BackColor       =   -2147483643
-      BorderStyle     =   1
-      Appearance      =   1
-      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-         Name            =   "Courier"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   400
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      NumItems        =   3
-      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         Text            =   "Line"
-         Object.Width           =   1411
-      EndProperty
-      BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         SubItemIndex    =   1
-         Text            =   "File"
-         Object.Width           =   3881
-      EndProperty
-      BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         SubItemIndex    =   2
-         Text            =   "Error"
-         Object.Width           =   2540
-      EndProperty
    End
    Begin MSComctlLib.ListView lvVars 
       Height          =   1050
       Left            =   10890
-      TabIndex        =   5
+      TabIndex        =   4
       Top             =   6840
       Width           =   1860
       _ExtentX        =   3281
@@ -164,7 +160,7 @@ Begin VB.Form Form1
    Begin MSComctlLib.ListView lvCallStack 
       Height          =   1185
       Left            =   8955
-      TabIndex        =   6
+      TabIndex        =   5
       Top             =   6795
       Width           =   1815
       _ExtentX        =   3201
@@ -407,24 +403,20 @@ Begin VB.Form Form1
       Placement       =   1
       _Version        =   393216
       BeginProperty Tabs {1EFB6598-857C-11D1-B16A-00C0F0283628} 
-         NumTabs         =   5
+         NumTabs         =   4
          BeginProperty Tab1 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
             Caption         =   "Output"
             ImageVarType    =   2
          EndProperty
          BeginProperty Tab2 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
-            Caption         =   "Errors"
-            ImageVarType    =   2
-         EndProperty
-         BeginProperty Tab3 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
             Caption         =   "Variables"
             ImageVarType    =   2
          EndProperty
-         BeginProperty Tab4 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
+         BeginProperty Tab3 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
             Caption         =   "CallStack"
             ImageVarType    =   2
          EndProperty
-         BeginProperty Tab5 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
+         BeginProperty Tab4 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
             Caption         =   "Log"
             ImageVarType    =   2
          EndProperty
@@ -498,15 +490,7 @@ Private Sub ClearLastLineMarkers()
     
 End Sub
 
-Private Sub Command1_Click()
-    'Dim v As CVariable
-    'Set v = SyncronousGetVariableValue(Text1.Text)
-    'MsgBox v.Value & " (" & v.varType & ")"
-    
-    DebuggerCmd dc_SetBreakpoint, "c:\test.js", 1
-    
-    
-End Sub
+
 
 Private Sub Form_Unload(Cancel As Integer)
     If Not duk Is Nothing Then
@@ -616,7 +600,6 @@ Private Sub Form_Load()
     SetToolBarIcons
     lvVars.Visible = False
     lvCallStack.Visible = False
-    lvErrors.Visible = False
     lvLog.Visible = False
     
     scivb.DirectSCI.HideSelection False
@@ -644,7 +627,7 @@ Private Sub Form_Load()
     scivb.LoadFile App.path & "\test.js"
     curFile = App.path & "\test.js"
     
-    ts.Tabs(5).Selected = True
+    ts.Tabs(4).Selected = True
     
     
 End Sub
@@ -657,16 +640,17 @@ Private Sub Form_Resize()
         txtOut.Width = .Width - 200
         ts.Top = Me.Height - ts.Height - 800
         .Height = Me.Height - .Top - ts.Height - 1000
-        With txtOut
+        With lvVars
             .Move ts.Left + 100, ts.Top + 150, ts.Width - 200, ts.Height - 500
-            lvVars.Move .Left, .Top, .Width, .Height
             lvCallStack.Move .Left, .Top, .Width, .Height
-            lvErrors.Move .Left, .Top, .Width, .Height
             lvLog.Move .Left, .Top, .Width, .Height
+            txtOut.Move .Left, .Top, .Width, .Height - fraCmd.Height - 100
+            fraCmd.Move .Left, txtOut.Top + txtOut.Height + 20, .Width
+            txtCmd.Width = fraCmd.Width - txtCmd.Left - 100
+            
         End With
         SetLastColumnWidth lvCallStack
         SetLastColumnWidth lvVars
-        SetLastColumnWidth lvErrors
         SetLastColumnWidth lvLog
     End With
 End Sub
@@ -679,10 +663,10 @@ Private Sub ts_Click()
     Dim i As Long
     i = ts.SelectedItem.index
     txtOut.Visible = IIf(i = 1, True, False)
-    lvErrors.Visible = IIf(i = 2, True, False)
-    lvVars.Visible = IIf(i = 3, True, False)
-    lvCallStack.Visible = IIf(i = 4, True, False)
-    lvLog.Visible = IIf(i = 5, True, False)
+    lvVars.Visible = IIf(i = 2, True, False)
+    lvCallStack.Visible = IIf(i = 3, True, False)
+    lvLog.Visible = IIf(i = 4, True, False)
+    fraCmd.Visible = txtOut.Visible
 End Sub
 
 ''we use a timer for this to give them a chance to click on the calltip to edit the variable..
@@ -729,4 +713,21 @@ Private Sub sciext_MouseDwellStart(lline As Long, Position As Long)
     End If
 
 
+End Sub
+
+Private Sub txtCmd_KeyPress(KeyAscii As Integer)
+    
+    Dim v As CVariable
+    
+    If KeyAscii <> 13 Then Exit Sub 'wait for user to press return key
+    KeyAscii = 0 'eat the keypress to prevent vb from doing a msgbeep
+    
+    If Not running Then Exit Sub
+    If Len(txtCmd.Text) = 0 Then Exit Sub
+    
+    Set v = SyncEval(txtCmd.Text)
+    If v.varType = "undefined" Then Exit Sub
+    If Len(v.Value) = 0 Then Exit Sub
+    doOutput v.Value
+    
 End Sub

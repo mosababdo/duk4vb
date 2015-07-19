@@ -111,6 +111,7 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2) As 
         Case dc_break: b = PAUSE_REQ
         Case dc_Resume: b = RESUME_REQ
         Case dc_GetLocals: b = GET_LOCALS_REQ
+        Case dc_GetCallStack: b = GET_CALL_STACK_REQ
     End Select
     
     If b <> 0 Then
@@ -121,6 +122,7 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2) As 
         Exit Function
     End If
     
+    'all of the ones below here require arguments...
     If d = dc_GetVar Then
         'REQ <int: 0x1a> <str: varname> EOM
         AddByte DUK_DBG_MARKER_REQUEST
@@ -151,15 +153,17 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2) As 
         ConstructMessage = True
         Exit Function
     End If
-    
-    If d = dc_GetCallStack Then
-        'REQ <int: 0x1c> EOM
+ 
+    If d = dc_Eval Then
+        'REQ <int: 0x1e> <str: expression> EOM
         AddByte DUK_DBG_MARKER_REQUEST
-        AddByte &H80 + &H1C
+        AddByte &H80 + &H1E
+        AddString CStr(arg1)
         AddByte DUK_DBG_MARKER_EOM
         ConstructMessage = True
         Exit Function
     End If
+    
     
 End Function
 
