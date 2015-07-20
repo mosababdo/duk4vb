@@ -23,8 +23,10 @@ Public Event NewLine()
 
 Private WithEvents owner As SciSimple
 Attribute owner.VB_VarHelpID = -1
-Private WithEvents sc As clsSubClass
-Attribute sc.VB_VarHelpID = -1
+
+Implements iSubclass    'these are public classes within scivb_lite which is open source.
+Dim sc As cSubclass     'they are the open source subclass library by paul canton
+
 Private ucHwnd As Long
 Private Declare Sub CopyMemory Lib "kernel32.dll" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal length As Long)
 
@@ -33,9 +35,9 @@ Private Type POINTAPI
     y As Long
 End Type
 
-Private Declare Function GetCursorPos Lib "User32" (lpPoint As POINTAPI) As Long
-Private Declare Function WindowFromPoint Lib "User32" (ByVal xPoint As Long, ByVal yPoint As Long) As Long
-Private Declare Function GetClassName Lib "User32" Alias "GetClassNameA" (ByVal hwnd As Long, ByVal lpClassName As String, ByVal nMaxCount As Long) As Long
+Private Declare Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
+Private Declare Function WindowFromPoint Lib "user32" (ByVal xPoint As Long, ByVal yPoint As Long) As Long
+Private Declare Function GetClassName Lib "user32" Alias "GetClassNameA" (ByVal hwnd As Long, ByVal lpClassName As String, ByVal nMaxCount As Long) As Long
          
 Private Const WM_NOTIFY = &H4E
 Private Const SCI_LINEFROMPOSITION = 2166
@@ -71,8 +73,8 @@ Private Type SCNotification
     y As Long
 End Type
 
-Private Declare Function GetFocus Lib "User32" () As Long
-Private Declare Function GetParent Lib "User32" (ByVal hwnd As Long) As Long
+Private Declare Function GetFocus Lib "user32" () As Long
+Private Declare Function GetParent Lib "user32" (ByVal hwnd As Long) As Long
 
 Private Function GetUCHwnd(ctrl As Control) As Long
     
@@ -92,12 +94,13 @@ End Function
 
 Function Init(scivb As SciSimple, Optional dwelltime As Long = 600) As Boolean
     Dim i As Long
-     
+   
     Set owner = scivb
-    Set sc = New clsSubClass
-     
+    Set sc = New cSubclass
+    
     ucHwnd = GetUCHwnd(scivb)
-    If sc.AttachMessage(ucHwnd, WM_NOTIFY) Then
+    If sc.Subclass(ucHwnd, Me) Then
+        sc.AddMsg ucHwnd, WM_NOTIFY
         For i = 0 To 4
             owner.DirectSCI.SetMarginSensitiveN i, 1
         Next
@@ -108,7 +111,21 @@ Function Init(scivb As SciSimple, Optional dwelltime As Long = 600) As Boolean
 End Function
 
 Private Sub Class_Terminate()
-    sc.DetatchMessage ucHwnd, WM_NOTIFY
+    sc.Unsubclass ucHwnd
+End Sub
+
+Private Sub iSubclass_WndProc(ByVal bBefore As Boolean, bHandled As Boolean, lReturn As Long, ByVal lng_hWnd As Long, ByVal uMsg As Long, ByVal wParam As Long, ByVal lParam As Long)
+
+    Dim scMsg As SCNotification
+    Dim tHdr As NMHDR
+    
+    If uMsg = WM_NOTIFY Then
+        CopyMemory scMsg, ByVal lParam, Len(scMsg)
+        tHdr = scMsg.NotifyHeader
+        If (tHdr.hwndFrom = owner.sciHWND) Then HandleSciMsg tHdr, scMsg
+        Exit Sub
+    End If
+    
 End Sub
 
 Private Sub owner_KeyDown(KeyCode As Long, Shift As Long)
@@ -117,19 +134,7 @@ Private Sub owner_KeyDown(KeyCode As Long, Shift As Long)
     End If
 End Sub
 
-Private Sub sc_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean)
 
-    Dim scMsg As SCNotification
-    Dim tHdr As NMHDR
-    
-    If wMsg = WM_NOTIFY Then
-        CopyMemory scMsg, ByVal lParam, Len(scMsg)
-        tHdr = scMsg.NotifyHeader
-        If (tHdr.hwndFrom = owner.sciHWND) Then HandleSciMsg tHdr, scMsg
-        Exit Sub
-    End If
-    
-End Sub
 
 
 Private Sub HandleSciMsg(tHdr As NMHDR, scMsg As SCNotification)
