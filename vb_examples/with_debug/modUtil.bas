@@ -1,50 +1,26 @@
 Attribute VB_Name = "modUtil"
+'Author: David Zimmer <dzzie@yahoo.com>
+'Site: Sandsprite.com
+'License: http://opensource.org/licenses/MIT
+
 Global Const LANG_US = &H409
 Public Declare Function htonl Lib "ws2_32.dll" (ByVal hostlong As Long) As Long
 
 
-Private Declare Function FindWindow Lib "User32" Alias "FindWindowA" _
+Private Declare Function FindWindow Lib "user32" Alias "FindWindowA" _
     (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
-Private Declare Function FindWindowEx Lib "User32" Alias "FindWindowExA" _
+Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExA" _
     (ByVal hWnd1 As Long, ByVal hWnd2 As Long, ByVal lpsz1 As String, _
      ByVal lpsz2 As String) As Long
-Private Declare Function PostMessage Lib "User32" Alias "PostMessageA" _
+Private Declare Function PostMessage Lib "user32" Alias "PostMessageA" _
     (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, _
      ByVal lParam As Long) As Long
-Private Declare Sub keybd_event Lib "User32" (ByVal bVk As Byte, ByVal bScan As Byte, ByVal dwFlags As Long, ByVal dwExtraInfo As Long)
+Private Declare Sub keybd_event Lib "user32" (ByVal bVk As Byte, ByVal bScan As Byte, ByVal dwFlags As Long, ByVal dwExtraInfo As Long)
 Private Const WM_ACTIVATE As Long = &H6
 
 Private Const KEYEVENTF_KEYUP = &H2
 Private Const VK_CANCEL = &H3
 Private Const VK_CONTROL = &H11
-
-'jcis
-'http://www.vbforums.com/showthread.php?672465-RESOLVED-How-to-clear-Immediate-Window-in-IDE
-Public Sub ClearImmediateWindow()
-Dim lWinVB As Long, lWinEmmediate As Long
-    
-      Debug.Print String(30, vbCrLf)
-      
-'    'DO NOT SET A BREAKPOINT IN HERE IT WILL STEAL ACTIVATION AND SCREW YOUR SOURCE!
-'
-'    keybd_event VK_CANCEL, 0, 0, 0  ' (This is Control-Break)
-'
-'    lWinVB = FindWindow("wndclass_desked_gsk", vbNullString)
-'    'Last param depends on languages, use your inmediate window caption:
-'    lWinEmmediate = FindWindowEx(lWinVB, ByVal 0&, "VbaWindow", "Immediate")
-'
-'    PostMessage lWinEmmediate, WM_ACTIVATE, 1, 0&
-'
-'    keybd_event VK_CONTROL, 0, 0, 0 'Select All
-'    keybd_event vbKeyA, 0, 0, 0 'Select All
-'    keybd_event vbKeyDelete, 0, 0, 0 'Clear
-'
-'    keybd_event vbKeyA, 0, KEYEVENTF_KEYUP, 0
-'    keybd_event VK_CONTROL, 0, KEYEVENTF_KEYUP, 0
-'    keybd_event vbKeyF5, 0, 0, 0   'Continue execution
-'    keybd_event vbKeyF5, 0, KEYEVENTF_KEYUP, 0
-    
-End Sub
 
 Function bHexDump(b() As Byte) As String
     Dim s As String
@@ -280,11 +256,20 @@ Function ReadFile(fileName) As Variant
    ReadFile = temp
 End Function
 
-Sub WriteFile(path, it)
+Sub WriteFile(path As String, it As String)
+
+    If FileExists(path) Then Kill path
+        
+    Dim f As Long
+    Dim b() As Byte
+    
+    b() = StrConv(it, vbFromUnicode, LANG_US)
+    
     f = FreeFile
-    Open path For Output As #f
-    Print #f, it
+    Open path For Binary As #f
+    Put f, , b()
     Close f
+    
 End Sub
 
 Function hto64(d As Double) As Double

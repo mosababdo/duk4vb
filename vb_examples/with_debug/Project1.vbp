@@ -49,4 +49,4 @@ MaxNumberOfThreads=1
 AutoRefresh=1
 
 [fastBuild]
-fullPath=D:\_code\duk4vb\vb_examples\with_debug\debugger.exe
+fullPath=D:\_code\duk4vb\vb_examples\with_debug\dukDbg.exe

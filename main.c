@@ -10,6 +10,16 @@ api tidbits:
 	DUK_EXTERNAL_DECL duk_int_t duk_get_type(duk_context *ctx, duk_idx_t index);
 	duk_is_none(), which would indicate whether index it outside of stack,
 	is not needed; duk_is_valid_index() gives the same information.
+
+
+modifications to duktape from origial (base 1.2.1)
+--------------------------------------------------------------
+	duk__debug_process_message       DUK_INTERNAL /*DUK_LOCAL* / void    - changed access so can call from main.c
+	duk_debug_process_messages       //duk_debug_send_status(thr);       - disabled to stop double status message on step into -dz 7.20.15
+	duk__interrupt_handle_debugger   //send_status = 1;                  - disabled to stop double status message on step over -dz 7.20.15
+	duk_debug_write_strbuf           #ifdef DUK_DBG_USE_PACKED_PROTOCOL  - to simplify protocol 
+	duk_debug_write_int              #ifdef DUK_DBG_USE_PACKED_PROTOCOL  - to simplify protocol
+
 */
 
 #pragma comment(lib, "ws2_32.lib")
@@ -122,7 +132,9 @@ int ScriptTimeoutCheck(const void*udata)
 	}
 
     if (watchdogTimeout) {
-        if (tick - startTime > watchdogTimeout)  return 1;
+		if (tick - startTime > watchdogTimeout){  
+			return 1;
+		}
     }
     return 0;
 }
@@ -302,15 +314,7 @@ duk_size_t DebugRead(void *udata, char *buffer, duk_size_t length){
 }
 
 //debugger is sending our interface data 
-duk_size_t DebugWrite(void *udata, const char *buffer, duk_size_t length){
-	
-	/*we are stealing it for a UI initited call which must be synchronous, 
-	//main ui thread is blocking at a previous point in call stack..
-	if(redirectOutput){
-		for(int i=0; i < length;i++) tmpbuf.push_back(buffer[i]);
-		return length;
-	}*/
-	
+duk_size_t DebugWrite(void *udata, const char *buffer, duk_size_t length){	
 	return vbDbgWriteHandler(buffer, length);
 }
 

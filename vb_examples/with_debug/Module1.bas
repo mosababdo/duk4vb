@@ -1,4 +1,8 @@
 Attribute VB_Name = "mDuk"
+'Author: David Zimmer <dzzie@yahoo.com>
+'Site: Sandsprite.com
+'License: http://opensource.org/licenses/MIT
+
 Public hDukLib As Long
 Public libRefCnt As Long 'used when running in IDE...
 
@@ -6,7 +10,7 @@ Public Declare Function DukCreate Lib "Duk4VB.dll" () As Long
 Public Declare Function AddFile Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal jsFile As String) As Long
 Public Declare Function Eval Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal js As String) As Long
 Public Declare Function DukPushNewJSClass Lib "Duk4VB.dll" (ByVal ctx As Long, ByVal jsClassName As String, ByVal hInst As Long) As Long 'returns 0/-1
-Public Declare Sub SetCallBacks Lib "Duk4VB.dll" (ByVal msgProc As Long, ByVal dbgCmdProc As Long, ByVal hostResolverProc As Long, ByVal lineInputfunc As Long, ByVal debugWritefunc As Long)
+Public Declare Sub SetCallBacks Lib "Duk4VB.dll" (ByVal msgProc As Long, ByVal dbgCmdProc As Long, ByVal cb_HostResolverProc As Long, ByVal lineInputfunc As Long, ByVal debugWritefunc As Long)
 Public Declare Function DukOp Lib "Duk4VB.dll" (ByVal operation As opDuk, Optional ByVal ctx As Long = 0, Optional ByVal arg1 As Long, Optional ByVal sArg As String) As Long
 
 'misc windows api..
@@ -18,7 +22,7 @@ Declare Function lstrlen Lib "kernel32.dll" Alias "lstrlenA" (ByVal lpString As 
 
 
 
-'call back message types we receive from duktape in vb_stdout
+'call back message types we receive from duktape in cb_stdout
 Enum cb_type
     cb_output = 0
     cb_Refresh = 1
@@ -107,19 +111,19 @@ Global Const DUK_DBG_ERR_TOOMANY = &H2
 Global Const DUK_DBG_ERR_NOTFOUND = &H3
 Global Const DUK_VAR_NOT_FOUND = "DUK_VAR_NOT_FOUND"
 
+Global forceShutDown As Boolean
 Global running As Boolean
 Public LastStringReturn As String
 Public readyToReturn As Boolean
 Public LastCommand As Debug_Commands
-Dim varsLoaded As Boolean
 Public replyReceived As Boolean
 
 Public ActiveDebuggerClass As CDukTape
 Public RespBuffer As New CResponseBuffer
 Public RecvBuffer As New CWriteBuffer
 
-'Private variables As Collection
 Private dbgStopNext As Boolean 'for debugging a specific message/event..
+Private Const debugAll As Boolean = True
 
 Public Type Stats
     state As Long
@@ -128,12 +132,16 @@ Public Type Stats
     lineNumber As Long
     pc As Long
     callStackLoaded As Boolean
+    lastLineNo As Long
 End Type
 
 Public status As Stats
-Private VarReturn As CVariable 'because we have to work across callbacks...
-Public tmpBreakPoint As CBreakpoint 'because we have to work across callbacks..(used from with modBreakpoints to so public)
-Private tmpCol As Collection 'because we have to work across callbacks..
+
+'because we have to work across callbacks we need some module level variables..
+Private tmpVar As CVariable
+Public tmpBreakPoint As CBreakpoint 'used from with modBreakpoints to so public
+Private tmpCol As Collection
+
 
 Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
 
@@ -159,11 +167,11 @@ Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
     End If
     
     'this can still work..but now its up to the runtime to find the dll..if not the app will terminate
-    SetCallBacks AddressOf vb_stdout, _
-                 AddressOf GetDebuggerCommand, _
-                 AddressOf HostResolver, _
-                 AddressOf VbLineInput, _
-                 AddressOf DebugDataIncoming
+    SetCallBacks AddressOf cb_stdout, _
+                 AddressOf cb_GetDbgCmd, _
+                 AddressOf cb_HostResolver, _
+                 AddressOf cb_prompt, _
+                 AddressOf cb_DebugDataIncoming
                  
     InitDukLib = True
     
@@ -172,7 +180,7 @@ End Function
 'debugger is just starting up first message already received..
 Sub On_DebuggerInilitize()
     status.lineNumber = DukOp(opd_dbgCurLine, ActiveDebuggerClass.Context)
-    Form1.SyncUI
+    Form1.SyncUI True
     InitDebuggerBpx
 End Sub
 
@@ -185,68 +193,31 @@ Private Sub On_DebuggerTerminate()
     
 End Sub
 
-'this is used for script to host app object integration..
-Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt As Long, ByVal hInst As Long) As Long
-    Dim key As String
-    Dim v1 As Variant
+'call back: this is used for script to host app object integration..
+Public Function cb_HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt As Long, ByVal hInst As Long) As Long
     
-    On Error Resume Next
-    'we could switch to numeric ids..but it would be harder to manage/debug when more complex..
-    key = StringFromPointer(buf)
-    
-    'this is just a quick demo not the full setup see duk4vb project for a full COM relay using same structure
-'    If key = "list1.additem" Then
-'        If argCnt > 1 Then
-'            v1 = GetArgAsString(ctx, i + 3)
-'            Form1.List1.AddItem CStr(v1)
-'        End If
-'    End If
-    
-'    If key = "text2.text" Then
-'        DukOp opd_PushStr, ctx, 0, Form1.Text2.text
-'        HostResolver = 1
-'    End If
-            
+    'see the COM example for a full implementation, or basic for a basic one..
+
 End Function
 
-Sub RefreshVariables()
-    
-    Dim li As ListItem
-    Dim v As CVariable
-    
-'    Set variables = New Collection
-'
-'    Form1.lvVars.ListItems.Clear
-'    DebuggerCmd dc_GetLocals
-'
-'    For Each v In variables
-'        Set li = Form1.lvVars.ListItems.Add(, , IIf(v.isGlobal, "Global", "Local"))
-'        li.SubItems(1) = v.name
-'        li.SubItems(2) = v.varType
-'        li.SubItems(3) = v.Value
-'        Set li.Tag = v
-'    Next
-    
-End Sub
-
-'this is messed up but it works...see notes in DukOp for opd_dbgManuallyTriggerGetVar
-Function SyncronousGetVariableValue(name As String) As CVariable
-    Set VarReturn = New CVariable
-    VarReturn.name = name
+'see notes in DukOp for opd_dbgTriggerRead
+Function SyncGetVarValue(name As String) As CVariable
+    Set tmpVar = New CVariable
+    tmpVar.name = name
     LastCommand = dc_GetVar
     replyReceived = False
     RespBuffer.ConstructMessage dc_GetVar, name
     DukOp opd_dbgTriggerRead, ActiveDebuggerClass.Context
-    Set SyncronousGetVariableValue = VarReturn
+    Set SyncGetVarValue = tmpVar
 End Function
 
-Function SyncronousSetBreakPoint(b As CBreakpoint) As Boolean
+Function SyncSetBreakPoint(b As CBreakpoint) As Boolean
     Set tmpBreakPoint = b
     LastCommand = dc_SetBreakpoint
     replyReceived = False
     RespBuffer.ConstructMessage dc_SetBreakpoint, b.fileName, b.lineNo + 1
     DukOp opd_dbgTriggerRead, ActiveDebuggerClass.Context
-    SyncronousSetBreakPoint = CBool(Len(b.errText) = 0)
+    SyncSetBreakPoint = CBool(Len(b.errText) = 0)
 End Function
 
 Function SyncDelBreakPoint(b As CBreakpoint) As Boolean
@@ -269,14 +240,16 @@ Function SyncGetCallStack() As Collection 'of cCallStack
 End Function
 
 Function SyncEval(js As String) As CVariable
-    Set VarReturn = New CVariable
-    VarReturn.name = "eval result"
+    Set tmpVar = New CVariable
+    tmpVar.name = "eval result"
     LastCommand = dc_Eval
     replyReceived = False
     RespBuffer.ConstructMessage dc_Eval, js
     DukOp opd_dbgTriggerRead, ActiveDebuggerClass.Context
-    Set SyncEval = VarReturn
+    Set SyncEval = tmpVar
 End Function
+
+
 
 Public Sub LoadCallStack()
     
@@ -297,7 +270,8 @@ Public Sub LoadCallStack()
     
 End Sub
 
-Public Sub DebuggerCmd(cmd As Debug_Commands, Optional arg1, Optional arg2)
+
+Public Sub SendDebuggerCmd(cmd As Debug_Commands, Optional arg1, Optional arg2)
     
     If Not replyReceived Then Exit Sub ' we are still waiting for last commands response..
     replyReceived = False
@@ -339,9 +313,9 @@ End Function
 
 
 
-'callback functions
+'callback: debugger misc message stream
 '------------------------------
-Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
+Public Sub cb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
 
     Dim msg As String
     
@@ -368,13 +342,14 @@ Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
     End If
     
     If lpMsg = 0 Then Exit Sub
+    If forceShutDown Then Exit Sub
     
     msg = StringFromPointer(lpMsg)
     
     Select Case t
         Case cb_StringReturn: LastStringReturn = msg
         'Case cb_ReleaseObj: ReleaseObj CLng(msg)
-        Case cb_output: doOutput (msg): dbg "Output received: " & msg
+        Case cb_output: doOutput msg: dbg "Output received: " & msg
         Case cb_error:  dbg "Script Error: " & msg
         Case cb_debugger:
                 If msg = "Debugger-Detached" Then
@@ -405,10 +380,11 @@ Public Function doOutput(msg)
     
 End Function
 
-Public Function VbLineInput(ByVal buf As Long, ByVal ctx As Long) As Long
+'call back: prompt function implementation
+Public Function cb_prompt(ByVal buf As Long, ByVal ctx As Long) As Long
     Dim b() As Byte
     Dim retVal As String
-    VbLineInput = 0 'return value default..
+    cb_prompt = 0 'return value default..
     
     Dim Text As String
     Dim def As String
@@ -428,19 +404,23 @@ Public Function VbLineInput(ByVal buf As Long, ByVal ctx As Long) As Long
   
 End Function
 
-'debugger is requesting a command to operate on..vb blocks until user enters command..
-Public Function GetDebuggerCommand(ByVal buf As Long, ByVal sz As Long) As Long
+'call back: debugger is requesting a command to operate on..
+'           vb blocks until user enters command..
+'           this is the duktape read data routine
+Public Function cb_GetDbgCmd(ByVal buf As Long, ByVal sz As Long) As Long
     
     Dim i As Long
     Dim cmd_length As Long
     Dim b() As Byte
+        
+        If forceShutDown Then Exit Function
         
 topLine:
         If Not RespBuffer.isEmpty Then
             
             If RespBuffer.GetBuf(sz, b) Then
                 CopyMemory ByVal buf, ByVal VarPtr(b(0)), sz
-                GetDebuggerCommand = sz
+                cb_GetDbgCmd = sz
             End If
             
             Exit Function
@@ -451,10 +431,24 @@ topLine:
                 RecvBuffer.breakPointsInitilized = True
                 On_DebuggerInilitize
             ElseIf Not status.callStackLoaded Then 'every time we step/bp
+                
+                If Len(status.fileName) > 0 And status.fileName <> Form1.curFile Then
+                    'my personal preference is to only debug current file user sees..
+                    'for me any other js is lib files I add as glue and dont want to bother them with..
+                    SendDebuggerCmd dc_stepout
+                    GoTo topLine
+                End If
+                
+                If status.lastLineNo = status.lineNumber And LastCommand = dc_stepout Then
+                    'must be above case + var assignment of return value..
+                    SendDebuggerCmd dc_StepOver
+                    GoTo topLine
+                End If
+                
                 LoadCallStack
+                'LoadVariables disabled see comments at bottom of module.
             End If
             
-            'GoTo topLine 'immediate send of response buffer..(if not a synchrnous request..)
         End If
         
         
@@ -484,7 +478,7 @@ topLine:
             
             If RespBuffer.GetBuf(sz, b) Then
                 CopyMemory ByVal buf, ByVal VarPtr(b(0)), sz
-                GetDebuggerCommand = sz
+                cb_GetDbgCmd = sz
             End If
             
             Exit Function
@@ -493,10 +487,13 @@ topLine:
         
 End Function
 
-'debugger is sending our interface data, this happens in multiple stages until a single EOM byte is received (00)
-Public Function DebugDataIncoming(ByVal buf As Long, ByVal sz As Long) As Long
+'call back: debugger is sending our interface data,
+'           this happens in multiple stages until a single EOM byte is received (00)
+'           this is the duktape write data routine
+Public Function cb_DebugDataIncoming(ByVal buf As Long, ByVal sz As Long) As Long
 
     If buf = 0 Or sz = 0 Then Exit Function 'shouldnt happen...
+    If forceShutDown Then Exit Function
     
     Dim b() As Byte
     ReDim b(sz - 1) 'b is 0 based,
@@ -504,23 +501,22 @@ Public Function DebugDataIncoming(ByVal buf As Long, ByVal sz As Long) As Long
     'Debug.Print bHexDump(b)
      
     RecvBuffer.WriteBuf b()
-    DebugDataIncoming = sz
-    
-   
-    
+    cb_DebugDataIncoming = sz
 End Function
 
 'called by RecvBuff when a full message has been received..
-Public Function DebuggerMessageReceived()
+Public Function On_FullMessageReceived()
     
     Dim b As Byte
     Dim i As Long
     
     'If dbgStopNext Then Stop
-        
+    
+    If forceShutDown Then Exit Function
+    
     With RecvBuffer
-        
-        'h = .Hint 'just for mouse over test..
+    
+        'If debugAll Then doOutput "MessageReceived: " & .BytesLeft & " bytes"
         
         b = .ReadByte()
         
@@ -534,7 +530,7 @@ Public Function DebuggerMessageReceived()
         End If
         
         Select Case b
-            Case DUK_DBG_MARKER_NOTIFY: HandleNotify
+            Case DUK_DBG_MARKER_NOTIFY:  HandleNotify
             
             Case DUK_DBG_MARKER_REQUEST: .DebugDump ("Request")
             
@@ -566,9 +562,9 @@ Public Function DebuggerMessageReceived()
                     'the reply is specific to the last command we issued..
                     Select Case LastCommand
                         Case dc_GetVar, dc_Eval: HandleGetVar
-                        Case dc_SetBreakpoint: tmpBreakPoint.index = .ReadInt 'REP <int: breakpoint index> EOM
-                        Case dc_GetCallStack: HandleCallStack
-                        'Case dc_GetLocals:
+                        Case dc_SetBreakpoint:   tmpBreakPoint.index = .ReadInt 'REP <int: breakpoint index> EOM
+                        Case dc_GetCallStack:    HandleCallStack
+                        'Case dc_GetLocals:       HandleGetLocals
                         Case Else:
                             .DebugDump ("Reply last cmd: " & LastCommand)
                     End Select
@@ -591,15 +587,21 @@ Function HandleNotify()
         Select Case msg
                    'NFY <int: 1> <int: state> <str: filename> <str: funcname> <int: linenumber> <int: pc> EOM
               Case STATUS_NOTIFICATION:
+                    status.lastLineNo = status.lineNumber
                     status.state = .ReadInt
                     status.fileName = .ReadString
                     status.curFunc = .ReadString
                     status.lineNumber = .ReadInt
                     status.pc = .ReadInt
                     status.callStackLoaded = False
-                    'Debug.Print "File: " & fname & " func: " & func & " Line: " & lno
+                    
+                    'for debugging
+                    'If debugAll Then doOutput "STATUS_NOTIFICATION Line: " & status.lineNumber & " LastLine: " & status.lastLineNo & " pc: " & status.pc & " File: " & status.fileName
+                    
+                    'next one for debugging the C code since UI will be frozen (vb IDE keeps window WM_PAINT working at breakpoints which is SOOOOO handy!)
+                    'MsgBox "STATUS_NOTIFICATION Line: " & status.lineNumber & "LastLine: " & status.lastLineNo & " pc: " & status.pc
+                    
                     'we cant sync the UI until we get this message to show our line number were on...
-                    varsLoaded = False
                     Form1.SyncUI
                     
                    'NFY <int: 2> <str: message> EOM - String output redirected from the print() function.
@@ -618,7 +620,8 @@ Function HandleNotify()
 End Function
 
 
-Function HandleGetVar()
+
+Function HandleGetVar() 'maybe better named read_tval
     
     Dim b As Byte
     Dim found As Long
@@ -628,20 +631,22 @@ Function HandleGetVar()
         'REP <int: 0/1, found> <tval: value> EOM
         found = RecvBuffer.ReadInt
         If found = 0 Then
-            VarReturn.varType = DUK_VAR_NOT_FOUND
+            tmpVar.varType = DUK_VAR_NOT_FOUND
             Exit Function
         End If
     ElseIf LastCommand = dc_Eval Then
         'REP <int: 0=success, 1=error> <tval: value> EOM
         'on error tval will contain the error message as string
         hadErr = RecvBuffer.ReadInt
+    ElseIf LastCommand = dc_GetLocals Then
+        'we dont have to do anything any prfixes already called..using as a read_tval call..
     Else
         dbg "in HandleGetVar for unknown reason?"
         Exit Function
     End If
     
         
-    With VarReturn
+    With tmpVar
         b = RecvBuffer.ReadByte
         Select Case b
                 
@@ -708,5 +713,61 @@ Function HandleCallStack()
     End With
     
 End Function
+
+
+'so the getlocals command has some limitations that make it not worth using for me:
+' 1) only works for local variables once in a function
+' 2) only works if the script explicitly prefixes the variable with var
+' 3) to support this..my HandleGetVar would have to fully support every tval type which it doesnt
+'     the above limitations and gui complexity/space a var list window would take up and how easy
+'     it is to mouse over a variable to get its value on demand or use the command window to get it
+'     I am just going to eliminate getlocals support because of these limitations..
+'Function HandleGetLocals()
+'    'note documentation is wrong second argument is actually a tval
+'    'REP [ <str: varName> <str: varValue> ]* EOM
+'
+'    Dim c As CVariable
+'
+'    With RecvBuffer
+'        Do While 1
+'            Set tmpVar = New CVariable
+'            Set c = New CVariable
+'            c.name = .ReadString
+'            HandleGetVar 'read tval into tmpVar
+'            c.Value = tmpVar.Value
+'            c.varType = tmpVar.varType
+'            tmpCol.Add c
+'            If .BytesLeft = 0 Then Exit Do
+'        Loop
+'    End With
+'
+'End Function
+'
+'Sub LoadVariables()
+'
+'    Dim li As ListItem
+'    Dim v As CVariable
+'    Dim vars As Collection
+'
+'    Form1.lvVars.ListItems.Clear
+'    Set vars = SyncGetLocals()
+'
+'    'columns: name,value (type not returned)
+'    For Each v In vars
+'        Set li = Form1.lvVars.ListItems.Add(, , v.name)
+'        li.SubItems(1) = v.Value
+'    Next
+'
+'End Sub
+'
+'Function SyncGetLocals() As Collection 'of cvariable
+'    Set tmpCol = New Collection
+'    LastCommand = dc_GetLocals
+'    replyReceived = False
+'    RespBuffer.ConstructMessage dc_GetLocals
+'    DukOp opd_dbgTriggerRead, ActiveDebuggerClass.Context
+'    Set SyncGetLocals = tmpCol
+'End Function
+
 
 

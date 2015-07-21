@@ -11,6 +11,10 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+'Author: David Zimmer <dzzie@yahoo.com>
+'Site: Sandsprite.com
+'License: http://opensource.org/licenses/MIT
+
 Option Explicit
 'http://www.scintilla.org/aprilw/SciLexer.bas
 

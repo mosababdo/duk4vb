@@ -1,5 +1,11 @@
+
+a = 1
+a++;
+
+var gs = "string1"
 print(1)
-a = b(0)
+var ga = b(0)
+ga = add_two(ga) //in a library file lib.js
 
 function b(c){
 	return c+=1
@@ -7,90 +13,16 @@ function b(c){
 
 function main(){
 	var a = 1
-    v1 = parseInt(0);
+    var v1 = parseInt(0);
 	v1 = b(v1)
 	v1 = b(v1)
-	c = false
-	d = null
-	e = [1,2,3,4]
+	var c = false
+	var d = null
+	//var e = [1,2,3,4]
+    var s = "this is my string!"
 	return v1;
 }
 
 main()
 print(1)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+rint(1)

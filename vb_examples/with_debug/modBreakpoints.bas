@@ -1,4 +1,8 @@
 Attribute VB_Name = "modBreakpoints"
+'Author: David Zimmer <dzzie@yahoo.com>
+'Site: Sandsprite.com
+'License: http://opensource.org/licenses/MIT
+
 Public breakpoints As New Collection
 
 Function isExecutableLine(sourceText As String) As Boolean
@@ -69,7 +73,7 @@ Public Function SetBreakpoint(ByVal fileName As String, lineNo As Long, ByVal so
     End With
     
     If running Then
-        If Not SyncronousSetBreakPoint(b) Then
+        If Not SyncSetBreakPoint(b) Then
             dbg "Failed to set breakpoint: " & b.Stats
             Exit Function
         Else
@@ -135,15 +139,15 @@ Sub InitDebuggerBpx()
         If Not b.isSet Then
             If Form1.curFile = b.fileName Then
                 If b.sourceText = Form1.scivb.GetLineText(b.lineNo) Then
-                     If Not SyncronousSetBreakPoint(b) Then
+                     If Not SyncSetBreakPoint(b) Then
                         dbg "InitDebuggerBpx: Failed to set bp" & b.Stats
                      End If
                      'Set tmpBreakPoint = b
-                     'DebuggerCmd dc_SetBreakpoint, b.fileName, b.lineNo
+                     'SendDebuggerCmd dc_SetBreakpoint, b.fileName, b.lineNo
                      If Len(b.errText) > 0 Then dbg b.Stats
                 End If
             Else
-                If Not SyncronousSetBreakPoint(b) Then
+                If Not SyncSetBreakPoint(b) Then
                     dbg "Failed to set breakpoint: " & b.Stats
                 End If
             End If

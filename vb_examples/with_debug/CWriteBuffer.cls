@@ -11,6 +11,10 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+'Author: David Zimmer <dzzie@yahoo.com>
+'Site: Sandsprite.com
+'License: http://opensource.org/licenses/MIT
+
 'when duktape sends us info it does so in multiple packets..here we buffer it until an end of message
 'marker is received (flagging on sz=1, val=0)
 '
@@ -33,7 +37,11 @@ Property Get BytesLeft() As Long
 End Property
 
 Property Get length() As Long
-    length = UBound(buf) + 1
+    If AryIsEmpty(buf) Then
+        length = -1
+    Else
+        length = UBound(buf) + 1
+    End If
 End Property
 
 Property Get Position() As Long
@@ -60,7 +68,9 @@ Function ReadString(Optional withPrefix As Boolean = True) As String
     Dim r As String, b As Byte, sz As Long, m() As Byte
     If withPrefix Then
         b = ReadByte
-        If b <> &H11 Then Debug.Print "Error in ReadString unknown prefix!"
+        If b <> &H11 Then
+            Debug.Print "Error in ReadString unknown prefix!"
+        End If
     End If
     sz = Me.ReadInt(False)
     For i = 1 To sz
@@ -84,10 +94,11 @@ Sub WriteBuf(b() As Byte)
     
     If UBound(b) = 0 And b(0) = 0 Then
         mPosition = 0
-        Call DebuggerMessageReceived
+        Call On_FullMessageReceived
         firstMessage = False
         replyReceived = True
         Erase buf
+        mPosition = 0
         Exit Sub
     End If
     
@@ -103,6 +114,7 @@ End Sub
 Function DebugDump(Optional prefix As String)
     dbg "MessageReceived: " & prefix
     dbg bHexDump(buf)
+    'Debug.Print bHexDump(buf)
 End Function
 
 Property Get Hint()

@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-Object = "{FBE17B58-A1F0-4B91-BDBD-C9AB263AC8B0}#78.0#0"; "scivb_lite.ocx"
+Object = "{FBE17B58-A1F0-4B91-BDBD-C9AB263AC8B0}#78.1#0"; "scivb_lite.ocx"
 Begin VB.Form Form1 
    Caption         =   "DukTape JS Debugger Example"
    ClientHeight    =   9795
@@ -14,7 +14,7 @@ Begin VB.Form Form1
    Begin VB.Frame fraCmd 
       Height          =   600
       Left            =   225
-      TabIndex        =   8
+      TabIndex        =   7
       Top             =   8685
       Width           =   13155
       Begin VB.TextBox txtCmd 
@@ -29,7 +29,7 @@ Begin VB.Form Form1
          EndProperty
          Height          =   285
          Left            =   630
-         TabIndex        =   10
+         TabIndex        =   9
          Top             =   180
          Width           =   12255
       End
@@ -46,7 +46,7 @@ Begin VB.Form Form1
          EndProperty
          Height          =   240
          Left            =   90
-         TabIndex        =   9
+         TabIndex        =   8
          Top             =   225
          Width           =   510
       End
@@ -54,7 +54,7 @@ Begin VB.Form Form1
    Begin MSComctlLib.ListView lvLog 
       Height          =   1050
       Left            =   1575
-      TabIndex        =   7
+      TabIndex        =   6
       Top             =   6795
       Width           =   1860
       _ExtentX        =   3281
@@ -89,62 +89,14 @@ Begin VB.Form Form1
       Left            =   5670
       MultiLine       =   -1  'True
       ScrollBars      =   2  'Vertical
-      TabIndex        =   6
+      TabIndex        =   5
       Top             =   6705
       Width           =   3165
-   End
-   Begin MSComctlLib.ListView lvVars 
-      Height          =   1050
-      Left            =   10890
-      TabIndex        =   4
-      Top             =   6840
-      Width           =   1860
-      _ExtentX        =   3281
-      _ExtentY        =   1852
-      View            =   3
-      LabelEdit       =   1
-      LabelWrap       =   -1  'True
-      HideSelection   =   -1  'True
-      FullRowSelect   =   -1  'True
-      _Version        =   393217
-      ForeColor       =   -2147483640
-      BackColor       =   -2147483643
-      BorderStyle     =   1
-      Appearance      =   1
-      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-         Name            =   "Courier"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   400
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      NumItems        =   4
-      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         Text            =   "scope"
-         Object.Width           =   2540
-      EndProperty
-      BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         SubItemIndex    =   1
-         Text            =   "name"
-         Object.Width           =   2540
-      EndProperty
-      BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         SubItemIndex    =   2
-         Text            =   "type"
-         Object.Width           =   2540
-      EndProperty
-      BeginProperty ColumnHeader(4) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         SubItemIndex    =   3
-         Text            =   "value"
-         Object.Width           =   2540
-      EndProperty
    End
    Begin MSComctlLib.ListView lvCallStack 
       Height          =   1185
       Left            =   8955
-      TabIndex        =   5
+      TabIndex        =   4
       Top             =   6795
       Width           =   1815
       _ExtentX        =   3201
@@ -387,20 +339,16 @@ Begin VB.Form Form1
       Placement       =   1
       _Version        =   393216
       BeginProperty Tabs {1EFB6598-857C-11D1-B16A-00C0F0283628} 
-         NumTabs         =   4
+         NumTabs         =   3
          BeginProperty Tab1 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
             Caption         =   "Output"
             ImageVarType    =   2
          EndProperty
          BeginProperty Tab2 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
-            Caption         =   "Variables"
-            ImageVarType    =   2
-         EndProperty
-         BeginProperty Tab3 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
             Caption         =   "CallStack"
             ImageVarType    =   2
          EndProperty
-         BeginProperty Tab4 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
+         BeginProperty Tab3 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
             Caption         =   "Log"
             ImageVarType    =   2
          EndProperty
@@ -429,6 +377,10 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+'Author: David Zimmer <dzzie@yahoo.com>
+'Site: Sandsprite.com
+'License: http://opensource.org/licenses/MIT
+
 Dim duk As CDukTape
 Dim WithEvents sciext As CSciExtender
 Attribute sciext.VB_VarHelpID = -1
@@ -439,12 +391,20 @@ Const SC_MARK_BACKGROUND = 22
 'http://www.scintilla.org/aprilw/SciLexer.bas
  
 Public lastEIP As Long
-Private forceStop As Boolean
 Public curFile As String
+Private userStop As Boolean
 
-Public Sub SyncUI()
+Public Sub SyncUI(Optional fromOnInitilize As Boolean = False)
+    
+    'do not issue any debugger commands from within here..
+    'have to wait to while in the read blocking routine or UI events after that..
     
     Dim curline As Long
+    
+    If Not fromOnInitilize Then
+        If Len(status.fileName) = 0 Or status.fileName <> curFile Then Exit Sub
+    End If
+    
     ClearLastLineMarkers
     
     curline = status.lineNumber - 1
@@ -454,6 +414,8 @@ Public Sub SyncUI()
     
     scivb.GotoLine curline
     scivb.SetFocus
+    Me.Refresh
+    DoEvents
 
 End Sub
  
@@ -476,6 +438,9 @@ End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
     If Not duk Is Nothing Then
+        duk.Timeout = 1
+        forceShutDown = True
+        SendDebuggerCmd dc_stepInto
         If duk.isDebugging Then duk.DebugAttach False
         Set duk = Nothing
     End If
@@ -489,19 +454,19 @@ End Sub
 Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
 
     Select Case Button.key
-        Case "Run":               If running Then DebuggerCmd dc_Resume Else ExecuteScript
-        Case "Start Debugger":    If running Then DebuggerCmd dc_Resume Else ExecuteScript True
-        Case "Step In":           DebuggerCmd dc_stepInto
-        Case "Step Over":         DebuggerCmd dc_StepOver
-        Case "Step Out":          DebuggerCmd dc_stepout
+        Case "Run":               If running Then SendDebuggerCmd dc_Resume Else ExecuteScript
+        Case "Start Debugger":    If running Then SendDebuggerCmd dc_Resume Else ExecuteScript True
+        Case "Step In":           SendDebuggerCmd dc_stepInto
+        Case "Step Over":         SendDebuggerCmd dc_StepOver
+        Case "Step Out":          SendDebuggerCmd dc_stepout
 '        Case "Run to Cursor":     RunToLine scivb.CurrentLine + 1
 '        Case "Toggle Breakpoint": ToggleBreakPoint
 '        Case "Clear All Breakpoints": RemoveAllBreakpoints
-        Case "Break":                 DebuggerCmd dc_break
+        Case "Break":                 SendDebuggerCmd dc_break
         Case "Stop":
+                        userStop = True
                         duk.Timeout = 1
-                        forceStop = True
-                        DebuggerCmd dc_stepInto
+                        SendDebuggerCmd dc_stepInto
                         
         
     End Select
@@ -518,11 +483,15 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     txtOut.Text = Empty
     lvLog.ListItems.Clear
     lvCallStack.ListItems.Clear
-    lvVars.ListItems.Clear
     
-    forceStop = False
+    userStop = False
     Set duk = New CDukTape
     Set RecvBuffer = New CWriteBuffer 'this resets our flags like firstMessage and bpInitilized...
+    
+    If Not duk.AddFile(App.path & "\lib.js") Then
+        doOutput "lib.js: " & duk.LastError
+        Exit Sub
+    End If
     
     If withDebugger Then
         duk.Timeout = 0
@@ -538,7 +507,7 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
          If withDebugger Then duk.DebugAttach False
         
          If duk.hadError Then
-             If Not forceStop Then
+             If Not userStop Then
                 doOutput duk.LastError
              End If
          End If
@@ -574,7 +543,6 @@ End Sub
 Private Sub Form_Load()
 
     SetToolBarIcons
-    lvVars.Visible = False
     lvCallStack.Visible = False
     lvLog.Visible = False
     
@@ -603,7 +571,7 @@ Private Sub Form_Load()
     scivb.LoadFile App.path & "\test.js"
     curFile = App.path & "\test.js"
     
-    ts.Tabs(4).Selected = True
+    'ts.Tabs(4).Selected = True
     
     
 End Sub
@@ -616,17 +584,14 @@ Private Sub Form_Resize()
         txtOut.Width = .Width - 200
         ts.Top = Me.Height - ts.Height - 800
         .Height = Me.Height - .Top - ts.Height - 1000
-        With lvVars
+        With lvLog
             .Move ts.Left + 100, ts.Top + 150, ts.Width - 200, ts.Height - 500
             lvCallStack.Move .Left, .Top, .Width, .Height
-            lvLog.Move .Left, .Top, .Width, .Height
             txtOut.Move .Left, .Top, .Width, .Height - fraCmd.Height - 100
             fraCmd.Move .Left, txtOut.Top + txtOut.Height + 20, .Width
             txtCmd.Width = fraCmd.Width - txtCmd.Left - 100
-            
         End With
         SetLastColumnWidth lvCallStack
-        SetLastColumnWidth lvVars
         SetLastColumnWidth lvLog
     End With
 End Sub
@@ -639,9 +604,8 @@ Private Sub ts_Click()
     Dim i As Long
     i = ts.SelectedItem.index
     txtOut.Visible = IIf(i = 1, True, False)
-    lvVars.Visible = IIf(i = 2, True, False)
-    lvCallStack.Visible = IIf(i = 3, True, False)
-    lvLog.Visible = IIf(i = 4, True, False)
+    lvCallStack.Visible = IIf(i = 2, True, False)
+    lvLog.Visible = IIf(i = 3, True, False)
     fraCmd.Visible = txtOut.Visible
 End Sub
 
@@ -672,7 +636,7 @@ Private Sub sciext_MouseDwellStart(lline As Long, Position As Long)
     If running Then
          curWord = sciext.WordUnderMouse(Position)
          If Len(curWord) = 0 Then Exit Sub
-         Set cv = SyncronousGetVariableValue(curWord)
+         Set cv = SyncGetVarValue(curWord)
          If cv.varType <> DUK_VAR_NOT_FOUND Then
             scivb.SelStart = Position 'so call tip shows right under it..
             scivb.SelLength = 0
@@ -700,6 +664,11 @@ Private Sub txtCmd_KeyPress(KeyAscii As Integer)
     
     If Not running Then Exit Sub
     If Len(txtCmd.Text) = 0 Then Exit Sub
+    
+    If txtCmd.Text = "cls" Then
+        txtOut.Text = Empty
+        Exit Sub
+    End If
     
     Set v = SyncEval(txtCmd.Text)
     If v.varType = "undefined" Then Exit Sub

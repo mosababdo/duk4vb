@@ -11,6 +11,20 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+'Author: David Zimmer <dzzie@yahoo.com>
+'Site: Sandsprite.com
+'License: http://opensource.org/licenses/MIT
+
+'This class handles responses back to the duktape debugger.
+'it includes primitives to build up the binary protocol response
+'it is a module level class in mDuk.bas since it has to work across call backs
+'once an entire packet is built, it holds the whole thing in an internal buffer
+'it allows the duktape engine to sip off of its data a few bytes at a time
+'since this is how the engine is implemented. In order to achieve this
+'(and keep my sanity) it implements a file pointer like mechanism where
+'an internal pointer keeps incrementing as data is accessed so the next
+'sip is always the next available data. There is no error handling because I
+'want to know immediatly if there is a flaw in the logic.
 
 Private buf() As Byte
 Public Position As Long
@@ -101,8 +115,6 @@ Function ConstructMessage(d As Debug_Commands, Optional arg1, Optional arg2) As 
     
     Clear
     Dim b As Byte
-    
-    isNormalCall = True
     
     Select Case d
         Case dc_stepInto: b = STEP_INTO_REQ

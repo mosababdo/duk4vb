@@ -1511,7 +1511,7 @@ DUK_LOCAL void duk__debug_handle_get_bytecode(duk_hthread *thr, duk_heap *heap) 
 	duk_debug_write_eom(thr);
 }
 
-DUK_INTERNAL /*DUK_LOCAL*/ void duk__debug_process_message(duk_hthread *thr) {
+DUK_INTERNAL /*DUK_LOCAL -dz*/ void duk__debug_process_message(duk_hthread *thr) {
 	duk_context *ctx = (duk_context *) thr;
 	duk_heap *heap;
 	duk_uint8_t x;
@@ -1667,7 +1667,7 @@ DUK_INTERNAL duk_bool_t duk_debug_process_messages(duk_hthread *thr, duk_bool_t 
 			/* Executed something that may have affected status,
 			 * resend.
 			 */
-			duk_debug_send_status(thr);
+			//duk_debug_send_status(thr); //disabled to stop double status message on step into -dz 7.20.15
 			thr->heap->dbg_state_dirty = 0;
 		}
 		retval = 1;  /* processed one or more messages */
