@@ -62,7 +62,10 @@ Public Function SetBreakpoint(ByVal fileName As String, lineNo As Long, ByVal so
         Exit Function
     End If
     
-    If Not isExecutableLine(sourceText) Then Exit Function 'just covers some basics for convience..
+    If Not isExecutableLine(sourceText) Then 'just covers some basics for convience..
+        doOutput "Can not set breakpoint here, not an executable line"
+        Exit Function
+    End If
     
     Set b = New CBreakpoint
     
@@ -142,8 +145,6 @@ Sub InitDebuggerBpx()
                      If Not SyncSetBreakPoint(b) Then
                         dbg "InitDebuggerBpx: Failed to set bp" & b.Stats
                      End If
-                     'Set tmpBreakPoint = b
-                     'SendDebuggerCmd dc_SetBreakpoint, b.fileName, b.lineNo
                      If Len(b.errText) > 0 Then dbg b.Stats
                 End If
             Else

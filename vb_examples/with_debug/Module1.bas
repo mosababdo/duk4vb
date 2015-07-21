@@ -55,12 +55,9 @@ End Enum
 Enum Debug_Commands
     dc_NotSet = 0
     dc_break = 2
-    dc_stepInto = 3
-    dc_stepout = 4
+    dc_StepInto = 3
+    dc_StepOut = 4
     dc_StepOver = 5
-    'dc_RunToLine = 6
-    'dc_Quit = 7
-    'dc_Manual = 8
     dc_Resume = 9
     dc_GetLocals = 10
     dc_GetVar = 11
@@ -133,6 +130,7 @@ Public Type Stats
     pc As Long
     callStackLoaded As Boolean
     lastLineNo As Long
+    stepToLine As Long
 End Type
 
 Public status As Stats
@@ -180,6 +178,7 @@ End Function
 'debugger is just starting up first message already received..
 Sub On_DebuggerInilitize()
     status.lineNumber = DukOp(opd_dbgCurLine, ActiveDebuggerClass.Context)
+    status.stepToLine = -1
     Form1.SyncUI True
     InitDebuggerBpx
 End Sub
@@ -435,16 +434,26 @@ topLine:
                 If Len(status.fileName) > 0 And status.fileName <> Form1.curFile Then
                     'my personal preference is to only debug current file user sees..
                     'for me any other js is lib files I add as glue and dont want to bother them with..
-                    SendDebuggerCmd dc_stepout
+                    SendDebuggerCmd dc_StepOut
                     GoTo topLine
                 End If
                 
-                If status.lastLineNo = status.lineNumber And LastCommand = dc_stepout Then
+                If status.lastLineNo = status.lineNumber And LastCommand = dc_StepOut Then
                     'must be above case + var assignment of return value..
                     SendDebuggerCmd dc_StepOver
                     GoTo topLine
                 End If
-                
+                                
+                If status.stepToLine <> -1 Then
+                    'this is the run to cursor implementation
+                    If status.lineNumber = status.stepToLine Then
+                        status.stepToLine = -1
+                    Else
+                        SendDebuggerCmd dc_StepInto
+                        GoTo topLine
+                    End If
+                End If
+
                 LoadCallStack
                 'LoadVariables disabled see comments at bottom of module.
             End If

@@ -15,4 +15,4 @@
 *.ilk
 *.lib
 *.htm
-/backups/*
+/Debug/*

@@ -399,7 +399,7 @@ Public Sub SyncUI(Optional fromOnInitilize As Boolean = False)
     'do not issue any debugger commands from within here..
     'have to wait to while in the read blocking routine or UI events after that..
     
-    Dim curline As Long
+    Dim curLine As Long
     
     If Not fromOnInitilize Then
         If Len(status.fileName) = 0 Or status.fileName <> curFile Then Exit Sub
@@ -407,12 +407,12 @@ Public Sub SyncUI(Optional fromOnInitilize As Boolean = False)
     
     ClearLastLineMarkers
     
-    curline = status.lineNumber - 1
-    scivb.SetMarker curline, 1
-    scivb.SetMarker curline, 3
-    lastEIP = curline
+    curLine = status.lineNumber - 1
+    scivb.SetMarker curLine, 1
+    scivb.SetMarker curLine, 3
+    lastEIP = curLine
     
-    scivb.GotoLine curline
+    scivb.GotoLine curLine
     scivb.SetFocus
     Me.Refresh
     DoEvents
@@ -452,21 +452,36 @@ Private Sub lvLog_DblClick()
 End Sub
 
 Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
-
-    Select Case Button.key
+    Dim curLine As Long
+    Dim txt As String
+    
+    Select Case Button.Key
         Case "Run":               If running Then SendDebuggerCmd dc_Resume Else ExecuteScript
         Case "Start Debugger":    If running Then SendDebuggerCmd dc_Resume Else ExecuteScript True
         Case "Step In":           SendDebuggerCmd dc_stepInto
         Case "Step Over":         SendDebuggerCmd dc_StepOver
         Case "Step Out":          SendDebuggerCmd dc_stepout
-'        Case "Run to Cursor":     RunToLine scivb.CurrentLine + 1
-'        Case "Toggle Breakpoint": ToggleBreakPoint
-'        Case "Clear All Breakpoints": RemoveAllBreakpoints
+        Case "Clear All Breakpoints": RemoveAllBreakpoints
         Case "Break":                 SendDebuggerCmd dc_break
+
+        Case "Run to Cursor":
+                                  curLine = scivb.CurrentLine
+                                  txt = scivb.GetLineText(curLine)
+                                  If Not isExecutableLine(txt) Then
+                                        doOutput "Can not run to cursor: not executable line"
+                                  Else
+                                        status.stepToLine = curLine + 1
+                                        SendDebuggerCmd dc_stepInto
+                                  End If
+                                  
+        Case "Toggle Breakpoint":
+                                  curLine = scivb.CurrentLine
+                                  ToggleBreakPoint curFile, curLine, scivb.GetLineText(curLine)
+                                    
         Case "Stop":
-                        userStop = True
-                        duk.Timeout = 1
-                        SendDebuggerCmd dc_stepInto
+                                  userStop = True
+                                  duk.Timeout = 1
+                                  SendDebuggerCmd dc_stepInto
                         
         
     End Select
@@ -529,10 +544,10 @@ Private Sub SetToolBarIcons()
     Set tbarDebug.ImageList = IIf(running, ilToolbar, ilToolbars_Disabled)
     
     For Each b In tbarDebug.Buttons
-        If Len(b.key) > 0 Then
-            b.Image = b.key
-            b.ToolTipText = b.key
-            If b.key <> "Run" And b.key <> "Start Debugger" Then
+        If Len(b.Key) > 0 Then
+            b.Image = b.Key
+            b.ToolTipText = b.Key
+            If b.Key <> "Run" And b.Key <> "Start Debugger" Then
                 b.Enabled = running
             End If
         End If
@@ -570,10 +585,7 @@ Private Sub Form_Load()
     'scivb.Text = Replace(Replace("function b(c){\n\treturn c++\n}\na=0;\na = b(a)\na=b(a)", "\n", vbCrLf), "\t", vbTab)
     scivb.LoadFile App.path & "\test.js"
     curFile = App.path & "\test.js"
-    
-    'ts.Tabs(4).Selected = True
-    
-    
+ 
 End Sub
 
 Private Sub Form_Resize()
@@ -662,13 +674,13 @@ Private Sub txtCmd_KeyPress(KeyAscii As Integer)
     If KeyAscii <> 13 Then Exit Sub 'wait for user to press return key
     KeyAscii = 0 'eat the keypress to prevent vb from doing a msgbeep
     
-    If Not running Then Exit Sub
-    If Len(txtCmd.Text) = 0 Then Exit Sub
-    
     If txtCmd.Text = "cls" Then
         txtOut.Text = Empty
         Exit Sub
     End If
+    
+    If Not running Then Exit Sub
+    If Len(txtCmd.Text) = 0 Then Exit Sub
     
     Set v = SyncEval(txtCmd.Text)
     If v.varType = "undefined" Then Exit Sub

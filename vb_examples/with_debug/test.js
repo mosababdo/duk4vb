@@ -5,7 +5,7 @@ a++;
 var gs = "string1"
 print(1)
 var ga = b(0)
-ga = add_two(ga) //in a library file lib.js
+ga = add_two(ga) //in a library file lib.js you can not step into it...
 
 function b(c){
 	return c+=1
@@ -18,11 +18,10 @@ function main(){
 	v1 = b(v1)
 	var c = false
 	var d = null
-	//var e = [1,2,3,4]
+	var e = [1,2,3,4]
     var s = "this is my string!"
 	return v1;
 }
 
 main()
 print(1)
-rint(1)
