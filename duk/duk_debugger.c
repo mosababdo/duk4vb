@@ -1667,7 +1667,7 @@ DUK_INTERNAL duk_bool_t duk_debug_process_messages(duk_hthread *thr, duk_bool_t 
 			/* Executed something that may have affected status,
 			 * resend.
 			 */
-			//duk_debug_send_status(thr); //disabled to stop double status message on step into -dz 7.20.15
+			duk_debug_send_status(thr);
 			thr->heap->dbg_state_dirty = 0;
 		}
 		retval = 1;  /* processed one or more messages */

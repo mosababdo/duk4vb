@@ -15,8 +15,6 @@ api tidbits:
 modifications to duktape from origial (base 1.2.1)
 --------------------------------------------------------------
 	duk__debug_process_message       DUK_INTERNAL /*DUK_LOCAL* / void    - changed access so can call from main.c
-	duk_debug_process_messages       //duk_debug_send_status(thr);       - disabled to stop double status message on step into -dz 7.20.15
-	duk__interrupt_handle_debugger   //send_status = 1;                  - disabled to stop double status message on step over -dz 7.20.15
 	duk_debug_write_strbuf           #ifdef DUK_DBG_USE_PACKED_PROTOCOL  - to simplify protocol 
 	duk_debug_write_int              #ifdef DUK_DBG_USE_PACKED_PROTOCOL  - to simplify protocol
 

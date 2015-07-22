@@ -1620,7 +1620,7 @@ DUK_LOCAL void duk__interrupt_handle_debugger(duk_hthread *thr, duk_bool_t *out_
 			 */
 
 			thr->heap->dbg_last_time = now;
-			//send_status = 1; //disabled to stop double status message on step over -dz 7.20.15
+			send_status = 1;
 			process_messages = 1;
 		}
 	}
