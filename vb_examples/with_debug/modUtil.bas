@@ -192,6 +192,18 @@ Function AryIsEmpty(ary) As Boolean
 oops: AryIsEmpty = True
 End Function
 
+Function AnyOfTheseInstr(sIn, sCmp) As Boolean
+    Dim tmp() As String, i As Integer
+    tmp() = Split(sCmp, ",")
+    For i = 0 To UBound(tmp)
+        tmp(i) = Trim(tmp(i))
+        If Len(tmp(i)) > 0 And InStr(1, sIn, tmp(i), vbTextCompare) > 0 Then
+            AnyOfTheseInstr = True
+            Exit Function
+        End If
+    Next
+End Function
+
 Function KeyExistsInCollection(c As Collection, val As String) As Boolean
     On Error Resume Next
     Dim t

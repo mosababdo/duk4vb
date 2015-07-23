@@ -4,24 +4,34 @@ Attribute VB_Name = "modBreakpoints"
 'License: http://opensource.org/licenses/MIT
 
 Public breakpoints As New Collection
-
+ 
+'i am not going to bother with these tests anymore default behavior is acceptable..
 Function isExecutableLine(sourceText As String) As Boolean
     Dim tmp As String
     On Error Resume Next
-
-    tmp = LCase(sourceText)
-    tmp = Trim(Replace(tmp, vbTab, Empty))
-    tmp = Replace(tmp, vbCr, Empty)
-    tmp = Replace(tmp, vbLf, Empty)
-    
-    If Len(tmp) = 0 Then GoTo fail
-    If tmp = "}" Then GoTo fail  'is end function/end if
-    If Left(tmp, 1) = "/" Then GoTo fail 'is comment
-    If Left(tmp, 8) = "function" Then GoTo fail  'functio/sub start lines are hit more than you expect, once as it skips over it, so we block it as bp cause confusing..
     
     isExecutableLine = True
-Exit Function
-fail: isExecutableLine = False
+    Exit Function
+    
+'    tmp = LCase(sourceText)
+'    tmp = Trim(Replace(tmp, vbTab, Empty))
+'    tmp = Replace(tmp, vbCr, Empty)
+'    tmp = Replace(tmp, vbLf, Empty)
+'
+'    'bp on an empty line will stop on next line
+'    'bp on a function (){ start will break on next line
+'    'bp on a comment or multiline comment will break at line
+'    'bp on a function close brace will set, but never hit. <--
+'    'bp on close brace of a if state breaks on next line
+'    'bp on a single line function with multiple statements will hit once (step into only steps once and all bypass)
+'
+'    If Len(tmp) = 0 Then GoTo fail
+'    If tmp = "}" Then GoTo fail  'is end function/end if
+'    If Left(tmp, 1) = "/" Then GoTo fail 'is comment
+'
+'    isExecutableLine = True
+'Exit Function
+'fail: isExecutableLine = False
 End Function
 
 Public Function BreakPointExists(fileName As String, lineNo As Long, Optional b As CBreakpoint, Optional colIndex As Long) As Boolean
@@ -62,10 +72,10 @@ Public Function SetBreakpoint(ByVal fileName As String, lineNo As Long, ByVal so
         Exit Function
     End If
     
-    If Not isExecutableLine(sourceText) Then 'just covers some basics for convience..
-        doOutput "Can not set breakpoint here, not an executable line"
-        Exit Function
-    End If
+    'If Not isExecutableLine(sourceText) Then 'just covers some basics for convience..
+    '    doOutput "Can not set breakpoint here, not an executable line"
+    '    Exit Function
+    'End If
     
     Set b = New CBreakpoint
     

@@ -45,7 +45,6 @@ enum opDuk{
 	opd_ScriptTimeout=8,
 	opd_debugAttach=9,
 	opd_dbgCoOp = 10,
-	opd_dbgCurLine = 11,
 	opd_dbgTriggerRead = 12
 };
 
@@ -88,7 +87,7 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
   		    else duk_debugger_detach(ctx);
 			return 0;
 
-		case opd_dbgCurLine: return duk_debug_curr_line(ctx); 
+		/*case opd_dbgCurLine: return duk_debug_curr_line(ctx); */
 		case opd_dbgTriggerRead: duk__debug_process_message(ctx); return 0;
 	}
 
@@ -123,7 +122,7 @@ int ScriptTimeoutCheck(const void*udata)
 	if(inCreate) return 0; //fatal exception if this returns 1 during heap creation..
 
 	if(vbStdOut){
-		if(tick - lastRefresh > 500){
+		if(tick - lastRefresh > 250){
 			vbStdOut(cb_Refresh,0);
 			lastRefresh = tick;
 		}

@@ -11,6 +11,12 @@ Begin VB.Form Form1
    ScaleHeight     =   9795
    ScaleWidth      =   13845
    StartUpPosition =   2  'CenterScreen
+   Begin VB.Timer tmrSetStatus 
+      Enabled         =   0   'False
+      Interval        =   700
+      Left            =   9900
+      Top             =   180
+   End
    Begin VB.Frame fraCmd 
       Height          =   600
       Left            =   225
@@ -164,34 +170,34 @@ Begin VB.Form Form1
          EndProperty
          BeginProperty ListImage3 {2C247F27-8591-11D1-B16A-00C0F0283628} 
             Picture         =   "Form1.frx":0218
-            Key             =   "Clear All Breakpoints"
+            Key             =   "Run to Cursor"
          EndProperty
          BeginProperty ListImage4 {2C247F27-8591-11D1-B16A-00C0F0283628} 
             Picture         =   "Form1.frx":0324
-            Key             =   "Run to Cursor"
+            Key             =   "Clear All Breakpoints"
          EndProperty
          BeginProperty ListImage5 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0430
+            Picture         =   "Form1.frx":042E
             Key             =   "Step Over"
          EndProperty
          BeginProperty ListImage6 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":053C
+            Picture         =   "Form1.frx":053A
             Key             =   "Step Out"
          EndProperty
          BeginProperty ListImage7 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0648
+            Picture         =   "Form1.frx":0646
             Key             =   "Step In"
          EndProperty
          BeginProperty ListImage8 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0754
+            Picture         =   "Form1.frx":0752
             Key             =   "Stop"
          EndProperty
          BeginProperty ListImage9 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0860
+            Picture         =   "Form1.frx":085E
             Key             =   "Start Debugger"
          EndProperty
          BeginProperty ListImage10 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":096A
+            Picture         =   "Form1.frx":0968
             Key             =   "Toggle Breakpoint"
          EndProperty
       EndProperty
@@ -209,47 +215,47 @@ Begin VB.Form Form1
       BeginProperty Images {2C247F25-8591-11D1-B16A-00C0F0283628} 
          NumListImages   =   11
          BeginProperty ListImage1 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0A76
+            Picture         =   "Form1.frx":0A72
             Key             =   "Run"
          EndProperty
          BeginProperty ListImage2 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0B82
+            Picture         =   "Form1.frx":0B7E
             Key             =   "Start Debugger"
          EndProperty
          BeginProperty ListImage3 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0C8C
+            Picture         =   "Form1.frx":0C88
             Key             =   "Break"
          EndProperty
          BeginProperty ListImage4 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0D96
+            Picture         =   "Form1.frx":0D92
             Key             =   "Stop"
          EndProperty
          BeginProperty ListImage5 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0EA0
+            Picture         =   "Form1.frx":0E9C
             Key             =   "Toggle Breakpoint"
          EndProperty
          BeginProperty ListImage6 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0FAA
+            Picture         =   "Form1.frx":0FA6
             Key             =   "Clear All Breakpoints"
          EndProperty
          BeginProperty ListImage7 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":10B4
+            Picture         =   "Form1.frx":10B0
             Key             =   "Step In"
          EndProperty
          BeginProperty ListImage8 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":11BE
+            Picture         =   "Form1.frx":11BA
             Key             =   "Step Over"
          EndProperty
          BeginProperty ListImage9 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":12C8
+            Picture         =   "Form1.frx":12C4
             Key             =   "Step Out"
          EndProperty
          BeginProperty ListImage10 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":13D2
+            Picture         =   "Form1.frx":13CE
             Key             =   "Run to Cursor"
          EndProperty
          BeginProperty ListImage11 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":14DC
+            Picture         =   "Form1.frx":14D8
             Key             =   ""
          EndProperty
       EndProperty
@@ -394,25 +400,20 @@ Public lastEIP As Long
 Public curFile As String
 Private userStop As Boolean
 
-Public Sub SyncUI(Optional fromOnInitilize As Boolean = False)
+Public Sub SyncUI()
+       
+    Dim curline As Long
     
-    'do not issue any debugger commands from within here..
-    'have to wait to while in the read blocking routine or UI events after that..
-    
-    Dim curLine As Long
-    
-    If Not fromOnInitilize Then
-        If Len(status.fileName) = 0 Or status.fileName <> curFile Then Exit Sub
-    End If
+    If Len(status.fileName) = 0 Or status.fileName <> curFile Then Exit Sub
     
     ClearLastLineMarkers
     
-    curLine = status.lineNumber - 1
-    scivb.SetMarker curLine, 1
-    scivb.SetMarker curLine, 3
-    lastEIP = curLine
+    curline = status.lineNumber - 1
+    scivb.SetMarker curline, 1
+    scivb.SetMarker curline, 3
+    lastEIP = curline
     
-    scivb.GotoLine curLine
+    scivb.GotoLine curline
     scivb.SetFocus
     Me.Refresh
     DoEvents
@@ -421,7 +422,7 @@ End Sub
  
 
 
-Private Sub ClearLastLineMarkers()
+Public Sub ClearLastLineMarkers()
     Dim startPos As Long, endPos As Long
 
     scivb.DeleteMarker lastEIP, 1 'remove the yellow arrow
@@ -440,7 +441,7 @@ Private Sub Form_Unload(Cancel As Integer)
     If Not duk Is Nothing Then
         duk.Timeout = 1
         forceShutDown = True
-        SendDebuggerCmd dc_stepInto
+        SendDebuggerCmd dc_stepinto
         If duk.isDebugging Then duk.DebugAttach False
         Set duk = Nothing
     End If
@@ -451,37 +452,54 @@ Private Sub lvLog_DblClick()
     MsgBox lvLog.SelectedItem.Tag, vbInformation
 End Sub
 
+Private Sub scivb_KeyDown(KeyCode As Long, Shift As Long)
+
+    Dim curline As Long
+    
+    'Debug.Print KeyCode & " " & Shift
+    Select Case KeyCode
+        Case vbKeyF2: curline = scivb.CurrentLine
+                      ToggleBreakPoint curFile, curline, scivb.GetLineText(curline)
+                      
+        Case vbKeyF5: If running Then SendDebuggerCmd dc_Resume Else ExecuteScript True
+        Case vbKeyF7: SendDebuggerCmd dc_stepinto
+        Case vbKeyF8: SendDebuggerCmd dc_StepOver
+        Case vbKeyF9: SendDebuggerCmd dc_StepOut
+    End Select
+
+End Sub
+
 Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
-    Dim curLine As Long
+    Dim curline As Long
     Dim txt As String
     
     Select Case Button.Key
         Case "Run":               If running Then SendDebuggerCmd dc_Resume Else ExecuteScript
         Case "Start Debugger":    If running Then SendDebuggerCmd dc_Resume Else ExecuteScript True
-        Case "Step In":           SendDebuggerCmd dc_stepInto
+        Case "Step In":           SendDebuggerCmd dc_stepinto
         Case "Step Over":         SendDebuggerCmd dc_StepOver
-        Case "Step Out":          SendDebuggerCmd dc_stepout
+        Case "Step Out":          SendDebuggerCmd dc_StepOut
         Case "Clear All Breakpoints": RemoveAllBreakpoints
-        Case "Break":                 SendDebuggerCmd dc_break
+        Case "Break":                 SyncPauseExecution
 
         Case "Run to Cursor":
-                                  curLine = scivb.CurrentLine
-                                  txt = scivb.GetLineText(curLine)
+                                  curline = scivb.CurrentLine
+                                  txt = scivb.GetLineText(curline)
                                   If Not isExecutableLine(txt) Then
                                         doOutput "Can not run to cursor: not executable line"
                                   Else
-                                        status.stepToLine = curLine + 1
-                                        SendDebuggerCmd dc_stepInto
+                                        status.stepToLine = curline + 1
+                                        SendDebuggerCmd dc_stepinto
                                   End If
                                   
         Case "Toggle Breakpoint":
-                                  curLine = scivb.CurrentLine
-                                  ToggleBreakPoint curFile, curLine, scivb.GetLineText(curLine)
+                                  curline = scivb.CurrentLine
+                                  ToggleBreakPoint curFile, curline, scivb.GetLineText(curline)
                                     
         Case "Stop":
                                   userStop = True
                                   duk.Timeout = 1
-                                  SendDebuggerCmd dc_stepInto
+                                  SendDebuggerCmd dc_stepinto
                         
         
     End Select
@@ -547,7 +565,7 @@ Private Sub SetToolBarIcons()
         If Len(b.Key) > 0 Then
             b.Image = b.Key
             b.ToolTipText = b.Key
-            If b.Key <> "Run" And b.Key <> "Start Debugger" Then
+            If b.Key <> "Run" And b.Key <> "Start Debugger" And InStr(b.Key, "Breakpoint") < 1 Then
                 b.Enabled = running
             End If
         End If
@@ -610,6 +628,14 @@ End Sub
 
 Private Sub SetLastColumnWidth(lv As ListView)
     lv.ColumnHeaders(lv.ColumnHeaders.count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).Left - 100
+End Sub
+
+Private Sub tmrSetStatus_Timer()
+    'this is just to eliminate flicker when single stepping
+    'it was switching back between paused/running super fast and annoying..so if they are single stepping
+    'we will wait..and if its still running in 700ms then we will update the label..
+    If running Then lblStatus.Caption = "Status: Running"
+    tmrSetStatus.Enabled = False
 End Sub
 
 Private Sub ts_Click()

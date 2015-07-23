@@ -1,11 +1,11 @@
-Form1 = 257, 61, 1309, 768, , 88, 42, 1393, 774, C
-mDuk = 74, 8, 1362, 788, Z
+Form1 = 195, 50, 1247, 757, Z, 88, 42, 1393, 774, C
+mDuk = 74, 8, 1362, 788, 
 CDukTape = 44, 44, 925, 680, 
-modUtil = 44, 44, 971, 666, 
+modUtil = 44, 44, 971, 666, C
 CResponseBuffer = 0, 0, 1303, 676, 
 CWriteBuffer = 44, 167, 1282, 762, 
 CSciExtender = 176, 176, 1606, 666, 
 CVariable = 198, 198, 1327, 727, 
 CBreakpoint = 198, 198, 1328, 727, 
-modBreakpoints = 202, 187, 1303, 716, 
+modBreakpoints = 202, 109, 1303, 716, C
 cCallStack = 88, 88, 1169, 617, 

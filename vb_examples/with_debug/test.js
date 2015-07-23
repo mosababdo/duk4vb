@@ -1,15 +1,14 @@
 
 a = 1
 a++;
-
+ while(a){;}
+ 
 var gs = "string1"
 print(1)
 var ga = b(0)
 ga = add_two(ga) //in a library file lib.js you can not step into it...
 
-function b(c){
-	return c+=1
-}
+function b(c){ c++; return c+=1; }
 
 function main(){
 	var a = 1

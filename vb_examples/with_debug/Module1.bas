@@ -19,7 +19,7 @@ Public Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, Source As Any, ByVal length As Long)
 Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Declare Function lstrlen Lib "kernel32.dll" Alias "lstrlenA" (ByVal lpString As Long) As Long
-
+Declare Function GetTickCount Lib "kernel32" () As Long
 
 
 'call back message types we receive from duktape in cb_stdout
@@ -47,7 +47,6 @@ Enum opDuk
     opd_ScriptTimeout = 8
     opd_debugAttach = 9
     opd_dbgCoOp = 10
-    opd_dbgCurLine = 11
     opd_dbgTriggerRead = 12
 End Enum
 
@@ -55,8 +54,8 @@ End Enum
 Enum Debug_Commands
     dc_NotSet = 0
     dc_break = 2
-    dc_stepInto = 3
-    dc_stepout = 4
+    dc_stepinto = 3
+    dc_StepOut = 4
     dc_StepOver = 5
     dc_Resume = 9
     dc_GetLocals = 10
@@ -119,8 +118,7 @@ Public ActiveDebuggerClass As CDukTape
 Public RespBuffer As New CResponseBuffer
 Public RecvBuffer As New CWriteBuffer
 
-Private dbgStopNext As Boolean 'for debugging a specific message/event..
-Private Const debugAll As Boolean = True
+'Private dbgStopNext As Boolean 'for debugging a specific message/event..
 
 Public Type Stats
     state As Long
@@ -136,9 +134,9 @@ End Type
 Public status As Stats
 
 'because we have to work across callbacks we need some module level variables..
-Private tmpVar As CVariable
-Public tmpBreakPoint As CBreakpoint 'used from with modBreakpoints to so public
-Private tmpCol As Collection
+Private tmpVar       As CVariable
+Public tmpBreakPoint As CBreakpoint  'used in modBreakpoints so public
+Private tmpCol       As Collection
 
 
 Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
@@ -177,14 +175,15 @@ End Function
 
 'debugger is just starting up first message already received..
 Sub On_DebuggerInilitize()
-    status.lineNumber = DukOp(opd_dbgCurLine, ActiveDebuggerClass.Context)
     status.stepToLine = -1
-    Form1.SyncUI True
     InitDebuggerBpx
 End Sub
 
 Private Sub On_DebuggerTerminate()
-
+    
+    Dim emptyStatus As Stats
+    status = emptyStatus
+    
     Dim b As CBreakpoint
     For Each b In breakpoints
         b.isSet = False
@@ -248,6 +247,13 @@ Function SyncEval(js As String) As CVariable
     Set SyncEval = tmpVar
 End Function
 
+Sub SyncPauseExecution()
+    LastCommand = dc_break
+    replyReceived = False
+    RespBuffer.ConstructMessage dc_break
+    DukOp opd_dbgTriggerRead, ActiveDebuggerClass.Context
+End Sub
+
 
 
 Public Sub LoadCallStack()
@@ -269,10 +275,16 @@ Public Sub LoadCallStack()
     
 End Sub
 
-
-Public Sub SendDebuggerCmd(cmd As Debug_Commands, Optional arg1, Optional arg2)
+'if its a critical command to know was sent check return, if just BS like user step who cares..
+Public Function SendDebuggerCmd(cmd As Debug_Commands, Optional arg1, Optional arg2) As Boolean
     
-    If Not replyReceived Then Exit Sub ' we are still waiting for last commands response..
+    If Not replyReceived Then
+        'we are still waiting for last commands response..maybe user hit step step step to fast?
+        dbg "SendDebuggerCmd still waiting for reply exiting"
+        Exit Function
+    End If
+    
+    Form1.ClearLastLineMarkers
     replyReceived = False
     
     LastCommand = cmd
@@ -280,9 +292,10 @@ Public Sub SendDebuggerCmd(cmd As Debug_Commands, Optional arg1, Optional arg2)
         dbg "Failed to construct message for " & cmd
     Else
         readyToReturn = True
+        SendDebuggerCmd = True
     End If
     
-End Sub
+End Function
 
 Function GetLastString() As String
     Dim rv As Long
@@ -336,7 +349,7 @@ Public Sub cb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
     
     If t = cb_Refresh Then
         DoEvents
-        Sleep 3
+        Sleep 2
         Exit Sub
     End If
     
@@ -411,7 +424,7 @@ Public Function cb_GetDbgCmd(ByVal buf As Long, ByVal sz As Long) As Long
     Dim i As Long
     Dim cmd_length As Long
     Dim b() As Byte
-        
+    
         If forceShutDown Then Exit Function
         
 topLine:
@@ -434,11 +447,11 @@ topLine:
                 If Len(status.fileName) > 0 And status.fileName <> Form1.curFile Then
                     'my personal preference is to only debug current file user sees..
                     'for me any other js is lib files I add as glue and dont want to bother them with..
-                    SendDebuggerCmd dc_stepout
+                    SendDebuggerCmd dc_StepOut
                     GoTo topLine
                 End If
                 
-                If status.lastLineNo = status.lineNumber And LastCommand = dc_stepout Then
+                If status.lastLineNo = status.lineNumber And LastCommand = dc_StepOut Then
                     'must be above case + var assignment of return value..
                     SendDebuggerCmd dc_StepOver
                     GoTo topLine
@@ -449,7 +462,7 @@ topLine:
                     If status.lineNumber = status.stepToLine Then
                         status.stepToLine = -1
                     Else
-                        SendDebuggerCmd dc_stepInto
+                        SendDebuggerCmd dc_stepinto
                         GoTo topLine
                     End If
                 End If
@@ -466,6 +479,8 @@ topLine:
         'we block here until the UI sets the readyToReturn = true
         'this is not a CPU hog, and form remains responsive to user actions..
         readyToReturn = False
+        Form1.lblStatus.Caption = "Status: Paused"
+        Form1.tmrSetStatus.Enabled = False
         While Not readyToReturn
             DoEvents
             Sleep 20
@@ -483,6 +498,7 @@ topLine:
             End If
             
         Wend
+        Form1.tmrSetStatus.Enabled = True
         
         If Not RespBuffer.isEmpty Then
             
@@ -526,17 +542,24 @@ Public Function On_FullMessageReceived()
     
     With RecvBuffer
     
-        'If debugAll Then doOutput "MessageReceived: " & .BytesLeft & " bytes"
+        'doOutput "MessageReceived: " & .BytesLeft & " bytes"
         
         b = .ReadByte()
         
         If .firstMessage Then
+            'I actually have a small bug in my parser..i didnt realize that the initial
+            'debugger attach message is terminated by a LF only..so the buffer right now
+            'actually contains two messages..the dbg attach message, and a status notification
+            'message. So we will just check the protocol version, then gobble up the rest of the
+            'message to get to the status message and then process that..oops!
             If b <> Asc(1) Then MsgBox "Bad debugger protocol version!"
             '<protocolversion> <SP (0x20)> <additional text, no LF> <LF (0x0a)>
             '1 <DUK_VERSION> <DUK_GIT_DESCRIBE> <target string> <LF>
             '1 10099 v1.0.0-254-g2459e88 duk command built from Duktape repo
-            'todo: HandleInitMessage
-            Exit Function
+            Do
+                b = .ReadByte
+            Loop While b <> &HA
+            b = .ReadByte()
         End If
         
         Select Case b
@@ -606,14 +629,11 @@ Function HandleNotify()
                     status.callStackLoaded = False
                     
                     'for debugging
-                    'If debugAll Then doOutput "STATUS_NOTIFICATION Line: " & status.lineNumber & " LastLine: " & status.lastLineNo & " pc: " & status.pc & " File: " & status.fileName
+                    'doOutput "STATUS_NOTIFICATION Line: " & status.lineNumber & " LastLine: " & status.lastLineNo & " pc: " & status.pc & " File: " & status.fileName
                     
                     'next one for debugging the C code since UI will be frozen (vb IDE keeps window WM_PAINT working at breakpoints which is SOOOOO handy!)
                     'MsgBox "STATUS_NOTIFICATION Line: " & status.lineNumber & "LastLine: " & status.lastLineNo & " pc: " & status.pc
-                    
-                    'we cant sync the UI until we get this message to show our line number were on...
-                    'Form1.SyncUI notification messages may be sent multiple times at once..dont sync ui here..
-                    
+                                    
                    'NFY <int: 2> <str: message> EOM - String output redirected from the print() function.
               Case PRINT_NOTIFICATION: .DebugDump "Print Notify"
               
