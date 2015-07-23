@@ -26,6 +26,7 @@ Attribute VB_Exposed = False
 'sip is always the next available data. There is no error handling because I
 'want to know immediatly if there is a flaw in the logic.
 
+Option Explicit
 Private buf() As Byte
 Public Position As Long
 Public length As Long
@@ -34,7 +35,8 @@ Public isEmpty  As Boolean
 Function GetBuf(sz As Long, outBuf() As Byte) As Boolean
         
     Dim endAt As Long
-    Dim ub As Long
+    Dim ub As Long, i As Long
+    
     ub = UBound(buf)
     
     Erase outBuf

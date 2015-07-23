@@ -3,6 +3,7 @@ Attribute VB_Name = "modBreakpoints"
 'Site: Sandsprite.com
 'License: http://opensource.org/licenses/MIT
 
+Option Explicit
 Public breakpoints As New Collection
  
 'i am not going to bother with these tests anymore default behavior is acceptable..

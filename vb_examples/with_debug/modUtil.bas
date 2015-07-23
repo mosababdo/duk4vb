@@ -3,6 +3,7 @@ Attribute VB_Name = "modUtil"
 'Site: Sandsprite.com
 'License: http://opensource.org/licenses/MIT
 
+Option Explicit
 Global Const LANG_US = &H409
 Public Declare Function htonl Lib "ws2_32.dll" (ByVal hostlong As Long) As Long
 
@@ -29,7 +30,7 @@ Function bHexDump(b() As Byte) As String
 End Function
 
 Function HexDump(ByVal str, Optional hexOnly = 0) As String
-    Dim s() As String, chars As String, tmp As String
+    Dim s() As String, chars As String, tmp As String, i As Long, h, tt, x
     On Error Resume Next
     Dim ary() As Byte
     Dim offset As Long
@@ -124,6 +125,7 @@ End Sub
 
 Function GetParentFolder(path) As String
     On Error Resume Next
+    Dim tmp, ub
     If Len(path) = 0 Then Exit Function
     tmp = Split(path, "\")
     ub = tmp(UBound(tmp))
@@ -137,6 +139,7 @@ End Function
 'End Function
 
 Sub push(ary, Value) 'this modifies parent ary object
+Dim x
     On Error GoTo Init
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
@@ -147,7 +150,7 @@ End Sub
 
 Sub papush(ary, ParamArray Value()) 'this modifies parent ary object
     
-    Dim i As Long
+    Dim i As Long, v
     
     If AryIsEmpty(ary) Then
         ReDim ary(0)
@@ -165,6 +168,7 @@ End Sub
 
 Sub bpush(ary, Value As Byte, Optional freshStart As Boolean = False)   'this modifies parent ary object
     On Error GoTo Init
+    Dim x
     If freshStart Then Erase ary
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
@@ -186,6 +190,7 @@ End Function
 
 Function AryIsEmpty(ary) As Boolean
   On Error GoTo oops
+  Dim i
     i = UBound(ary)  '<- throws error if not initalized
     AryIsEmpty = False
   Exit Function
@@ -251,6 +256,7 @@ hell: FileExists = False
 End Function
 
 Function FileNameFromPath(fullpath) As String
+Dim tmp
     If InStr(fullpath, "\") > 0 Then
         tmp = Split(fullpath, "\")
         FileNameFromPath = CStr(tmp(UBound(tmp)))

@@ -3,6 +3,7 @@ Attribute VB_Name = "mDuk"
 'Site: Sandsprite.com
 'License: http://opensource.org/licenses/MIT
 
+Option Explicit
 Public hDukLib As Long
 Public libRefCnt As Long 'used when running in IDE...
 
@@ -54,8 +55,8 @@ End Enum
 Enum Debug_Commands
     dc_NotSet = 0
     dc_break = 2
-    dc_stepinto = 3
-    dc_StepOut = 4
+    dc_stepInto = 3
+    dc_stepout = 4
     dc_StepOver = 5
     dc_Resume = 9
     dc_GetLocals = 10
@@ -447,11 +448,11 @@ topLine:
                 If Len(status.fileName) > 0 And status.fileName <> Form1.curFile Then
                     'my personal preference is to only debug current file user sees..
                     'for me any other js is lib files I add as glue and dont want to bother them with..
-                    SendDebuggerCmd dc_StepOut
+                    SendDebuggerCmd dc_stepout
                     GoTo topLine
                 End If
                 
-                If status.lastLineNo = status.lineNumber And LastCommand = dc_StepOut Then
+                If status.lastLineNo = status.lineNumber And LastCommand = dc_stepout Then
                     'must be above case + var assignment of return value..
                     SendDebuggerCmd dc_StepOver
                     GoTo topLine
@@ -462,7 +463,7 @@ topLine:
                     If status.lineNumber = status.stepToLine Then
                         status.stepToLine = -1
                     Else
-                        SendDebuggerCmd dc_stepinto
+                        SendDebuggerCmd dc_stepInto
                         GoTo topLine
                     End If
                 End If

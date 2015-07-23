@@ -1,7 +1,9 @@
 
 a = 1
 a++;
- while(a){;}
+ while(a){
+a++;
+}
  
 var gs = "string1"
 print(1)

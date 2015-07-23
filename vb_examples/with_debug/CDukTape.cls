@@ -15,6 +15,7 @@ Attribute VB_Exposed = False
 'Site: Sandsprite.com
 'License: http://opensource.org/licenses/MIT
 
+Option Explicit
 Private hDuk As Long
 Private mTimeout As Long
 Private mRunning As Boolean

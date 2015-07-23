@@ -26,6 +26,7 @@ Attribute VB_Exposed = False
 'since those dont matter here in a full system with direct callbacks..I disabled that for simplicity.
 'search the source for DUK_DBG_USE_PACKED_PROTOCOL to see the small mod
 
+Option Explicit
 Private buf() As Byte
 Private mPosition As Long
 Public DisplayDebugOutput As Boolean
@@ -65,7 +66,7 @@ Function ReadInt(Optional withPrefix As Boolean = True) As Long
 End Function
 
 Function ReadString(Optional withPrefix As Boolean = True) As String
-    Dim r As String, b As Byte, sz As Long, m() As Byte
+    Dim r As String, b As Byte, sz As Long, m() As Byte, i As Long
     If withPrefix Then
         b = ReadByte
         If b <> &H11 Then
@@ -89,8 +90,7 @@ End Function
 
 Sub WriteBuf(b() As Byte)
  
-    
-    'Const eom = "-END-OF-MESSAGE-"
+    Dim i As Long
     
     If UBound(b) = 0 And b(0) = 0 Then
         mPosition = 0
