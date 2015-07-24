@@ -10,7 +10,7 @@ Attribute VB_Name = "CDukTape"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 'Author: David Zimmer <dzzie@yahoo.com>
 'Site: Sandsprite.com
 'License: http://opensource.org/licenses/MIT
@@ -36,26 +36,28 @@ Public Property Get isDebugging() As Boolean
     isDebugging = mDebugging
 End Property
 
-Function DebugAttach(Optional attach As Boolean = True) As Boolean
+'only visible within our ocx because it request special integration
+'and whole point of the ocx is to hide complexity and make it easy to use.
+Friend Function DebugAttach(Optional attach As Boolean = True) As Boolean
     If attach Then
         If mDebugging Then Exit Function
-        If Not ActiveDebuggerClass Is Nothing Then Exit Function
+        'If Not ActiveDebuggerClass Is Nothing Then Exit Function
         If mTimeout <> 0 Then DukOp opd_ScriptTimeout, 0, 0
         If DukOp(opd_debugAttach, hDuk, 1) = 0 Then
             DebugAttach = True
             mDebugging = True
-            Set ActiveDebuggerClass = Me
+            'Set ActiveDebuggerClass = Me
         Else
             If mTimeout <> 0 Then DukOp opd_ScriptTimeout, 0, mTimeout
         End If
     Else
         If Not mDebugging Then Exit Function
-        If ObjPtr(ActiveDebuggerClass) <> ObjPtr(Me) Then Exit Function
+        'If ObjPtr(ActiveDebuggerClass) <> ObjPtr(Me) Then Exit Function
         If mTimeout <> 0 Then DukOp opd_ScriptTimeout, 0, mTimeout
         If DukOp(opd_debugAttach, hDuk, 0) = 0 Then
             DebugAttach = True
             mDebugging = False
-            Set ActiveDebuggerClass = Nothing
+            'Set ActiveDebuggerClass = Nothing
         End If
     End If
 End Function
@@ -69,8 +71,8 @@ Property Get Timeout() As Long
     Timeout = mTimeout
 End Property
 
-Property Get Context() As Long
-    Context = hDuk
+Property Get context() As Long
+    context = hDuk
 End Property
 
 Private Sub Class_Initialize()
@@ -93,7 +95,7 @@ Private Sub Class_Terminate()
         'in the IDE we release it as soon as not needed..that way IDE doesnt
         'ever hang onto the dll after debugging. If it does we cant recompile the dll
         'without closing VB IDE which is annoying...
-        'FreeLibrary mDuk.hDukLib
+        FreeLibrary mDuk.hDukLib
     End If
 End Sub
 
@@ -104,7 +106,19 @@ Function Reset() As Boolean
         Reset = False
         Exit Function
     End If
-        
+    
+    Dim o As Object
+    For Each o In comTypes
+        Set o = Nothing
+    Next
+    
+    For Each o In objs
+        Set o = Nothing
+    Next
+    
+    Set comTypes = New Collection
+    Set objs = New Collection
+    
     Class_Terminate
     Class_Initialize
     
@@ -116,7 +130,36 @@ Private Sub ClearErr()
     LastErrorLine = 0
 End Sub
 
-Function AddFile(fPath) As Boolean
+Function AddObject(obj As Object, name As String, Optional ByRef outErrList As Collection) As Boolean
+    
+    Dim d
+    Dim cc As CCOMType
+    Dim result As Boolean
+        
+    result = ParseObjectToCache(name, obj, Me)
+    Set cc = comTypes(name) 'always added even with errors
+       
+    If Not result Then
+       Set outErrList = cc.errors
+       Exit Function
+    End If
+        
+    If Not Me.AddFile(cc.js_file) Then
+        outErrList.Add "Error loading js File: " & cc.js_file & " " & LastError
+        Exit Function
+    End If
+        
+    For Each d In cc.dependancies
+        If Not AddObject(Nothing, CStr(d), outErrList) Then
+            Exit Function
+        End If
+    Next
+    
+    AddObject = True
+    
+End Function
+
+Function AddFile(fpath) As Boolean
     Dim rv As Long
     Dim tmp As String
     
@@ -124,7 +167,7 @@ Function AddFile(fPath) As Boolean
     ClearErr
 
     mRunning = True
-    rv = mDuk.AddFile(hDuk, CStr(fPath))
+    rv = mDuk.AddFile(hDuk, CStr(fpath))
     mRunning = False
     
     If rv = 0 Then

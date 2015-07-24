@@ -11,14 +11,6 @@ Begin VB.Form Form1
    ScaleHeight     =   9795
    ScaleWidth      =   13845
    StartUpPosition =   2  'CenterScreen
-   Begin VB.CommandButton Command1 
-      Caption         =   "Command1"
-      Height          =   375
-      Left            =   11610
-      TabIndex        =   10
-      Top             =   135
-      Width           =   870
-   End
    Begin VB.Timer tmrSetStatus 
       Enabled         =   0   'False
       Interval        =   700
@@ -445,15 +437,11 @@ End Sub
 
 
 
-Private Sub Command1_Click()
-duk.Reset
-End Sub
-
 Private Sub Form_Unload(Cancel As Integer)
     If Not duk Is Nothing Then
         duk.Timeout = 1
         forceShutDown = True
-        SendDebuggerCmd dc_stepInto
+        SendDebuggerCmd dc_stepinto
         If duk.isDebugging Then duk.DebugAttach False
         Set duk = Nothing
     End If
@@ -474,9 +462,9 @@ Private Sub scivb_KeyDown(KeyCode As Long, Shift As Long)
                       ToggleBreakPoint curFile, curline, scivb.GetLineText(curline)
                       
         Case vbKeyF5: If running Then SendDebuggerCmd dc_Resume Else ExecuteScript True
-        Case vbKeyF7: SendDebuggerCmd dc_stepInto
+        Case vbKeyF7: SendDebuggerCmd dc_stepinto
         Case vbKeyF8: SendDebuggerCmd dc_StepOver
-        Case vbKeyF9: SendDebuggerCmd dc_stepout
+        Case vbKeyF9: SendDebuggerCmd dc_StepOut
     End Select
 
 End Sub
@@ -488,9 +476,9 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
     Select Case Button.Key
         Case "Run":               If running Then SendDebuggerCmd dc_Resume Else ExecuteScript
         Case "Start Debugger":    If running Then SendDebuggerCmd dc_Resume Else ExecuteScript True
-        Case "Step In":           SendDebuggerCmd dc_stepInto
+        Case "Step In":           SendDebuggerCmd dc_stepinto
         Case "Step Over":         SendDebuggerCmd dc_StepOver
-        Case "Step Out":          SendDebuggerCmd dc_stepout
+        Case "Step Out":          SendDebuggerCmd dc_StepOut
         Case "Clear All Breakpoints": RemoveAllBreakpoints
         Case "Break":                 SyncPauseExecution
 
@@ -501,7 +489,7 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
                                         doOutput "Can not run to cursor: not executable line"
                                   Else
                                         status.stepToLine = curline + 1
-                                        SendDebuggerCmd dc_stepInto
+                                        SendDebuggerCmd dc_stepinto
                                   End If
                                   
         Case "Toggle Breakpoint":
@@ -511,7 +499,7 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
         Case "Stop":
                                   userStop = True
                                   duk.Timeout = 1
-                                  SendDebuggerCmd dc_stepInto
+                                  SendDebuggerCmd dc_stepinto
                         
         
     End Select

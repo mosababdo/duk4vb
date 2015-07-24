@@ -1,35 +1,25 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Object = "{FBE17B58-A1F0-4B91-BDBD-C9AB263AC8B0}#78.1#0"; "scivb_lite.ocx"
-Begin VB.Form Form1 
-   Caption         =   "DukTape JS Debugger Example"
-   ClientHeight    =   9795
-   ClientLeft      =   60
-   ClientTop       =   345
-   ClientWidth     =   13845
-   LinkTopic       =   "Form1"
-   ScaleHeight     =   9795
-   ScaleWidth      =   13845
-   StartUpPosition =   2  'CenterScreen
-   Begin VB.CommandButton Command1 
-      Caption         =   "Command1"
-      Height          =   375
-      Left            =   11610
-      TabIndex        =   10
-      Top             =   135
-      Width           =   870
-   End
-   Begin VB.Timer tmrSetStatus 
+Begin VB.UserControl ucDukDbg 
+   ClientHeight    =   7560
+   ClientLeft      =   0
+   ClientTop       =   0
+   ClientWidth     =   13950
+   ScaleHeight     =   7560
+   ScaleWidth      =   13950
+   ToolboxBitmap   =   "ucDukDbg.ctx":0000
+   Begin VB.Timer tmrHideCallTip 
       Enabled         =   0   'False
-      Interval        =   700
-      Left            =   9900
-      Top             =   180
+      Interval        =   600
+      Left            =   7920
+      Top             =   90
    End
    Begin VB.Frame fraCmd 
       Height          =   600
-      Left            =   225
-      TabIndex        =   7
-      Top             =   8685
+      Left            =   45
+      TabIndex        =   0
+      Top             =   6390
       Width           =   13155
       Begin VB.TextBox txtCmd 
          BeginProperty Font 
@@ -43,7 +33,7 @@ Begin VB.Form Form1
          EndProperty
          Height          =   285
          Left            =   630
-         TabIndex        =   9
+         TabIndex        =   1
          Top             =   180
          Width           =   12255
       End
@@ -60,105 +50,20 @@ Begin VB.Form Form1
          EndProperty
          Height          =   240
          Left            =   90
-         TabIndex        =   8
+         TabIndex        =   2
          Top             =   225
          Width           =   510
       End
    End
-   Begin MSComctlLib.ListView lvLog 
-      Height          =   1050
-      Left            =   1575
-      TabIndex        =   6
-      Top             =   6795
-      Width           =   1860
-      _ExtentX        =   3281
-      _ExtentY        =   1852
-      View            =   3
-      LabelEdit       =   1
-      LabelWrap       =   -1  'True
-      HideSelection   =   -1  'True
-      FullRowSelect   =   -1  'True
-      _Version        =   393217
-      ForeColor       =   -2147483640
-      BackColor       =   -2147483643
-      BorderStyle     =   1
-      Appearance      =   1
-      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-         Name            =   "Courier"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   400
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      NumItems        =   1
-      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         Text            =   "Message"
-         Object.Width           =   1411
-      EndProperty
-   End
-   Begin VB.TextBox txtOut 
-      Height          =   1185
-      Left            =   5670
-      MultiLine       =   -1  'True
-      ScrollBars      =   2  'Vertical
-      TabIndex        =   5
-      Top             =   6705
-      Width           =   3165
-   End
-   Begin MSComctlLib.ListView lvCallStack 
-      Height          =   1185
-      Left            =   8955
-      TabIndex        =   4
-      Top             =   6795
-      Width           =   1815
-      _ExtentX        =   3201
-      _ExtentY        =   2090
-      View            =   3
-      LabelEdit       =   1
-      LabelWrap       =   -1  'True
-      HideSelection   =   -1  'True
-      FullRowSelect   =   -1  'True
-      _Version        =   393217
-      ForeColor       =   -2147483640
-      BackColor       =   -2147483643
-      BorderStyle     =   1
-      Appearance      =   1
-      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-         Name            =   "Courier"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   400
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      NumItems        =   3
-      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         Text            =   "Line"
-         Object.Width           =   1235
-      EndProperty
-      BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         SubItemIndex    =   1
-         Text            =   "Function"
-         Object.Width           =   2540
-      EndProperty
-      BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         SubItemIndex    =   2
-         Text            =   "File"
-         Object.Width           =   2540
-      EndProperty
-   End
-   Begin VB.Timer tmrHideCallTip 
+   Begin VB.Timer tmrSetStatus 
       Enabled         =   0   'False
-      Interval        =   600
-      Left            =   8010
+      Interval        =   700
+      Left            =   9810
       Top             =   135
    End
    Begin MSComctlLib.ImageList ilToolbars_Disabled 
-      Left            =   9225
-      Top             =   45
+      Left            =   9135
+      Top             =   0
       _ExtentX        =   1005
       _ExtentY        =   1005
       BackColor       =   -2147483643
@@ -169,50 +74,50 @@ Begin VB.Form Form1
       BeginProperty Images {2C247F25-8591-11D1-B16A-00C0F0283628} 
          NumListImages   =   10
          BeginProperty ListImage1 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0000
+            Picture         =   "ucDukDbg.ctx":0312
             Key             =   "Run"
          EndProperty
          BeginProperty ListImage2 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":010C
+            Picture         =   "ucDukDbg.ctx":041E
             Key             =   "Break"
          EndProperty
          BeginProperty ListImage3 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0218
+            Picture         =   "ucDukDbg.ctx":052A
             Key             =   "Run to Cursor"
          EndProperty
          BeginProperty ListImage4 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0324
+            Picture         =   "ucDukDbg.ctx":0636
             Key             =   "Clear All Breakpoints"
          EndProperty
          BeginProperty ListImage5 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":042E
+            Picture         =   "ucDukDbg.ctx":0740
             Key             =   "Step Over"
          EndProperty
          BeginProperty ListImage6 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":053A
+            Picture         =   "ucDukDbg.ctx":084C
             Key             =   "Step Out"
          EndProperty
          BeginProperty ListImage7 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0646
+            Picture         =   "ucDukDbg.ctx":0958
             Key             =   "Step In"
          EndProperty
          BeginProperty ListImage8 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0752
+            Picture         =   "ucDukDbg.ctx":0A64
             Key             =   "Stop"
          EndProperty
          BeginProperty ListImage9 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":085E
+            Picture         =   "ucDukDbg.ctx":0B70
             Key             =   "Start Debugger"
          EndProperty
          BeginProperty ListImage10 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0968
+            Picture         =   "ucDukDbg.ctx":0C7A
             Key             =   "Toggle Breakpoint"
          EndProperty
       EndProperty
    End
    Begin MSComctlLib.ImageList ilToolbar 
-      Left            =   8550
-      Top             =   45
+      Left            =   8460
+      Top             =   0
       _ExtentX        =   1005
       _ExtentY        =   1005
       BackColor       =   -2147483643
@@ -223,56 +128,56 @@ Begin VB.Form Form1
       BeginProperty Images {2C247F25-8591-11D1-B16A-00C0F0283628} 
          NumListImages   =   11
          BeginProperty ListImage1 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0A72
+            Picture         =   "ucDukDbg.ctx":0D84
             Key             =   "Run"
          EndProperty
          BeginProperty ListImage2 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0B7E
+            Picture         =   "ucDukDbg.ctx":0E90
             Key             =   "Start Debugger"
          EndProperty
          BeginProperty ListImage3 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0C88
+            Picture         =   "ucDukDbg.ctx":0F9A
             Key             =   "Break"
          EndProperty
          BeginProperty ListImage4 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0D92
+            Picture         =   "ucDukDbg.ctx":10A4
             Key             =   "Stop"
          EndProperty
          BeginProperty ListImage5 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0E9C
+            Picture         =   "ucDukDbg.ctx":11AE
             Key             =   "Toggle Breakpoint"
          EndProperty
          BeginProperty ListImage6 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":0FA6
+            Picture         =   "ucDukDbg.ctx":12B8
             Key             =   "Clear All Breakpoints"
          EndProperty
          BeginProperty ListImage7 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":10B0
+            Picture         =   "ucDukDbg.ctx":13C2
             Key             =   "Step In"
          EndProperty
          BeginProperty ListImage8 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":11BA
+            Picture         =   "ucDukDbg.ctx":14CC
             Key             =   "Step Over"
          EndProperty
          BeginProperty ListImage9 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":12C4
+            Picture         =   "ucDukDbg.ctx":15D6
             Key             =   "Step Out"
          EndProperty
          BeginProperty ListImage10 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":13CE
+            Picture         =   "ucDukDbg.ctx":16E0
             Key             =   "Run to Cursor"
          EndProperty
          BeginProperty ListImage11 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-            Picture         =   "Form1.frx":14D8
+            Picture         =   "ucDukDbg.ctx":17EA
             Key             =   ""
          EndProperty
       EndProperty
    End
    Begin MSComctlLib.Toolbar tbarDebug 
       Height          =   330
-      Left            =   135
-      TabIndex        =   0
-      Top             =   270
+      Left            =   90
+      TabIndex        =   3
+      Top             =   90
       Width           =   3870
       _ExtentX        =   6826
       _ExtentY        =   582
@@ -335,67 +240,37 @@ Begin VB.Form Form1
    End
    Begin SCIVB_LITE.SciSimple scivb 
       Height          =   5865
-      Left            =   90
-      TabIndex        =   2
-      Top             =   675
+      Left            =   45
+      TabIndex        =   4
+      Top             =   450
       Width           =   13650
       _ExtentX        =   24077
       _ExtentY        =   10345
    End
-   Begin MSComctlLib.TabStrip ts 
-      Height          =   3120
-      Left            =   90
-      TabIndex        =   3
-      Top             =   6570
-      Width           =   13695
-      _ExtentX        =   24156
-      _ExtentY        =   5503
-      Placement       =   1
-      _Version        =   393216
-      BeginProperty Tabs {1EFB6598-857C-11D1-B16A-00C0F0283628} 
-         NumTabs         =   3
-         BeginProperty Tab1 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
-            Caption         =   "Output"
-            ImageVarType    =   2
-         EndProperty
-         BeginProperty Tab2 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
-            Caption         =   "CallStack"
-            ImageVarType    =   2
-         EndProperty
-         BeginProperty Tab3 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
-            Caption         =   "Log"
-            ImageVarType    =   2
-         EndProperty
-      EndProperty
-      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-         Name            =   "Courier"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   400
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-   End
    Begin VB.Label lblStatus 
       Caption         =   "Status: Idle"
       Height          =   375
-      Left            =   4095
-      TabIndex        =   1
-      Top             =   270
+      Left            =   4005
+      TabIndex        =   5
+      Top             =   90
       Width           =   4560
    End
 End
-Attribute VB_Name = "Form1"
+Attribute VB_Name = "ucDukDbg"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = True
 'Author: David Zimmer <dzzie@yahoo.com>
 'Site: Sandsprite.com
 'License: http://opensource.org/licenses/MIT
 
-Dim duk As CDukTape
+
+'icon from IconJam
+'   http://www.icojam.com
+'   http://www.iconarchive.com/show/animals-icons-by-icojam/02-duck-icon.html
+
+Private WithEvents duk As CDukTape
 Dim WithEvents sciext As CSciExtender
 Attribute sciext.VB_VarHelpID = -1
  
@@ -407,6 +282,99 @@ Const SC_MARK_BACKGROUND = 22
 Public lastEIP As Long
 Public curFile As String
 Private userStop As Boolean
+
+Event txtOut(msg As String)
+Event dbgOut(msg As String)
+Event dukErr(line As Long, msg As String)
+
+Private objCache As New Collection
+Private libFiles As New Collection
+
+'note this does not reset the running script..thats up to the user based on state..
+Public Sub Reset(objs As Boolean, libs As Boolean)
+    Dim o As CCachedObj
+    
+    If objs Then
+        For Each o In objCache
+            Set o = Nothing
+        Next
+        Set objCache = New Collection
+    End If
+    
+    If libs Then Set libFiles = New Collection
+    
+End Sub
+
+'only have to configure this once per instance unless you reset
+Public Function AddObject(obj As Object, name As String) As Boolean
+    Dim o As CCachedObj
+    
+    If running Then Exit Function
+    
+    For Each o In objCache
+        If o.name = name Then Exit Function
+    Next
+    
+    Set o = New CCachedObj
+    Set o.obj = obj
+    o.name = name
+    objCache.Add o
+    AddObject = True
+    
+End Function
+
+'only have to configure this once per instance unless you reset
+Public Function AddLibFile(fpath As String) As Boolean
+    
+    Dim f
+    
+    If running Then Exit Function
+    
+    If Not FileExists(fpath) Then Exit Function
+    
+    For Each f In libFiles
+        If LCase(f) = LCase(fpath) Then Exit Function
+    Next
+
+    libFiles.Add fpath
+    AddLibFile = True
+    
+End Function
+
+Friend Property Get context() As Long
+    If duk Is Nothing Then
+        context = 0
+    Else
+        context = duk.context
+    End If
+End Property
+
+Friend Property Get sci() As SciSimple
+    Set sci = scivb
+End Property
+
+Friend Sub SetStatus(msg As String)
+    If msg = "on" Then
+        tmrSetStatus.Enabled = True
+    Else
+        lblStatus.Caption = "Status: " & msg
+        tmrSetStatus.Enabled = False
+    End If
+End Sub
+
+Friend Sub doEvent(msg As String, Optional isdbg As Boolean = False)
+    If isdbg Then
+        RaiseEvent dbgOut(msg)
+    Else
+        RaiseEvent txtOut(msg)
+    End If
+End Sub
+
+Function LoadFile(fpath As String) As Boolean
+    If Not FileExists(fpath) Then Exit Function
+    curFile = fpath
+    LoadFile = scivb.LoadFile(fpath)
+End Function
 
 Public Sub SyncUI()
        
@@ -423,7 +391,7 @@ Public Sub SyncUI()
     
     scivb.GotoLine curline
     scivb.SetFocus
-    Me.Refresh
+    UserControl.Refresh
     DoEvents
 
 End Sub
@@ -443,13 +411,11 @@ Public Sub ClearLastLineMarkers()
     
 End Sub
 
-
-
-Private Sub Command1_Click()
-duk.Reset
+Private Sub duk_Error(ByVal line As Long, ByVal desc As String)
+    RaiseEvent dukErr(line, desc)
 End Sub
 
-Private Sub Form_Unload(Cancel As Integer)
+Private Sub UserControl_Terminate()
     If Not duk Is Nothing Then
         duk.Timeout = 1
         forceShutDown = True
@@ -457,6 +423,7 @@ Private Sub Form_Unload(Cancel As Integer)
         If duk.isDebugging Then duk.DebugAttach False
         Set duk = Nothing
     End If
+    Set ActiveUserControl = Nothing
 End Sub
 
 Private Sub lvLog_DblClick()
@@ -485,7 +452,7 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
     Dim curline As Long
     Dim txt As String
     
-    Select Case Button.Key
+    Select Case Button.key
         Case "Run":               If running Then SendDebuggerCmd dc_Resume Else ExecuteScript
         Case "Start Debugger":    If running Then SendDebuggerCmd dc_Resume Else ExecuteScript True
         Case "Step In":           SendDebuggerCmd dc_stepInto
@@ -520,8 +487,15 @@ End Sub
 
 Private Sub ExecuteScript(Optional withDebugger As Boolean)
  
-    Dim rv
-
+    Dim rv, f
+    Dim o As CCachedObj
+    Dim c As Collection
+     
+    If Not duk Is Nothing Then
+        MsgBox "Another script is already running can not start a new one!", vbInformation
+        Exit Sub
+    End If
+    
     running = True
     SetToolBarIcons
     lblStatus = "Status: " & IIf(withDebugger, "Debugging...", "Running...")
@@ -533,11 +507,20 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     Set duk = New CDukTape
     Set RecvBuffer = New CWriteBuffer 'this resets our flags like firstMessage and bpInitilized...
     
-    If Not duk.AddFile(App.path & "\lib.js") Then
-        doOutput "lib.js: " & duk.LastError
-        Exit Sub
-    End If
+    For Each o In objCache
+        If Not duk.AddObject(o.obj, o.name, c) Then
+            doOutput "Error adding object: " & o.name & vbCrLf & c2s(c)
+            GoTo cleanup
+        End If
+    Next
     
+    For Each f In libFiles
+        If Not duk.AddFile(f) Then
+            doOutput "Error adding " & FileNameFromPath(f) & ": " & duk.LastError
+            GoTo cleanup
+        End If
+    Next
+
     If withDebugger Then
         duk.Timeout = 0
         duk.DebugAttach
@@ -548,6 +531,7 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     WriteFile curFile, scivb.Text
     rv = duk.AddFile(curFile)
     
+cleanup:
     If Not duk Is Nothing Then 'form closing?
          If withDebugger Then duk.DebugAttach False
         
@@ -557,6 +541,7 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
              End If
          End If
          
+         duk.Reset 'remove any live COM object references (global and have to add again next time fresh..)
          Set duk = Nothing
          ClearLastLineMarkers
          lblStatus = "Status: Idle" 'these would call form_load again if closing down..
@@ -567,17 +552,26 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     
 End Sub
 
-Private Sub SetToolBarIcons()
+Private Sub SetToolBarIcons(Optional forceDisable As Boolean = False)
     Dim b As Button
+    
+    If forceDisable Then
+        For Each b In tbarDebug.Buttons
+            b.Enabled = False
+        Next
+        Set tbarDebug.ImageList = Nothing
+        Set tbarDebug.ImageList = ilToolbars_Disabled
+        Exit Sub
+    End If
     
     Set tbarDebug.ImageList = Nothing
     Set tbarDebug.ImageList = IIf(running, ilToolbar, ilToolbars_Disabled)
     
     For Each b In tbarDebug.Buttons
-        If Len(b.Key) > 0 Then
-            b.Image = b.Key
-            b.ToolTipText = b.Key
-            If b.Key <> "Run" And b.Key <> "Start Debugger" And InStr(b.Key, "Breakpoint") < 1 Then
+        If Len(b.key) > 0 Then
+            b.Image = b.key
+            b.ToolTipText = b.key
+            If b.key <> "Run" And b.key <> "Start Debugger" And InStr(b.key, "Breakpoint") < 1 Then
                 b.Enabled = running
             End If
         End If
@@ -585,11 +579,17 @@ Private Sub SetToolBarIcons()
     
 End Sub
 
-Private Sub Form_Load()
 
+ 
+Private Sub UserControl_Initialize()
+
+    If Not ActiveUserControl Is Nothing Then
+        scivb.Text = "[ You can only have one active instance of this control open at a time ]"
+        SetToolBarIcons True
+        Exit Sub
+    End If
+        
     SetToolBarIcons
-    lvCallStack.Visible = False
-    lvLog.Visible = False
     
     scivb.DirectSCI.HideSelection False
     scivb.DirectSCI.MarkerDefine 2, SC_MARK_CIRCLE
@@ -610,36 +610,20 @@ Private Sub Form_Load()
     scivb.ReadOnly = False
 
     Set sciext = New CSciExtender
-    sciext.Init scivb
+    sciext.init scivb
     
-    'scivb.Text = Replace(Replace("function b(c){\n\treturn c++\n}\na=0;\na = b(a)\na=b(a)", "\n", vbCrLf), "\t", vbTab)
-    scivb.LoadFile App.path & "\test.js"
-    curFile = App.path & "\test.js"
- 
+    Set ActiveUserControl = Me
+    
 End Sub
 
-Private Sub Form_Resize()
+Private Sub UserControl_Resize()
     On Error Resume Next
     With scivb
-        .Width = Me.Width - .Left - 200
-        ts.Width = .Width
-        txtOut.Width = .Width - 200
-        ts.Top = Me.Height - ts.Height - 800
-        .Height = Me.Height - .Top - ts.Height - 1000
-        With lvLog
-            .Move ts.Left + 100, ts.Top + 150, ts.Width - 200, ts.Height - 500
-            lvCallStack.Move .Left, .Top, .Width, .Height
-            txtOut.Move .Left, .Top, .Width, .Height - fraCmd.Height - 100
-            fraCmd.Move .Left, txtOut.Top + txtOut.Height + 20, .Width
-            txtCmd.Width = fraCmd.Width - txtCmd.Left - 100
-        End With
-        SetLastColumnWidth lvCallStack
-        SetLastColumnWidth lvLog
+        .Width = UserControl.Width - .Left - 200
+        .Height = UserControl.Height - .Top - 600
+        fraCmd.Move .Left, .Top + .Height + 20, .Width
+        txtCmd.Width = fraCmd.Width - txtCmd.Left - 100
     End With
-End Sub
-
-Private Sub SetLastColumnWidth(lv As ListView)
-    lv.ColumnHeaders(lv.ColumnHeaders.count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).Left - 100
 End Sub
 
 Private Sub tmrSetStatus_Timer()
@@ -650,14 +634,7 @@ Private Sub tmrSetStatus_Timer()
     tmrSetStatus.Enabled = False
 End Sub
 
-Private Sub ts_Click()
-    Dim i As Long
-    i = ts.SelectedItem.index
-    txtOut.Visible = IIf(i = 1, True, False)
-    lvCallStack.Visible = IIf(i = 2, True, False)
-    lvLog.Visible = IIf(i = 3, True, False)
-    fraCmd.Visible = txtOut.Visible
-End Sub
+ 
 
 ''we use a timer for this to give them a chance to click on the calltip to edit the variable..
 Private Sub tmrHideCallTip_Timer()
@@ -690,7 +667,7 @@ Private Sub sciext_MouseDwellStart(lline As Long, Position As Long)
          If cv.varType <> DUK_VAR_NOT_FOUND Then
             scivb.SelStart = Position 'so call tip shows right under it..
             scivb.SelLength = 0
-            txt = cv.Value
+            txt = cv.value
             If Len(txt) = 0 Then
                 txt = cv.varType
             ElseIf Len(txt) > 25 Then
@@ -722,7 +699,9 @@ Private Sub txtCmd_KeyPress(KeyAscii As Integer)
     
     Set v = SyncEval(txtCmd.Text)
     If v.varType = "undefined" Then Exit Sub
-    If Len(v.Value) = 0 Then Exit Sub
-    doOutput v.Value
+    If Len(v.value) = 0 Then Exit Sub
+    doOutput v.value
     
 End Sub
+
+ 

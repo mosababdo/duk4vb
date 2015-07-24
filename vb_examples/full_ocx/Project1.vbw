@@ -1,6 +1,5 @@
-Form1 = 195, 50, 1247, 757, , 88, 42, 1393, 774, C
-mDuk = 74, 8, 1362, 788, 
-CDukTape = 44, 44, 925, 680, Z
+mDuk = 30, 4, 1318, 784, C
+CDukTape = 44, 44, 925, 680, C
 modUtil = 44, 44, 971, 666, 
 CResponseBuffer = 0, 0, 1303, 676, 
 CWriteBuffer = 44, 167, 1282, 762, 
@@ -9,3 +8,8 @@ CVariable = 198, 198, 1327, 727,
 CBreakpoint = 198, 198, 1328, 727, 
 modBreakpoints = 202, 109, 1303, 716, 
 cCallStack = 88, 88, 1169, 617, 
+ucDukDbg = 151, 16, 1275, 706, , 44, 44, 1264, 771, C
+mCOM = 66, 66, 1165, 595, 
+CCOMType = 44, 44, 1143, 573, 
+CMethod = 0, 0, 0, 0, C
+CCachedObj = 44, 44, 1144, 573, C
