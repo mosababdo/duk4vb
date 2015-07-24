@@ -1,7 +1,7 @@
 Type=Exe
 Form=frmHostTest.frm
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
-Object={047848A0-21DD-421D-951E-B4B1F3E1718D}#3.0#0; dukDbg.ocx
+Object={047848A0-21DD-421D-951E-B4B1F3E1718D}#4.0#0; dukDbg.ocx
 IconForm="frmHostTest"
 Startup="frmHostTest"
 HelpFile=""

@@ -265,12 +265,12 @@ Attribute VB_Exposed = True
 'Site: Sandsprite.com
 'License: http://opensource.org/licenses/MIT
 
-
 'icon from IconJam
 '   http://www.icojam.com
 '   http://www.iconarchive.com/show/animals-icons-by-icojam/02-duck-icon.html
 
 Private WithEvents duk As CDukTape
+Attribute duk.VB_VarHelpID = -1
 Dim WithEvents sciext As CSciExtender
 Attribute sciext.VB_VarHelpID = -1
  
@@ -324,6 +324,7 @@ Public Function AddObject(obj As Object, name As String) As Boolean
 End Function
 
 'only have to configure this once per instance unless you reset
+'note user can not step into lib file source..(my design choice for simplicity of use)
 Public Function AddLibFile(fpath As String) As Boolean
     
     Dim f
@@ -339,6 +340,17 @@ Public Function AddLibFile(fpath As String) As Boolean
     libFiles.Add fpath
     AddLibFile = True
     
+End Function
+
+Public Function GetCallStack() As Collection
+    If Not running Then GoTo fail
+    If duk Is Nothing Then GoTo fail
+    If Not duk.isDebugging Then GoTo fail
+    If InStr(0, lblStatus.Caption, "Paused") < 1 Then GoTo fail
+    Set GetCallStack = SyncGetCallStack()
+    Exit Function
+fail:
+    Set GetCallStack = New Collection
 End Function
 
 Friend Property Get context() As Long
@@ -496,6 +508,11 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
         Exit Sub
     End If
     
+    If Not ActiveUserControl Is Nothing Then
+        MsgBox "Another debugger instance is already running", vbInformation
+        Exit Sub
+    End If
+    
     running = True
     SetToolBarIcons
     lblStatus = "Status: " & IIf(withDebugger, "Debugging...", "Running...")
@@ -505,6 +522,7 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     
     userStop = False
     Set duk = New CDukTape
+    Set ActiveUserControl = Me
     Set RecvBuffer = New CWriteBuffer 'this resets our flags like firstMessage and bpInitilized...
     
     For Each o In objCache
@@ -550,6 +568,8 @@ cleanup:
     
     End If
     
+    Set ActiveUserControl = Nothing
+    
 End Sub
 
 Private Sub SetToolBarIcons(Optional forceDisable As Boolean = False)
@@ -583,11 +603,11 @@ End Sub
  
 Private Sub UserControl_Initialize()
 
-    If Not ActiveUserControl Is Nothing Then
-        scivb.Text = "[ You can only have one active instance of this control open at a time ]"
-        SetToolBarIcons True
-        Exit Sub
-    End If
+'    If Not ActiveUserControl Is Nothing Then
+'        scivb.Text = "[ You can only have one active instance of this control open at a time ]"
+'        SetToolBarIcons True
+'        Exit Sub
+'    End If
         
     SetToolBarIcons
     
@@ -612,7 +632,7 @@ Private Sub UserControl_Initialize()
     Set sciext = New CSciExtender
     sciext.init scivb
     
-    Set ActiveUserControl = Me
+    'Set ActiveUserControl = Me
     
 End Sub
 

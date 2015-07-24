@@ -37,8 +37,14 @@ Function LoadType(modname As String) As Boolean
     
     pd = App.path & "\COM\"
     If Not FolderExists(pd) Then
-        errors.Add "COM sub folder does not exist.."
-        Exit Function
+        pd = GetParentFolder(App.path) & "\COM\"
+        If Not FolderExists(pd) Then
+            pd = GetParentFolder(App.path) & "\with_COM\COM\"
+            If Not FolderExists(pd) Then
+                errors.Add "COM sub folder does not exist.." & pd
+                Exit Function
+            End If
+        End If
     End If
         
     If Not FileExists(pd & name & ".js") Then
@@ -89,7 +95,7 @@ Function LoadType(modname As String) As Boolean
         End If
     Next
         
-    If errors.Count > 0 Then Exit Function
+    If errors.count > 0 Then Exit Function
     LoadType = True
     
 End Function
