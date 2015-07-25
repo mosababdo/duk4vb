@@ -524,13 +524,7 @@ Private Sub duk_Error(ByVal line As Long, ByVal desc As String)
 End Sub
 
 
-'this is important dont forget it!
-Private Sub ownerForm_Unload(Cancel As Integer)
-    If Me.isRunning Then
-        MsgBox "You must stop execution before closing this form"
-        Cancel = 1
-    End If
-End Sub
+
 
 Private Sub scivb_AutoCompleteEvent(className As String)
     Dim prev As String
@@ -577,7 +571,9 @@ Private Sub scivb_KeyDown(KeyCode As Long, Shift As Long)
     
     'Debug.Print KeyCode & " " & Shift
     Select Case KeyCode
-        Case vbKeyF2: curline = scivb.CurrentLine
+        Case vbKeyF2:
+                      If Len(curFile) = 0 Then curFile = GetFreeFileName(Environ("temp"), ".js")
+                      curline = scivb.CurrentLine
                       ToggleBreakPoint curFile, curline, scivb.GetLineText(curline), Me
                       
         Case vbKeyF5: If running Then SendDebuggerCmd dc_Resume Else ExecuteScript True
@@ -617,6 +613,7 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
                                   End If
                                   
         Case "Toggle Breakpoint":
+                                  If Len(curFile) = 0 Then curFile = GetFreeFileName(Environ("temp"), ".js")
                                   curline = scivb.CurrentLine
                                   ToggleBreakPoint curFile, curline, scivb.GetLineText(curline), Me
                                     
@@ -630,9 +627,19 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
     
 End Sub
 
+'this is used to block the user from closing the form while debugger is running.
 Private Sub HookParentEvents()
     On Error Resume Next
     Set ownerForm = UserControl.Parent
+    If Err.Number <> 0 Then RaiseEvent dbgOut("Could not Hook parent form Unload event is a form your container?")
+End Sub
+
+'this is important dont forget it!
+Private Sub ownerForm_Unload(Cancel As Integer)
+    If Me.isRunning Then
+        MsgBox "You must stop execution before closing this form"
+        Cancel = 1
+    End If
 End Sub
 
 Private Sub ExecuteScript(Optional withDebugger As Boolean)
@@ -646,6 +653,7 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
         Exit Sub
     End If
     
+    If Len(curFile) = 0 Then curFile = GetFreeFileName(Environ("temp"), ".js")
     RaiseEvent StateChanged(dsStarted)
     
     HookParentEvents
@@ -680,6 +688,7 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
         duk.Timeout = 7000 'set to 0 to disabled
     End If
      
+    If Len(curFile) = 0 Then curFile = GetFreeFileName(Environ("temp"), ".js")
     WriteFile curFile, scivb.Text
     rv = duk.AddFile(curFile)
     
@@ -732,30 +741,33 @@ End Sub
 
  
 Private Sub UserControl_Initialize()
-
     SetToolBarIcons
+End Sub
+
+Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
+    'only do this once at runtime startup (this will also fire at design time in IDE)
+    'we dont want to run a subclass while in IDE
+    If Ambient.UserMode And sciext Is Nothing Then
+        scivb.DirectSCI.HideSelection False
+        scivb.DirectSCI.MarkerDefine 2, SC_MARK_CIRCLE
+        scivb.DirectSCI.MarkerSetFore 2, vbRed 'set breakpoint color
+        scivb.DirectSCI.MarkerSetBack 2, vbRed
     
-    scivb.DirectSCI.HideSelection False
-    scivb.DirectSCI.MarkerDefine 2, SC_MARK_CIRCLE
-    scivb.DirectSCI.MarkerSetFore 2, vbRed 'set breakpoint color
-    scivb.DirectSCI.MarkerSetBack 2, vbRed
-
-    scivb.DirectSCI.MarkerDefine 1, SC_MARK_ARROW
-    scivb.DirectSCI.MarkerSetFore 1, vbBlack 'current eip
-    scivb.DirectSCI.MarkerSetBack 1, vbYellow
-
-    scivb.DirectSCI.MarkerDefine 3, SC_MARK_BACKGROUND
-    scivb.DirectSCI.MarkerSetFore 3, vbBlack 'current eip
-    scivb.DirectSCI.MarkerSetBack 3, vbYellow
-
-    scivb.DirectSCI.AutoCSetIgnoreCase True
-    scivb.DisplayCallTips = True
-    Call scivb.LoadCallTips(App.path & "\dependancies\calltips.txt")
-    scivb.ReadOnly = False
-
-    Set sciext = New CSciExtender
-    sciext.init scivb
+        scivb.DirectSCI.MarkerDefine 1, SC_MARK_ARROW
+        scivb.DirectSCI.MarkerSetFore 1, vbBlack 'current eip
+        scivb.DirectSCI.MarkerSetBack 1, vbYellow
     
+        scivb.DirectSCI.MarkerDefine 3, SC_MARK_BACKGROUND
+        scivb.DirectSCI.MarkerSetFore 3, vbBlack 'current eip
+        scivb.DirectSCI.MarkerSetBack 3, vbYellow
+    
+        scivb.DirectSCI.AutoCSetIgnoreCase True
+        scivb.DisplayCallTips = True
+        scivb.ReadOnly = False
+        
+        Set sciext = New CSciExtender
+        sciext.init scivb
+    End If
 End Sub
 
 Private Sub UserControl_Resize()

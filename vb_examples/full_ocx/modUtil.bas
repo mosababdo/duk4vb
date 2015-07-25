@@ -30,7 +30,7 @@ Function bHexDump(b() As Byte) As String
 End Function
 
 Function HexDump(ByVal str, Optional hexOnly = 0) As String
-    Dim s() As String, chars As String, tmp As String, i As Long, h, tt, X
+    Dim s() As String, chars As String, tmp As String, i As Long, h, tt, x
     On Error Resume Next
     Dim ary() As Byte
     Dim offset As Long
@@ -44,9 +44,9 @@ Function HexDump(ByVal str, Optional hexOnly = 0) As String
         tt = Hex(ary(i))
         If Len(tt) = 1 Then tt = "0" & tt
         tmp = tmp & tt & " "
-        X = ary(i)
+        x = ary(i)
         'chars = chars & IIf((x > 32 And x < 127) Or x > 191, Chr(x), ".") 'x > 191 causes \x0 problems on non us systems... asc(chr(x)) = 0
-        chars = chars & IIf((X > 32 And X < 127), Chr(X), ".")
+        chars = chars & IIf((x > 32 And x < 127), Chr(x), ".")
         If i > 1 And i Mod 16 = 0 Then
             h = Hex(offset)
             While Len(h) < 6: h = "0" & h: Wend
@@ -138,9 +138,9 @@ End Function
 'End Function
 
 Sub push(ary, value) 'this modifies parent ary object
-Dim X
+Dim x
     On Error GoTo init
-    X = UBound(ary) '<-throws Error If Not initalized
+    x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
     ary(UBound(ary)) = value
     Exit Sub
@@ -167,9 +167,9 @@ End Sub
 
 Sub bpush(ary, value As Byte, Optional freshStart As Boolean = False)   'this modifies parent ary object
     On Error GoTo init
-    Dim X
+    Dim x
     If freshStart Then Erase ary
-    X = UBound(ary) '<-throws Error If Not initalized
+    x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
     ary(UBound(ary)) = value
     Exit Sub
@@ -223,10 +223,10 @@ Function KeyExistsInCollection(c As Collection, val As String) As Boolean
 End Function
 
 Function c2s(c As Collection) As String
-    Dim X, Y
+    Dim x, Y
     If c.count = 0 Then Exit Function
-    For Each X In c
-        Y = Y & X & ", "
+    For Each x In c
+        Y = Y & x & ", "
     Next
     Y = Mid(Y, 1, Len(Y) - 2)
     c2s = Y

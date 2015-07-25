@@ -6,33 +6,30 @@ Attribute VB_Name = "modBreakpoints"
 Option Explicit
 Public breakpoints As New Collection
  
-'i am not going to bother with these tests anymore default behavior is acceptable..
+'here are the behaviors of duktape for setting breakpoints:
+'    bp on an empty line will stop on next line
+'    bp on a function (){ start will break on next line
+'    bp on a comment or multiline comment will break at next line
+'    bp on a function close brace will set, but never hit. <--
+'    bp on close brace of a if state breaks on next line
+'    bp on a single line function with multiple statements will hit once (step into only steps once and all bypass)
+
+'this next function is used for run to line functionality..some basic tests..
 Function isExecutableLine(sourceText As String) As Boolean
     Dim tmp As String
     On Error Resume Next
     
+    tmp = LCase(sourceText)
+    tmp = Trim(Replace(tmp, vbTab, Empty))
+    tmp = Replace(tmp, vbCr, Empty)
+    tmp = Replace(tmp, vbLf, Empty)
+    If Len(tmp) = 0 Then GoTo fail
+    If tmp = "}" Then GoTo fail  'is end function/end if
+    If Left(tmp, 1) = "/" Then GoTo fail 'is comment
+
     isExecutableLine = True
-    Exit Function
-    
-'    tmp = LCase(sourceText)
-'    tmp = Trim(Replace(tmp, vbTab, Empty))
-'    tmp = Replace(tmp, vbCr, Empty)
-'    tmp = Replace(tmp, vbLf, Empty)
-'
-'    'bp on an empty line will stop on next line
-'    'bp on a function (){ start will break on next line
-'    'bp on a comment or multiline comment will break at line
-'    'bp on a function close brace will set, but never hit. <--
-'    'bp on close brace of a if state breaks on next line
-'    'bp on a single line function with multiple statements will hit once (step into only steps once and all bypass)
-'
-'    If Len(tmp) = 0 Then GoTo fail
-'    If tmp = "}" Then GoTo fail  'is end function/end if
-'    If Left(tmp, 1) = "/" Then GoTo fail 'is comment
-'
-'    isExecutableLine = True
-'Exit Function
-'fail: isExecutableLine = False
+Exit Function
+fail: isExecutableLine = False
 End Function
 
 Public Function BreakPointExists(fileName As String, lineNo As Long, ctl As ucDukDbg, Optional b As CBreakpoint, Optional colIndex As Long) As Boolean
@@ -73,11 +70,6 @@ Public Function SetBreakpoint(ByVal fileName As String, lineNo As Long, ByVal so
         Exit Function
     End If
     
-    'If Not isExecutableLine(sourceText) Then 'just covers some basics for convience..
-    '    doOutput "Can not set breakpoint here, not an executable line"
-    '    Exit Function
-    'End If
-    
     Set b = New CBreakpoint
     
     With b
@@ -117,10 +109,12 @@ Public Sub RemoveBreakpoint(fileName As String, lineNo As Long, ctl As ucDukDbg)
         End If
         
         'we have to compact our duktape bp indexes - technically we should call relist...
-        'note we specifically dont check filename its a flat array currently
+        'todo: test this against multiple instances of form..(bp index is set per duk heap)
         For Each cur_b In breakpoints
-            If cur_b.index > b.index Then
-                cur_b.index = cur_b.index - 1
+            If ObjPtr(ctl) = b.owner Then
+                If cur_b.index > b.index Then
+                    cur_b.index = cur_b.index - 1
+                End If
             End If
         Next
     End If
