@@ -1,15 +1,22 @@
 VERSION 5.00
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#18.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#21.0#0"; "dukDbg.ocx"
 Begin VB.Form frmHostTest 
    Caption         =   "Form1"
    ClientHeight    =   9000
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   14175
+   ClientWidth     =   16740
    LinkTopic       =   "Form1"
    ScaleHeight     =   9000
-   ScaleWidth      =   14175
+   ScaleWidth      =   16740
    StartUpPosition =   3  'Windows Default
+   Begin VB.ListBox lstCallStack 
+      Height          =   3180
+      Left            =   12015
+      TabIndex        =   9
+      Top             =   2880
+      Width           =   4470
+   End
    Begin VB.CommandButton cmdMultiInst 
       Caption         =   "MultiInst"
       Height          =   375
@@ -80,8 +87,16 @@ Begin VB.Form frmHostTest
       TabIndex        =   0
       Top             =   225
       Width           =   11490
-      _ExtentX        =   20267
-      _ExtentY        =   8837
+      _extentx        =   20267
+      _extenty        =   8837
+   End
+   Begin VB.Label Label1 
+      Caption         =   "Callstack"
+      Height          =   285
+      Left            =   12015
+      TabIndex        =   10
+      Top             =   2520
+      Width           =   1185
    End
 End
 Attribute VB_Name = "frmHostTest"
@@ -105,7 +120,6 @@ Private Sub cmdJustDuk_Click()
     Else
         If rv <> "undefined" Then MsgBox rv
     End If
-    
     
 End Sub
 
@@ -137,14 +151,14 @@ Private Sub Form_Load()
     cboTest.AddItem "for(i=0;i<10;i++)form.List2.AddItem('item:'+i);alert('clearing!');form.List2.Clear()"
     cboTest.AddItem "var ts = fso.OpenTextFile('c:\\lastGraph.txt',1,true,0);v = ts.ReadAll(); alert(v)"          'value of v is returned from eval..
     cboTest.AddItem "var ts = fso.OpenTextFile('c:\\lastGraph.txt',1); v = ts.ReadAll();alert(v)"          '(default args test)
-
-
     
+    'if you want to access the embedded scintilla control
+    'Dim sci As SciSimple
+    'Set sci = ucDukDbg1.sci
+
 End Sub
 
-Private Sub Form_Unload(Cancel As Integer)
-    ucDukDbg1.EnsureTearDown
-End Sub
+
 
 Private Sub ucDukDbg1_dbgOut(msg As String)
     List1.AddItem "dbgout: " & msg
@@ -160,6 +174,18 @@ Private Sub ucDukDbg1_StateChanged(state As dukDbg.dbgStates)
         List2.Clear
         txtOut.Text = Empty
     End If
+    
+    If state = dsPaused Then
+        lstCallStack.Clear
+        Dim c As Collection
+        Dim cc As cCallStack
+        
+        Set c = ucDukDbg1.GetCallStack()
+        For Each cc In c
+            lstCallStack.AddItem cc.lineNo & " " & cc.func & " " & cc.fpath
+        Next
+    End If
+    
 End Sub
 
 Private Sub ucDukDbg1_txtOut(msg As String)

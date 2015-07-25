@@ -73,7 +73,7 @@ Public Function cb_HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argC
     
     On Error Resume Next
     
-    If forceShutDown Then Exit Function
+    If Not isControlActive() Then Exit Function
     
     key = StringFromPointer(buf)
     dbg "HostResolver: " & key & " ctx:" & ctx & " args: " & argCnt & " hInst: " & hInst

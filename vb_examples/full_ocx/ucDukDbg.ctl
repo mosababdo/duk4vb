@@ -288,7 +288,7 @@ Const SC_MARK_ARROW = 2
 Const SC_MARK_BACKGROUND = 22
 'http://www.scintilla.org/aprilw/SciLexer.bas
  
-Private lastEIP As Long
+Private lastEIP As Long 'used for clearing last line highlight
 Private curFile As String
 Private userStop As Boolean
 
@@ -303,24 +303,37 @@ Event dbgOut(msg As String)
 Event dukErr(line As Long, msg As String)
 Event StateChanged(state As dbgStates)
 
+'we cache these per instance and add them to a fresh script engine instance each execution..
 Private objCache As New Collection
 Private libFiles As New Collection
 Private intellisense As New Collection
+Private WithEvents ownerForm As Form
+Attribute ownerForm.VB_VarHelpID = -1
 
-Sub EnsureTearDown()
-    
-    'Exit Sub
-    
-    If Not running Then Exit Sub
-    If Not CanIBeActiveInstance(Me) Then Exit Sub
-    If running Then
-        If Not duk Is Nothing Then
-            duk.Timeout = 1
-            forceShutDown = True
-            SendDebuggerCmd dc_stepInto
-        End If
-    End If
-End Sub
+Property Get isRunning() As Boolean
+    isRunning = running
+End Property
+
+'Property Get Closing() As Boolean
+'    Closing = mClosing
+'End Property
+'
+'Property Let Closing(x As Boolean)
+'    mClosing = True
+'
+''this just causes bugs..screw it force user to stop it..
+''    If Not running Then Exit Property
+''    If Not CanIBeActiveInstance(Me) Then Exit Property
+''
+''    If running Then
+''        If Not duk Is Nothing Then
+''            duk.Timeout = 1
+''            'forceShutDown = True
+''            SendDebuggerCmd dc_stepInto
+''        End If
+''    End If
+'
+'End Property
 
 Property Get CurrentFile() As String
     CurrentFile = curFile
@@ -424,7 +437,7 @@ Public Function GetCallStack() As Collection
     If Not running Then GoTo fail
     If duk Is Nothing Then GoTo fail
     If Not duk.isDebugging Then GoTo fail
-    If InStr(0, lblStatus.Caption, "Paused") < 1 Then GoTo fail
+    If InStr(1, lblStatus.Caption, "Paused") < 1 Then GoTo fail
     Set GetCallStack = SyncGetCallStack()
     Exit Function
 fail:
@@ -510,6 +523,15 @@ Private Sub duk_Error(ByVal line As Long, ByVal desc As String)
     RaiseEvent dukErr(line, desc)
 End Sub
 
+
+'this is important dont forget it!
+Private Sub ownerForm_Unload(Cancel As Integer)
+    If Me.isRunning Then
+        MsgBox "You must stop execution before closing this form"
+        Cancel = 1
+    End If
+End Sub
+
 Private Sub scivb_AutoCompleteEvent(className As String)
     Dim prev As String
     Dim it As CIntellisenseItem
@@ -547,10 +569,6 @@ Private Sub scivb_MouseUp(Button As Integer, Shift As Integer, x As Long, Y As L
     
 End Sub
 
-Private Sub UserControl_Terminate()
-    'MonitorInstances Me, True
-End Sub
-
 Private Sub scivb_KeyDown(KeyCode As Long, Shift As Long)
 
     Dim curline As Long
@@ -574,9 +592,10 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
     Dim curline As Long
     Dim txt As String
     
-    If Not CanIBeActiveInstance(Me) Then Exit Sub
-    
-    forceShutDown = False
+    If Not CanIBeActiveInstance(Me) Then
+        RaiseEvent txtOut("Only one instance can be debugging at a time.")
+        Exit Sub
+    End If
     
     Select Case Button.key
         Case "Run":               If running Then SendDebuggerCmd dc_Resume Else ExecuteScript
@@ -611,19 +630,27 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
     
 End Sub
 
+Private Sub HookParentEvents()
+    On Error Resume Next
+    Set ownerForm = UserControl.Parent
+End Sub
+
 Private Sub ExecuteScript(Optional withDebugger As Boolean)
  
     Dim rv, f
     Dim o As CCachedObj
     Dim c As New Collection
     
-'    If Not ActiveUserControl Is Nothing Then
-'        MsgBox "Another debugger instance is already running", vbInformation
-'        Exit Sub
-'    End If
+    If isControlActive() Then
+        MsgBox "Another debugger instance is already running", vbInformation
+        Exit Sub
+    End If
     
     RaiseEvent StateChanged(dsStarted)
+    
+    HookParentEvents
     running = True
+    sciext.LockEditor
     SetToolBarIcons
     lblStatus = "Status: " & IIf(withDebugger, "Debugging...", "Running...")
     
@@ -659,21 +686,7 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
 cleanup:
     If Not duk Is Nothing Then 'form closing?
          If withDebugger Then duk.DebugAttach False
-        
-         If forceShutDown Then
-            duk.Reset
-            Set duk = Nothing
-            running = False
-            Set ActiveUserControl = Nothing
-            Exit Sub
-         End If
-         
-         If duk.hadError Then
-             If Not userStop Then
-                doOutput duk.LastError
-             End If
-         End If
-         
+         If duk.hadError And Not userStop Then doOutput duk.LastError
          duk.Reset 'remove any live COM object references (global and have to add again next time fresh..)
          Set duk = Nothing
          ClearLastLineMarkers
@@ -681,10 +694,11 @@ cleanup:
          running = False
          SetToolBarIcons
          RaiseEvent StateChanged(dsIdle)
-         
     End If
     
+    sciext.LockEditor False
     Set ActiveUserControl = Nothing
+    Set ownerForm = Nothing
     
 End Sub
 
@@ -719,12 +733,6 @@ End Sub
  
 Private Sub UserControl_Initialize()
 
-'    If Not ActiveUserControl Is Nothing Then
-'        scivb.Text = "[ You can only have one active instance of this control open at a time ]"
-'        SetToolBarIcons True
-'        Exit Sub
-'    End If
-        
     SetToolBarIcons
     
     scivb.DirectSCI.HideSelection False
@@ -747,9 +755,6 @@ Private Sub UserControl_Initialize()
 
     Set sciext = New CSciExtender
     sciext.init scivb
-
-    
-    MonitorInstances Me
     
 End Sub
 

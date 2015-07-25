@@ -22,7 +22,6 @@ Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Declare Function lstrlen Lib "kernel32.dll" Alias "lstrlenA" (ByVal lpString As Long) As Long
 Declare Function GetTickCount Lib "kernel32" () As Long
 
-
 'call back message types we receive from duktape in cb_stdout
 Enum cb_type
     cb_output = 0
@@ -109,7 +108,6 @@ Global Const DUK_DBG_ERR_TOOMANY = &H2
 Global Const DUK_DBG_ERR_NOTFOUND = &H3
 Global Const DUK_VAR_NOT_FOUND = "DUK_VAR_NOT_FOUND"
 
-Global forceShutDown As Boolean
 Global running As Boolean
 Public LastStringReturn As String
 Public readyToReturn As Boolean
@@ -173,37 +171,43 @@ Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
     
 End Function
 
+Function isControlActive() As Boolean
+    If ActiveUserControl Is Nothing Then Exit Function
+    'If ActiveUserControl.Closing Then Exit Function
+    isControlActive = True
+End Function
+
 Function CanIBeActiveInstance(ctl As ucDukDbg) As Boolean
     If ActiveUserControl Is Nothing Then CanIBeActiveInstance = True
     If ObjPtr(ActiveUserControl) = ObjPtr(ctl) Then CanIBeActiveInstance = True
 End Function
 
-Function MonitorInstances(ctl As ucDukDbg, Optional isClosing As Boolean = False)
-    
-    Dim duk As CDukTape
-    
-    ctlCount = ctlCount + IIf(isClosing, -1, 1)
-    
-    If isClosing And ObjPtr(ActiveUserControl) = ObjPtr(ctl) Then
-        'check if running?
-'        If running Then
-'            If Not ctl.duktape Is Nothing Then
-'                ctl.duktape.Timeout = 1
-'                forceShutDown = True
-'                SendDebuggerCmd dc_stepInto
-'                If ctl.duktape.isDebugging Then ctl.duktape.DebugAttach False
-'            End If
-'        End If
-        Set ActiveUserControl = Nothing
-        running = False
-    End If
-    
-    If ctlCount = 0 Then
-      'do we need to do any library teardown?
-      'zero out callbacks?
-    End If
-    
-End Function
+'Function MonitorInstances(ctl As ucDukDbg, Optional isClosing As Boolean = False)
+'
+'    Dim duk As CDukTape
+'
+'    ctlCount = ctlCount + IIf(isClosing, -1, 1)
+'
+'    If isClosing And ObjPtr(ActiveUserControl) = ObjPtr(ctl) Then
+'        'check if running?
+''        If running Then
+''            If Not ctl.duktape Is Nothing Then
+''                ctl.duktape.Timeout = 1
+''                forceShutDown = True
+''                SendDebuggerCmd dc_stepInto
+''                If ctl.duktape.isDebugging Then ctl.duktape.DebugAttach False
+''            End If
+''        End If
+'        Set ActiveUserControl = Nothing
+'        running = False
+'    End If
+'
+'    If ctlCount = 0 Then
+'      'do we need to do any library teardown?
+'      'zero out callbacks?
+'    End If
+'
+'End Function
 
 'debugger is just starting up first message already received..
 Sub On_DebuggerInilitize()
@@ -390,7 +394,7 @@ Public Sub cb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
     End If
     
     If lpMsg = 0 Then Exit Sub
-    If forceShutDown Then Exit Sub
+    If Not isControlActive() Then Exit Sub
     
     msg = StringFromPointer(lpMsg)
     
@@ -464,7 +468,7 @@ Public Function cb_GetDbgCmd(ByVal buf As Long, ByVal sz As Long) As Long
     Dim cmd_length As Long
     Dim b() As Byte
     
-        If forceShutDown Then Exit Function
+        If Not isControlActive() Then Exit Function
         
 topLine:
         If Not RespBuffer.isEmpty Then
@@ -524,21 +528,21 @@ topLine:
             Sleep 20
             i = i + 1
             
-            If RespBuffer.isEmpty And forceShutDown Then Exit Function
+            If RespBuffer.isEmpty And Not isControlActive() Then Exit Function
             
             If running = False Then 'we have a detach
                 Exit Function
             End If
             
             If i = 500 Then
-                If Not forceShutDown And Not ActiveUserControl Is Nothing Then
+                If isControlActive() Then
                     DukOp opd_dbgCoOp, ActiveUserControl.context
                 End If
                 i = 0
             End If
             
         Wend
-        If Not forceShutDown Then ActiveUserControl.SetStatus "on"
+        If isControlActive() Then ActiveUserControl.SetStatus "on"
         
         If Not RespBuffer.isEmpty Then
             
@@ -559,7 +563,7 @@ End Function
 Public Function cb_DebugDataIncoming(ByVal buf As Long, ByVal sz As Long) As Long
 
     If buf = 0 Or sz = 0 Then Exit Function 'shouldnt happen...
-    If forceShutDown Then Exit Function
+    If Not isControlActive() Then Exit Function
     
     Dim b() As Byte
     ReDim b(sz - 1) 'b is 0 based,
@@ -575,10 +579,8 @@ Public Function On_FullMessageReceived()
     
     Dim b As Byte
     Dim i As Long
-    
-    'If dbgStopNext Then Stop
-    
-    If forceShutDown Then Exit Function
+        
+    If Not isControlActive() Then Exit Function
     
     With RecvBuffer
     

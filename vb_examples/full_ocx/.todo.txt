@@ -1,12 +1,8 @@
 
 
-breakpoints are going to need an owner control to support
-more than one form open at a time...(but they do have filename which is usually but not necessairly unique...)
-
 behavior: note if you open the same file in two instances of the form breakpoints in one will
  trigger in the other...because the file name is the same..duktape does not differntate between the names..
  other than in testing this should be rare..
 
-force teardown behavior..we need this in case user closes debugger when debugging
-but what if two instances are open..then second doesnt debug..
-
+behavior: dont allow the user to close the active form if debugging..
+bug: with code folding on..folding triggers breakpoint set..
