@@ -95,8 +95,9 @@ Private Sub Class_Terminate()
         'in the IDE we release it as soon as not needed..that way IDE doesnt
         'ever hang onto the dll after debugging. If it does we cant recompile the dll
         'without closing VB IDE which is annoying...
-        FreeLibrary mDuk.hDukLib
+        'FreeLibrary mDuk.hDukLib '<--to dangerous to use after initial dev of dll is done..
     End If
+    'ResetComObjects 'because these are global we can not reset them in a single class terminate..
 End Sub
 
 Function Reset() As Boolean
@@ -107,20 +108,9 @@ Function Reset() As Boolean
         Exit Function
     End If
     
-    Dim o As Object
-    For Each o In comTypes
-        Set o = Nothing
-    Next
-    
-    For Each o In objs
-        Set o = Nothing
-    Next
-    
-    Set comTypes = New Collection
-    Set objs = New Collection
-    
     Class_Terminate
     Class_Initialize
+    Reset = True
     
 End Function
 
@@ -136,6 +126,8 @@ Function AddObject(obj As Object, name As String, Optional ByRef outErrList As C
     Dim cc As CCOMType
     Dim result As Boolean
         
+    If outErrList Is Nothing Then Set outErrList = New Collection
+    
     result = ParseObjectToCache(name, obj, Me)
     Set cc = comTypes(name) 'always added even with errors
        

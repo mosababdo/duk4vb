@@ -6,15 +6,11 @@ BEGIN
   DataSourceBehavior  = 0  'vbNone
   MTSTransactionMode  = 0  'NotAnMTSObject
 END
-Attribute VB_Name = "CCachedObj"
+Attribute VB_Name = "CIntellisenseItem"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'the debugger UI caches objects sent to its proxy of AddObject
-'this is done so that you only have to call it once per object
-'and then it can manage the internal duk instance on its own
-'(since we create a new duk instance for every execution clean)
-Public obj As Object
-Public name As String
+Public objName As String
+Public methods As String 'space seperated
 

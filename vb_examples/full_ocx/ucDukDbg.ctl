@@ -247,6 +247,13 @@ Begin VB.UserControl ucDukDbg
       _ExtentX        =   24077
       _ExtentY        =   10345
    End
+   Begin VB.Label lblInfo 
+      Height          =   330
+      Left            =   8685
+      TabIndex        =   6
+      Top             =   90
+      Width           =   5010
+   End
    Begin VB.Label lblStatus 
       Caption         =   "Status: Idle"
       Height          =   375
@@ -269,6 +276,8 @@ Attribute VB_Exposed = True
 '   http://www.icojam.com
 '   http://www.iconarchive.com/show/animals-icons-by-icojam/02-duck-icon.html
 
+Option Explicit
+
 Private WithEvents duk As CDukTape
 Attribute duk.VB_VarHelpID = -1
 Dim WithEvents sciext As CSciExtender
@@ -279,19 +288,52 @@ Const SC_MARK_ARROW = 2
 Const SC_MARK_BACKGROUND = 22
 'http://www.scintilla.org/aprilw/SciLexer.bas
  
-Public lastEIP As Long
-Public curFile As String
+Private lastEIP As Long
+Private curFile As String
 Private userStop As Boolean
 
+Public Enum dbgStates
+    dsStarted = 1
+    dsIdle = 2
+    dsPaused = 3
+End Enum
+    
 Event txtOut(msg As String)
 Event dbgOut(msg As String)
 Event dukErr(line As Long, msg As String)
+Event StateChanged(state As dbgStates)
 
 Private objCache As New Collection
 Private libFiles As New Collection
+Private intellisense As New Collection
+
+Sub EnsureTearDown()
+    
+    'Exit Sub
+    
+    If Not running Then Exit Sub
+    If Not CanIBeActiveInstance(Me) Then Exit Sub
+    If running Then
+        If Not duk Is Nothing Then
+            duk.Timeout = 1
+            forceShutDown = True
+            SendDebuggerCmd dc_stepInto
+        End If
+    End If
+End Sub
+
+Property Get CurrentFile() As String
+    CurrentFile = curFile
+End Property
+
+Function LoadString(js) As Boolean
+    curFile = GetFreeFileName(Environ("temp"), ".js")
+    WriteFile curFile, CStr(js)
+    LoadString = scivb.LoadFile(curFile)
+End Function
 
 'note this does not reset the running script..thats up to the user based on state..
-Public Sub Reset(objs As Boolean, libs As Boolean)
+Public Sub Reset(Optional objs As Boolean = False, Optional libs As Boolean = False, Optional itsense As Boolean = False)
     Dim o As CCachedObj
     
     If objs Then
@@ -301,9 +343,44 @@ Public Sub Reset(objs As Boolean, libs As Boolean)
         Set objCache = New Collection
     End If
     
+    If itsense Then
+        For Each o In intellisense
+            Set o = Nothing
+        Next
+        Set intellisense = New Collection
+    End If
+    
     If libs Then Set libFiles = New Collection
     
 End Sub
+
+Function AddIntellisense(className As String, ByVal spaceSeperatedMethodList As String) As Boolean
+    
+    If Len(className) = 0 Or InStr(className, " ") > 1 Then Exit Function
+    If Len(spaceSeperatedMethodList) = 0 Then Exit Function
+    
+    If InStr(spaceSeperatedMethodList, ",") > 0 Then
+        spaceSeperatedMethodList = Join(Split(spaceSeperatedMethodList, ","), " ")
+    End If
+    
+    Dim it As CIntellisenseItem
+    
+    For Each it In intellisense
+        If it.objName = className Then Exit Function
+    Next
+    
+    Set it = New CIntellisenseItem
+    it.objName = className
+    it.methods = spaceSeperatedMethodList
+    intellisense.Add it
+    AddIntellisense = True
+    
+End Function
+
+Function LoadCallTips(fpath As String) As Long
+    If Not FileExists(fpath) Then Exit Function
+    LoadCallTips = scivb.LoadCallTips(fpath)
+End Function
 
 'only have to configure this once per instance unless you reset
 Public Function AddObject(obj As Object, name As String) As Boolean
@@ -343,6 +420,7 @@ Public Function AddLibFile(fpath As String) As Boolean
 End Function
 
 Public Function GetCallStack() As Collection
+    If Not CanIBeActiveInstance(Me) Then Exit Function
     If Not running Then GoTo fail
     If duk Is Nothing Then GoTo fail
     If Not duk.isDebugging Then GoTo fail
@@ -361,7 +439,11 @@ Friend Property Get context() As Long
     End If
 End Property
 
-Friend Property Get sci() As SciSimple
+Friend Property Get duktape() As CDukTape
+    Set duktape = duk
+End Property
+
+Public Property Get sci() As Object
     Set sci = scivb
 End Property
 
@@ -371,6 +453,7 @@ Friend Sub SetStatus(msg As String)
     Else
         lblStatus.Caption = "Status: " & msg
         tmrSetStatus.Enabled = False
+        If msg = "Paused" Then RaiseEvent StateChanged(dsPaused)
     End If
 End Sub
 
@@ -388,7 +471,7 @@ Function LoadFile(fpath As String) As Boolean
     LoadFile = scivb.LoadFile(fpath)
 End Function
 
-Public Sub SyncUI()
+Friend Sub SyncUI()
        
     Dim curline As Long
     
@@ -410,7 +493,7 @@ End Sub
  
 
 
-Public Sub ClearLastLineMarkers()
+Friend Sub ClearLastLineMarkers()
     Dim startPos As Long, endPos As Long
 
     scivb.DeleteMarker lastEIP, 1 'remove the yellow arrow
@@ -427,30 +510,57 @@ Private Sub duk_Error(ByVal line As Long, ByVal desc As String)
     RaiseEvent dukErr(line, desc)
 End Sub
 
-Private Sub UserControl_Terminate()
-    If Not duk Is Nothing Then
-        duk.Timeout = 1
-        forceShutDown = True
-        SendDebuggerCmd dc_stepInto
-        If duk.isDebugging Then duk.DebugAttach False
-        Set duk = Nothing
-    End If
-    Set ActiveUserControl = Nothing
+Private Sub scivb_AutoCompleteEvent(className As String)
+    Dim prev As String
+    Dim it As CIntellisenseItem
+    
+    prev = scivb.PreviousWord
+    
+    For Each it In intellisense
+        If it.objName = className Then
+            scivb.ShowAutoComplete it.methods
+            Exit Sub
+        End If
+    Next
+            
 End Sub
 
-Private Sub lvLog_DblClick()
-    If lvLog.SelectedItem Is Nothing Then Exit Sub
-    MsgBox lvLog.SelectedItem.Tag, vbInformation
+Private Sub scivb_DoubleClick()
+    Dim word As String
+    
+    word = scivb.CurrentWord
+    If Len(word) < 20 Then
+        lblInfo.Caption = "  " & scivb.hilightWord(word, , vbBinaryCompare) & " instances of '" & word & " ' found"
+    End If
+    
+End Sub
+
+Private Sub scivb_MouseUp(Button As Integer, Shift As Integer, x As Long, Y As Long)
+    On Error Resume Next
+    
+    Dim sel As String
+ 
+    sel = scivb.SelText
+    If Len(sel) > 0 And Len(sel) < 20 Then
+        lblInfo.Caption = "  " & scivb.hilightWord(sel, , vbBinaryCompare) & " instances of '" & sel & " ' found"
+    End If
+    
+End Sub
+
+Private Sub UserControl_Terminate()
+    'MonitorInstances Me, True
 End Sub
 
 Private Sub scivb_KeyDown(KeyCode As Long, Shift As Long)
 
     Dim curline As Long
     
+    If Not CanIBeActiveInstance(Me) Then Exit Sub
+    
     'Debug.Print KeyCode & " " & Shift
     Select Case KeyCode
         Case vbKeyF2: curline = scivb.CurrentLine
-                      ToggleBreakPoint curFile, curline, scivb.GetLineText(curline)
+                      ToggleBreakPoint curFile, curline, scivb.GetLineText(curline), Me
                       
         Case vbKeyF5: If running Then SendDebuggerCmd dc_Resume Else ExecuteScript True
         Case vbKeyF7: SendDebuggerCmd dc_stepInto
@@ -464,13 +574,17 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
     Dim curline As Long
     Dim txt As String
     
+    If Not CanIBeActiveInstance(Me) Then Exit Sub
+    
+    forceShutDown = False
+    
     Select Case Button.key
         Case "Run":               If running Then SendDebuggerCmd dc_Resume Else ExecuteScript
         Case "Start Debugger":    If running Then SendDebuggerCmd dc_Resume Else ExecuteScript True
         Case "Step In":           SendDebuggerCmd dc_stepInto
         Case "Step Over":         SendDebuggerCmd dc_StepOver
         Case "Step Out":          SendDebuggerCmd dc_stepout
-        Case "Clear All Breakpoints": RemoveAllBreakpoints
+        Case "Clear All Breakpoints": RemoveAllBreakpoints Me
         Case "Break":                 SyncPauseExecution
 
         Case "Run to Cursor":
@@ -485,7 +599,7 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
                                   
         Case "Toggle Breakpoint":
                                   curline = scivb.CurrentLine
-                                  ToggleBreakPoint curFile, curline, scivb.GetLineText(curline)
+                                  ToggleBreakPoint curFile, curline, scivb.GetLineText(curline), Me
                                     
         Case "Stop":
                                   userStop = True
@@ -501,24 +615,17 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
  
     Dim rv, f
     Dim o As CCachedObj
-    Dim c As Collection
-     
-    If Not duk Is Nothing Then
-        MsgBox "Another script is already running can not start a new one!", vbInformation
-        Exit Sub
-    End If
+    Dim c As New Collection
     
-    If Not ActiveUserControl Is Nothing Then
-        MsgBox "Another debugger instance is already running", vbInformation
-        Exit Sub
-    End If
+'    If Not ActiveUserControl Is Nothing Then
+'        MsgBox "Another debugger instance is already running", vbInformation
+'        Exit Sub
+'    End If
     
+    RaiseEvent StateChanged(dsStarted)
     running = True
     SetToolBarIcons
     lblStatus = "Status: " & IIf(withDebugger, "Debugging...", "Running...")
-    txtOut.Text = Empty
-    lvLog.ListItems.Clear
-    lvCallStack.ListItems.Clear
     
     userStop = False
     Set duk = New CDukTape
@@ -553,6 +660,14 @@ cleanup:
     If Not duk Is Nothing Then 'form closing?
          If withDebugger Then duk.DebugAttach False
         
+         If forceShutDown Then
+            duk.Reset
+            Set duk = Nothing
+            running = False
+            Set ActiveUserControl = Nothing
+            Exit Sub
+         End If
+         
          If duk.hadError Then
              If Not userStop Then
                 doOutput duk.LastError
@@ -565,7 +680,8 @@ cleanup:
          lblStatus = "Status: Idle" 'these would call form_load again if closing down..
          running = False
          SetToolBarIcons
-    
+         RaiseEvent StateChanged(dsIdle)
+         
     End If
     
     Set ActiveUserControl = Nothing
@@ -631,8 +747,9 @@ Private Sub UserControl_Initialize()
 
     Set sciext = New CSciExtender
     sciext.init scivb
+
     
-    'Set ActiveUserControl = Me
+    MonitorInstances Me
     
 End Sub
 
@@ -661,12 +778,11 @@ Private Sub tmrHideCallTip_Timer()
     If sciext.isMouseOverCallTip() Then Exit Sub
     tmrHideCallTip.Enabled = False
     scivb.StopCallTip
-    Set selVariable = Nothing
 End Sub
  
 Private Sub sciext_MarginClick(lline As Long, Position As Long, margin As Long, modifiers As Long)
     'Debug.Print "MarginClick: line,pos,margin,modifiers", lLine, Position, margin, modifiers
-    ToggleBreakPoint curFile, lline, scivb.GetLineText(lline)
+    ToggleBreakPoint curFile, lline, scivb.GetLineText(lline), Me
 End Sub
 
 Private Sub sciext_MouseDwellEnd(lline As Long, Position As Long)
@@ -679,6 +795,8 @@ Private Sub sciext_MouseDwellStart(lline As Long, Position As Long)
     Dim txt As String
     Dim curWord As String
     Dim cv As CVariable
+    
+    If Not CanIBeActiveInstance(Me) Then Exit Sub
     
     If running Then
          curWord = sciext.WordUnderMouse(Position)
@@ -706,11 +824,13 @@ Private Sub txtCmd_KeyPress(KeyAscii As Integer)
     
     Dim v As CVariable
     
+    If Not CanIBeActiveInstance(Me) Then Exit Sub
+    
     If KeyAscii <> 13 Then Exit Sub 'wait for user to press return key
     KeyAscii = 0 'eat the keypress to prevent vb from doing a msgbeep
     
     If txtCmd.Text = "cls" Then
-        txtOut.Text = Empty
+        RaiseEvent dbgOut("cls")
         Exit Sub
     End If
     

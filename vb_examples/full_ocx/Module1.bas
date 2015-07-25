@@ -33,6 +33,7 @@ Enum cb_type
     cb_ReleaseObj = 5
     cb_StringReturn = 6
     cb_debugger = 7
+    cb_alert = 8
 End Enum
 
 'DukOp declare operation codes..
@@ -136,7 +137,7 @@ Public status As Stats
 Private tmpVar       As CVariable
 Public tmpBreakPoint As CBreakpoint  'used in modBreakpoints so public
 Private tmpCol       As Collection
-
+Private ctlCount As Long
 
 Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
 
@@ -172,10 +173,42 @@ Function InitDukLib(Optional ByVal explicitPathToDll As String) As Boolean
     
 End Function
 
+Function CanIBeActiveInstance(ctl As ucDukDbg) As Boolean
+    If ActiveUserControl Is Nothing Then CanIBeActiveInstance = True
+    If ObjPtr(ActiveUserControl) = ObjPtr(ctl) Then CanIBeActiveInstance = True
+End Function
+
+Function MonitorInstances(ctl As ucDukDbg, Optional isClosing As Boolean = False)
+    
+    Dim duk As CDukTape
+    
+    ctlCount = ctlCount + IIf(isClosing, -1, 1)
+    
+    If isClosing And ObjPtr(ActiveUserControl) = ObjPtr(ctl) Then
+        'check if running?
+'        If running Then
+'            If Not ctl.duktape Is Nothing Then
+'                ctl.duktape.Timeout = 1
+'                forceShutDown = True
+'                SendDebuggerCmd dc_stepInto
+'                If ctl.duktape.isDebugging Then ctl.duktape.DebugAttach False
+'            End If
+'        End If
+        Set ActiveUserControl = Nothing
+        running = False
+    End If
+    
+    If ctlCount = 0 Then
+      'do we need to do any library teardown?
+      'zero out callbacks?
+    End If
+    
+End Function
+
 'debugger is just starting up first message already received..
 Sub On_DebuggerInilitize()
     status.stepToLine = -1
-    InitDebuggerBpx
+    InitDebuggerBpx ActiveUserControl
 End Sub
 
 Private Sub On_DebuggerTerminate()
@@ -248,6 +281,15 @@ Sub SyncPauseExecution()
     DukOp opd_dbgTriggerRead, ActiveUserControl.context
 End Sub
 
+Sub SyncStep(dc As Debug_Commands)
+    If dc = dc_stepInto Or dc = dc_stepout Or dc = dc_StepOver Then
+        LastCommand = dc
+        replyReceived = False
+        RespBuffer.ConstructMessage dc
+        DukOp opd_dbgTriggerRead, ActiveUserControl.context
+    End If
+End Sub
+
 
 
 'Public Sub LoadCallStack()
@@ -271,6 +313,9 @@ End Sub
 
 'if its a critical command to know was sent check return, if just BS like user step who cares..
 Public Function SendDebuggerCmd(cmd As Debug_Commands, Optional arg1, Optional arg2) As Boolean
+    
+    If Not running Then Exit Function
+    If ActiveUserControl Is Nothing Then Exit Function
     
     If Not replyReceived Then
         'we are still waiting for last commands response..maybe user hit step step step to fast?
@@ -351,9 +396,10 @@ Public Sub cb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
     
     Select Case t
         Case cb_StringReturn: LastStringReturn = msg
-        'Case cb_ReleaseObj: ReleaseObj CLng(msg)
+        Case cb_ReleaseObj: ReleaseObj CLng(msg)
         Case cb_output: doOutput msg: dbg "Output received: " & msg
         Case cb_error:  dbg "Script Error: " & msg
+        Case cb_alert: MsgBox msg, vbInformation, "Script Alert"
         Case cb_debugger:
                 If msg = "Debugger-Detached" Then
                     running = False
@@ -437,7 +483,7 @@ topLine:
                 On_DebuggerInilitize
             ElseIf Not status.callStackLoaded Then 'every time we step/bp
                 
-                If Len(status.fileName) > 0 And status.fileName <> ActiveUserControl.curFile Then
+                If Len(status.fileName) > 0 And status.fileName <> ActiveUserControl.CurrentFile Then
                     'my personal preference is to only debug current file user sees..
                     'for me any other js is lib files I add as glue and dont want to bother them with..
                     SendDebuggerCmd dc_stepout
@@ -478,19 +524,21 @@ topLine:
             Sleep 20
             i = i + 1
             
+            If RespBuffer.isEmpty And forceShutDown Then Exit Function
+            
             If running = False Then 'we have a detach
                 Exit Function
             End If
             
             If i = 500 Then
-                If Not ActiveUserControl Is Nothing Then
+                If Not forceShutDown And Not ActiveUserControl Is Nothing Then
                     DukOp opd_dbgCoOp, ActiveUserControl.context
                 End If
                 i = 0
             End If
             
         Wend
-        ActiveUserControl.SetStatus "on"
+        If Not forceShutDown Then ActiveUserControl.SetStatus "on"
         
         If Not RespBuffer.isEmpty Then
             

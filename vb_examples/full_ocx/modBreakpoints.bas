@@ -35,12 +35,12 @@ Function isExecutableLine(sourceText As String) As Boolean
 'fail: isExecutableLine = False
 End Function
 
-Public Function BreakPointExists(fileName As String, lineNo As Long, Optional b As CBreakpoint, Optional colIndex As Long) As Boolean
+Public Function BreakPointExists(fileName As String, lineNo As Long, ctl As ucDukDbg, Optional b As CBreakpoint, Optional colIndex As Long) As Boolean
 
     On Error Resume Next
     colIndex = 1
     For Each b In breakpoints
-        If b.lineNo = lineNo And b.fileName = fileName Then
+        If b.lineNo = lineNo And b.fileName = fileName And b.owner = ObjPtr(ctl) Then
             BreakPointExists = True
             Exit Function
         End If
@@ -51,12 +51,12 @@ Public Function BreakPointExists(fileName As String, lineNo As Long, Optional b 
     
 End Function
 
-Public Sub ToggleBreakPoint(fileName As String, lineNo As Long, sourceText As String)
+Public Sub ToggleBreakPoint(fileName As String, lineNo As Long, sourceText As String, ctl As ucDukDbg)
   
-    If BreakPointExists(fileName, lineNo) Then
-        RemoveBreakpoint fileName, lineNo
+    If BreakPointExists(fileName, lineNo, ctl) Then
+        RemoveBreakpoint fileName, lineNo, ctl
     Else
-        SetBreakpoint fileName, lineNo, sourceText
+        SetBreakpoint fileName, lineNo, sourceText, ctl
     End If
 
 End Sub
@@ -64,10 +64,10 @@ End Sub
 'file name is case sensitive!
 'sooo we need a live context to actually set breakpoints..but we can store them
 'at design time, and then on initial debugger startup make sure to cycle through set breakpoints to initial set..
-Public Function SetBreakpoint(ByVal fileName As String, lineNo As Long, ByVal sourceText As String) As Boolean
+Public Function SetBreakpoint(ByVal fileName As String, lineNo As Long, ByVal sourceText As String, ctl As ucDukDbg) As Boolean
     Dim b As CBreakpoint
     
-    If BreakPointExists(fileName, lineNo, b) Then
+    If BreakPointExists(fileName, lineNo, ctl, b) Then
         b.sourceText = sourceText 'just in case it changed..
         SetBreakpoint = True
         Exit Function
@@ -84,6 +84,7 @@ Public Function SetBreakpoint(ByVal fileName As String, lineNo As Long, ByVal so
         .fileName = fileName
         .lineNo = lineNo
         .sourceText = sourceText
+        .owner = ObjPtr(ctl)
     End With
     
     If running Then
@@ -96,18 +97,18 @@ Public Function SetBreakpoint(ByVal fileName As String, lineNo As Long, ByVal so
     End If
 
     breakpoints.Add b
-    If ActiveUserControl.curFile = fileName Then ActiveUserControl.sci.SetMarker lineNo
+    If ctl.CurrentFile = fileName Then ctl.sci.SetMarker lineNo
     SetBreakpoint = True
     
     
 End Function
 
-Public Sub RemoveBreakpoint(fileName As String, lineNo As Long)
+Public Sub RemoveBreakpoint(fileName As String, lineNo As Long, ctl As ucDukDbg)
     Dim b As CBreakpoint
     Dim colIndex As Long
     Dim cur_b As CBreakpoint
     
-    If Not BreakPointExists(fileName, lineNo, b, colIndex) Then Exit Sub
+    If Not BreakPointExists(fileName, lineNo, ctl, b, colIndex) Then Exit Sub
     
     If running Then
         If Not SyncDelBreakPoint(b) Then
@@ -124,7 +125,7 @@ Public Sub RemoveBreakpoint(fileName As String, lineNo As Long)
         Next
     End If
         
-    If ActiveUserControl.curFile = fileName Then ActiveUserControl.sci.DeleteMarker lineNo
+    If ctl.CurrentFile = fileName Then ctl.sci.DeleteMarker lineNo
     breakpoints.Remove colIndex
     
 End Sub
@@ -136,10 +137,10 @@ End Sub
 '    Next
 'End Sub
 '
-Sub RemoveAllBreakpoints()
+Sub RemoveAllBreakpoints(ctl As ucDukDbg)
     Dim b As CBreakpoint
     For Each b In breakpoints
-        RemoveBreakpoint b.fileName, b.lineNo
+        If b.owner = ObjPtr(ctl) Then RemoveBreakpoint b.fileName, b.lineNo, ctl
     Next
 End Sub
 
@@ -147,12 +148,12 @@ End Sub
 
 'called on debugger startup when first message received..
 'assumes only single source file ansd is still current..! todo:
-Sub InitDebuggerBpx()
+Sub InitDebuggerBpx(ctl As ucDukDbg)
     Dim b As CBreakpoint
     For Each b In breakpoints
         If Not b.isSet Then
-            If ActiveUserControl.curFile = b.fileName Then
-                If b.sourceText = ActiveUserControl.sci.GetLineText(b.lineNo) Then
+            If ctl.CurrentFile = b.fileName And b.owner = ObjPtr(ctl) Then
+                If b.sourceText = ctl.sci.GetLineText(b.lineNo) Then
                      If Not SyncSetBreakPoint(b) Then
                         dbg "InitDebuggerBpx: Failed to set bp" & b.Stats
                      End If

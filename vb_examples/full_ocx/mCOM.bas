@@ -1,4 +1,6 @@
 Attribute VB_Name = "mCOM"
+Option Explicit
+
 Public comTypes As New Collection
 Public objs As New Collection
 
@@ -39,6 +41,21 @@ hell:
     If Err.Number <> 0 Then Debug.Print "Error in ReleaseObj(" & hInst & ")" & Err.Description
 End Function
 
+Sub ResetComObjects()
+
+    Dim o As Object
+    For Each o In comTypes
+        Set o = Nothing
+    Next
+    
+    For Each o In objs
+        Set o = Nothing
+    Next
+    
+    Set comTypes = New Collection
+    Set objs = New Collection
+    
+End Sub
 
 'this is used for script to host app object integration..
 Public Function cb_HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt As Long, ByVal hInst As Long) As Long
@@ -52,8 +69,11 @@ Public Function cb_HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argC
     Dim meth As CMethod
     Dim pObjName As String
     Dim a As Long
+    Dim t As VbCallType
     
     On Error Resume Next
+    
+    If forceShutDown Then Exit Function
     
     key = StringFromPointer(buf)
     dbg "HostResolver: " & key & " ctx:" & ctx & " args: " & argCnt & " hInst: " & hInst
@@ -107,17 +127,18 @@ Public Function cb_HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argC
         retVal = CallByNameEx(o, meth.name, meth.CallType, args(), meth.retIsObj)
     End If
     
-    HostResolver = IIf(meth.hasRet, 1, 0)
+    t = meth.CallType
+    cb_HostResolver = IIf(meth.hasRet, 1, 0)
     
     'todo handle all ret types..
-    If LCase(meth.retType) = "string" Or LCase(meth.retType) = "variant" Then
+    If LCase(meth.retType) = "string" Or LCase(meth.retType) = "variant" Or LCase(meth.retType) = "boolean" Then
         dbg "returning string"
         DukOp opd_PushStr, ctx, 0, CStr(retVal)
-        If t <> VbLet Then HostResolver = 1
+        If t <> VbLet Then cb_HostResolver = 1
     ElseIf LCase(meth.retType) = "long" Then
         dbg "returning long"
         DukOp opd_PushNum, ctx, CLng(retVal)
-        If t <> VbLet Then HostResolver = 1
+        If t <> VbLet Then cb_HostResolver = 1
     End If
         
     If meth.retIsObj Then
@@ -147,7 +168,7 @@ Public Function CallByNameEx(obj As Object, ProcName As String, CallType As VbCa
         Dim a, b, c, d, e, f, g, h, i, j
     
         If Not IsArray(v) Or AryIsEmpty(v) Then
-            dbg "CallByName: " & obj & ProcName & " " & isObj
+            dbg "CallByName: " & TypeName(obj) & ProcName & " " & isObj
             If isObj Then
                 Set CallByNameEx = CallByName(obj, ProcName, CallType)
             Else
@@ -160,7 +181,7 @@ Public Function CallByNameEx(obj As Object, ProcName As String, CallType As VbCa
                 MsgBox "CallByNameEx does not support more than 10 args.. method: " & ProcName, vbCritical
             End If
             
-            dbg "CallByName: " & obj & " " & ProcName & " " & isObj & " " & Join(v, ", ")
+            dbg "CallByName: " & TypeName(obj) & " " & ProcName & " " & isObj & " " & Join(v, ", ")
             
             If numArgs >= 0 Then a = v(0)
             If numArgs >= 1 Then b = v(1)

@@ -18,6 +18,7 @@ Module=mCOM; mCOM.bas
 Class=CCOMType; CCOMType.cls
 Class=CMethod; CMethod.cls
 Class=CCachedObj; CCachedObj.cls
+Class=CIntellisenseItem; CIntellisenseItem.cls
 Startup="(None)"
 HelpFile=""
 Title="dukDbg"

@@ -33,6 +33,7 @@ Enum cb_type
     cb_ReleaseObj = 5
     cb_StringReturn = 6
     cb_debugger = 7
+    cb_alert = 8
 End Enum
 
 'DukOp declare operation codes..
@@ -364,6 +365,7 @@ Public Sub cb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
         'Case cb_ReleaseObj: ReleaseObj CLng(msg)
         Case cb_output: doOutput msg: dbg "Output received: " & msg
         Case cb_error:  dbg "Script Error: " & msg
+        Case cb_alert:  MsgBox msg, vbInformation, "Script Alert"
         Case cb_debugger:
                 If msg = "Debugger-Detached" Then
                     running = False

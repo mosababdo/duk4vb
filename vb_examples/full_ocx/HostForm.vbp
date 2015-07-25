@@ -1,7 +1,8 @@
 Type=Exe
-Form=frmHostTest.frm
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
-Object={047848A0-21DD-421D-951E-B4B1F3E1718D}#4.0#0; dukDbg.ocx
+Reference=*\G{420B2830-E718-11CF-893D-00A0C9054228}#1.0#0#C:\WINDOWS\system32\scrrun.dll#Microsoft Scripting Runtime
+Object={047848A0-21DD-421D-951E-B4B1F3E1718D}#18.0#0; dukDbg.ocx
+Form=frmHostTest.frm
 IconForm="frmHostTest"
 Startup="frmHostTest"
 HelpFile=""
@@ -19,7 +20,7 @@ VersionCompanyName="sandsprite"
 CompilationType=0
 OptimizationType=0
 FavorPentiumPro(tm)=0
-CodeViewDebugInfo=0
+CodeViewDebugInfo=-1
 NoAliasing=0
 BoundsCheck=0
 OverflowCheck=0
@@ -31,6 +32,7 @@ Unattended=0
 Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
+DebugStartupOption=0
 
 [fastBuild]
 fullPath=D:\_code\duk4vb\vb_examples\full_ocx\HostForm.exe

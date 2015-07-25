@@ -11,14 +11,6 @@ Begin VB.Form Form1
    ScaleHeight     =   9795
    ScaleWidth      =   13845
    StartUpPosition =   2  'CenterScreen
-   Begin VB.CommandButton Command1 
-      Caption         =   "Command1"
-      Height          =   375
-      Left            =   11610
-      TabIndex        =   10
-      Top             =   135
-      Width           =   870
-   End
    Begin VB.Timer tmrSetStatus 
       Enabled         =   0   'False
       Interval        =   700

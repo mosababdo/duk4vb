@@ -30,7 +30,7 @@ Function bHexDump(b() As Byte) As String
 End Function
 
 Function HexDump(ByVal str, Optional hexOnly = 0) As String
-    Dim s() As String, chars As String, tmp As String, i As Long, h, tt, x
+    Dim s() As String, chars As String, tmp As String, i As Long, h, tt, X
     On Error Resume Next
     Dim ary() As Byte
     Dim offset As Long
@@ -44,9 +44,9 @@ Function HexDump(ByVal str, Optional hexOnly = 0) As String
         tt = Hex(ary(i))
         If Len(tt) = 1 Then tt = "0" & tt
         tmp = tmp & tt & " "
-        x = ary(i)
+        X = ary(i)
         'chars = chars & IIf((x > 32 And x < 127) Or x > 191, Chr(x), ".") 'x > 191 causes \x0 problems on non us systems... asc(chr(x)) = 0
-        chars = chars & IIf((x > 32 And x < 127), Chr(x), ".")
+        chars = chars & IIf((X > 32 And X < 127), Chr(X), ".")
         If i > 1 And i Mod 16 = 0 Then
             h = Hex(offset)
             While Len(h) < 6: h = "0" & h: Wend
@@ -138,9 +138,9 @@ End Function
 'End Function
 
 Sub push(ary, value) 'this modifies parent ary object
-Dim x
+Dim X
     On Error GoTo init
-    x = UBound(ary) '<-throws Error If Not initalized
+    X = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
     ary(UBound(ary)) = value
     Exit Sub
@@ -167,9 +167,9 @@ End Sub
 
 Sub bpush(ary, value As Byte, Optional freshStart As Boolean = False)   'this modifies parent ary object
     On Error GoTo init
-    Dim x
+    Dim X
     If freshStart Then Erase ary
-    x = UBound(ary) '<-throws Error If Not initalized
+    X = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
     ary(UBound(ary)) = value
     Exit Sub
@@ -223,13 +223,13 @@ Function KeyExistsInCollection(c As Collection, val As String) As Boolean
 End Function
 
 Function c2s(c As Collection) As String
-    Dim x, y
+    Dim X, Y
     If c.count = 0 Then Exit Function
-    For Each x In c
-        y = y & x & ", "
+    For Each X In c
+        Y = Y & X & ", "
     Next
-    y = Mid(y, 1, Len(y) - 2)
-    c2s = y
+    Y = Mid(Y, 1, Len(Y) - 2)
+    c2s = Y
 End Function
 
 Function FolderExists(path As String) As Boolean
@@ -307,3 +307,40 @@ Function hto64(d As Double) As Double
     
 End Function
  
+Function RandomNum() As Long
+    Dim tmp As Long
+    Dim tries As Long
+    
+    On Error Resume Next
+
+    Do While 1
+        Err.Clear
+        Randomize
+        tmp = Round(Timer * Now * Rnd(), 0)
+        RandomNum = tmp
+        If Err.Number = 0 Then Exit Function
+        If tries < 100 Then
+            tries = tries + 1
+        Else
+            Exit Do
+        End If
+    Loop
+    
+    RandomNum = GetTickCount
+    
+End Function
+
+Function GetFreeFileName(ByVal folder, Optional ByVal extension = ".txt") As String
+    
+    If Not FolderExists(CStr(folder)) Then Exit Function
+    If Right(folder, 1) <> "\" Then folder = folder & "\"
+    If Left(extension, 1) <> "." Then extension = "." & extension
+    
+    Dim tmp As String
+    Do
+      tmp = folder & RandomNum() & extension
+    Loop Until Not FileExists(tmp)
+    
+    GetFreeFileName = tmp
+End Function
+

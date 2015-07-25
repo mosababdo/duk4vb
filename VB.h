@@ -12,7 +12,8 @@ typedef enum{
 	cb_error = 4,
 	cb_ReleaseObj = 5,
 	cb_StringReturn = 6,
-	cb_debugger = 7
+	cb_debugger = 7,
+	cb_Alert = 8
 } cb_type;
 
 //Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)

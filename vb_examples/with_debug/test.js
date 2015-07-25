@@ -1,9 +1,10 @@
 
 a = 1
 a++;
- while(a){
+alert(a)
+/* while(a){ //test break
 a++;
-}
+}*/
  
 var gs = "string1"
 print(1)

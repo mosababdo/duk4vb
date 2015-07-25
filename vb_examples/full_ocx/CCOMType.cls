@@ -11,6 +11,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+Option Explicit
+
 Public name As String
 Public methods As New Collection
 Public dependancies As New Collection
@@ -30,7 +32,7 @@ Function LoadType(modname As String) As Boolean
     Dim key As String
     Dim m As CMethod
     Dim pd As String
-    Dim protoEnd As Long
+    Dim protoEnd As Long, dat, d
     
     name = modname
     Set errors = New Collection

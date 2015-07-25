@@ -52,6 +52,7 @@ Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt 
     Dim meth As CMethod
     Dim pObjName As String
     Dim a As Long
+    Dim t As VbCallType
     
     On Error Resume Next
     
@@ -107,6 +108,7 @@ Public Function HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt 
         retVal = CallByNameEx(o, meth.name, meth.CallType, args(), meth.retIsObj)
     End If
     
+    t = meth.CallType
     HostResolver = IIf(meth.hasRet, 1, 0)
     
     'todo handle all ret types..

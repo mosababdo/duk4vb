@@ -24,6 +24,7 @@ Enum cb_type
     cb_error = 4
     cb_ReleaseObj = 5
     cb_StringReturn = 6
+    cb_alert = 8
 End Enum
 
 Enum opDuk
@@ -158,7 +159,8 @@ Public Sub vb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
     Select Case t
         Case cb_StringReturn: LastStringReturn = msg
         'Case cb_ReleaseObj: ReleaseObj CLng(msg)
-        Case cb_output, cb_error:  MsgBox msg, vbInformation, "Script Output"
+        Case cb_output, cb_error:  MsgBox msg, vbInformation, "Script " & IIf(t = cb_output, "Output", "Error")
+        Case cb_alert:  MsgBox msg, vbInformation, "Script Alert"
     End Select
     
 End Sub

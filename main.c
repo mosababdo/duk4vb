@@ -73,7 +73,8 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 	switch(operation){
 		case opd_PushUndef: duk_push_undefined(ctx); return 0;
 		case opd_PushNum: duk_push_number(ctx,arg1); return 0;
-		case opd_PushStr: duk_push_string(ctx, arg2); return 0;
+		case opd_PushStr: 
+			duk_push_string(ctx, arg2); return 0;
 		case opd_GetInt: return duk_to_number(ctx, arg1);
 		case opd_IsNullUndef: return (int)duk_is_null_or_undefined(ctx, arg1);
 		case opd_GetString: return (int)duk_safe_to_string(ctx, arg1);
@@ -238,6 +239,17 @@ int prompt(duk_context *ctx){
 	return 1;
 }
 
+static duk_ret_t my_alert(duk_context *ctx) {
+	//https://github.com/svaarala/duktape/blob/master/api-testcases/test-print-replacement.c
+	const char* msg = 0;
+	int n = duk_get_top(ctx);  /* #args */
+	if(n < 0) return 0;
+	msg  = duk_safe_to_string(ctx, 0); 
+	if(vbStdOut==NULL) return 0; 
+	vbStdOut(cb_Alert,msg);
+	return 0;
+}
+
 void RegisterNativeHandlers(duk_context *ctx){
 	
 	duk_push_global_object(ctx);
@@ -250,6 +262,10 @@ void RegisterNativeHandlers(duk_context *ctx){
 	duk_put_prop_string(ctx, -2, "prompt");
 	duk_pop(ctx);  /* pop global */
 
+	duk_push_global_object(ctx);
+	duk_push_c_function(ctx, my_alert, 2);
+	duk_put_prop_string(ctx, -2, "alert");
+	duk_pop(ctx);  /* pop global */
 
 }
 

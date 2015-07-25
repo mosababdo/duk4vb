@@ -11,6 +11,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+Option Explicit
+
 Public parentName As String
 Public ctype As String
 Public name As String
@@ -40,8 +42,8 @@ Function DescribeSelf() As String
         push tmp, "raw: " & .raw
         push tmp, vbTab & "cttpe: " & .ctype
         push tmp, vbTab & "name: " & .name
-        If .ArgNames.Count > 0 Then push tmp, vbTab & "ArgNames: " & c2s(.ArgNames)
-        If .ArgTypes.Count > 0 Then push tmp, vbTab & "ArgTypes: " & c2s(.ArgTypes)
+        If .ArgNames.count > 0 Then push tmp, vbTab & "ArgNames: " & c2s(.ArgNames)
+        If .ArgTypes.count > 0 Then push tmp, vbTab & "ArgTypes: " & c2s(.ArgTypes)
         push tmp, vbTab & "hasArgs: " & .hasArgs
         push tmp, vbTab & "hasRet: " & .hasRet
         push tmp, vbTab & "retIsObj: " & .retIsObj
@@ -99,7 +101,7 @@ Function parse(parentObjName As String, ByVal proto As String) As Boolean
     'a = InStr(proto, " ")
     'If a < 1 Then Exit Function
    '
-    Dim FirstWord As String
+    Dim FirstWord As String, word As String
     
     'FirstWord = Mid(proto, 1, a)
     
@@ -151,6 +153,8 @@ Function parse(parentObjName As String, ByVal proto As String) As Boolean
     End If
     
     name = word
+    
+    Dim b As Long
     
     b = InStrRev(proto, ")")
     If b > 0 And b < Len(proto) Then
@@ -210,6 +214,7 @@ End Function
 
 
 Sub push(ary, value) 'this modifies parent ary object
+    Dim x As Long
     On Error GoTo init
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
@@ -254,7 +259,7 @@ Function GenerateJS()
     
     If ctype = "call" Then
         t = t & vbTab & "this." & name & " = function(" & c2s(ArgNames) & "){" & vbCrLf & _
-            vbTab & vbTab & "return resolver('" & parentName & "." & name & "', arguments.length" & IIf(ArgNames.Count = 0, "", ", ") & c2s(ArgNames) & ");" & vbCrLf & _
+            vbTab & vbTab & "return resolver('" & parentName & "." & name & "', arguments.length" & IIf(ArgNames.count = 0, "", ", ") & c2s(ArgNames) & ");" & vbCrLf & _
             vbTab & "}" & vbCrLf
             
     ElseIf ctype = "let" Then
