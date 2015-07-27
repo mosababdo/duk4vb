@@ -31,6 +31,18 @@ com:   allows the js to access arbitrary COM and vb6 host objects
 debugger: full GUI debugger. uses scintilla for IDE edit control supports 
           the debug protocol. see readme, and video demo below:
           https://www.youtube.com/watch?v=nSr1-OugQ1M
+          
+OCX:   in progress - wrapping all of the complexity of the debugger+ide+COM 
+       code into an easy to use ocx control. While only instance can run at a time
+       does support multiple instances open (pita). Also exposes just the CDukTape
+       class in case you only want access to the JS engine itself without debugger.
+       Note that only project compatability has been set and its interface will change
+       allot still at this point!
+       
+jsThing: in progress - This is a real world javascript tool taken from pdfstreamdumper
+         jsui. here it is being converted to work with the debugger and duktape. This
+         project helps me define what I need for the interface for the ocx, what needs
+         to be exposed, and test it in actual use.
 </pre>
 
  <img src="https://raw.githubusercontent.com/dzzie/duk4vb/master/vb_examples/with_debug/screenshot.png">
@@ -46,6 +58,8 @@ benchmarks:
      * handling of object return types (form.text1.text = etc)
      * integrate with debugger protocol of engine
      * use scintilla (scivb) control to provide optional IDE/debugger UI
+     - wrap in ocx for easy reuse (in progress)
+     
 </pre>
 
 <pre>

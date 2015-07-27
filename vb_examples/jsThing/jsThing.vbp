@@ -1,0 +1,56 @@
+Type=Exe
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\stdole2.tlb#OLE Automation
+Object={0E59F1D2-1FBE-11D0-8FF2-00A0D10038BC}#1.0#0; msscript.ocx
+Reference=*\G{052DB09C-95F7-43BD-B7F8-492373D1151E}#1.0#0#..\..\..\..\Program Files\WinGraphviz\WinGraphviz.dll#WinGraphviz 1.01.7 Type Library
+Reference=*\G{3F4DACA7-160D-11D2-A8E9-00104B365C9F}#5.5#0#..\..\..\..\WINDOWS\system32\vbscript.dll\3#Microsoft VBScript Regular Expressions 5.5
+Object={3B7C8863-D78F-101B-B9B5-04021C009402}#1.2#0; RICHTX32.OCX
+Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; MSCOMCTL.OCX
+Object={047848A0-21DD-421D-951E-B4B1F3E1718D}#36.0#0; dukDbg.ocx
+Class=CFunc; CFunc.cls
+Class=CGraph; CGraph.cls
+Class=CNode; CNode.cls
+Class=CScriptFunctions; CScriptFunctions.cls
+Form=Form2.frm
+Form=frmFuncGraph.frm
+Form=frmInlineDecoderCalls.frm
+Form=frmRefactor.frm
+Form=frmScTest.frm
+Module=modEscapes; modEscapes.bas
+Module=fso; simple-fso..bas
+Module=modActionScript; modActionScript.bas
+Object={FBE17B58-A1F0-4B91-BDBD-C9AB263AC8B0}#78.1#0; scivb_lite.ocx
+Form=frmAryReplace.frm
+Startup="Form2"
+HelpFile=""
+ExeName32="jsThing.exe"
+Command32=""
+Name="Project1"
+HelpContextID="0"
+CompatibleMode="0"
+MajorVer=1
+MinorVer=0
+RevisionVer=0
+AutoIncrementVer=0
+ServerSupportFiles=0
+VersionCompanyName="sandsprite"
+CompilationType=0
+OptimizationType=0
+FavorPentiumPro(tm)=0
+CodeViewDebugInfo=0
+NoAliasing=0
+BoundsCheck=0
+OverflowCheck=0
+FlPointCheck=0
+FDIVCheck=0
+UnroundedFP=0
+StartMode=0
+Unattended=0
+Retained=0
+ThreadPerObject=0
+MaxNumberOfThreads=1
+
+[MS Transaction Server]
+AutoRefresh=1
+
+[fastBuild]
+fullPath=C:\Documents and Settings\david\Desktop\jsThing\jsThing.exe
