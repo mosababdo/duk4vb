@@ -166,11 +166,14 @@ extern "C" {
 }
 #endif
 
+//-dz defines
 #define DUK_OPT_EXEC_TIMEOUT_CHECK  ScriptTimeoutCheck
 #define DUK_OPT_INTERRUPT_COUNTER  1
 #define DUK_OPT_DEBUGGER_SUPPORT   1
+//#define DUK_OPT_DEBUGGER_FWD_LOGGING 1  this only forwards when debugging..might as well as just handle with stdout always since were local..
 
-//i added ifdef DUK_DBG_USE_PACKED_PROTOCOL to simplify unpacking of ints and strings in debugger protocol..(i dont need compact protocol)
+
+//-dz i added ifdef DUK_DBG_USE_PACKED_PROTOCOL to simplify unpacking of ints and strings in debugger protocol..(i dont need compact protocol)
 
 //----------------------------------------------------------------------------------
 

@@ -73,8 +73,7 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 	switch(operation){
 		case opd_PushUndef: duk_push_undefined(ctx); return 0;
 		case opd_PushNum: duk_push_number(ctx,arg1); return 0;
-		case opd_PushStr: 
-			duk_push_string(ctx, arg2); return 0;
+		case opd_PushStr: duk_push_string(ctx, arg2); return 0;
 		case opd_GetInt: return duk_to_number(ctx, arg1);
 		case opd_IsNullUndef: return (int)duk_is_null_or_undefined(ctx, arg1);
 		case opd_GetString: return (int)duk_safe_to_string(ctx, arg1);
@@ -266,6 +265,10 @@ void RegisterNativeHandlers(duk_context *ctx){
 	duk_push_c_function(ctx, my_alert, 2);
 	duk_put_prop_string(ctx, -2, "alert");
 	duk_pop(ctx);  /* pop global */
+
+	//duk_eval_string(ctx, "Duktape.Logger.clog.l = 0;");duk_pop(ctx); //change log level
+	duk_eval_string(ctx, "Duktape.Logger.prototype.raw = print");
+	duk_pop(ctx);
 
 }
 

@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#23.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#28.0#0"; "dukDbg.ocx"
 Begin VB.Form frmHostTest 
    Caption         =   "Form1"
    ClientHeight    =   9000
@@ -10,6 +10,22 @@ Begin VB.Form frmHostTest
    ScaleHeight     =   9000
    ScaleWidth      =   16740
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton Command1 
+      Caption         =   "Command1"
+      Height          =   330
+      Left            =   12240
+      TabIndex        =   12
+      Top             =   6300
+      Width           =   1860
+   End
+   Begin VB.TextBox Text2 
+      Height          =   375
+      Left            =   12060
+      TabIndex        =   11
+      Text            =   "a=0;if(a){a++;}else{a++;}a=0;"
+      Top             =   6750
+      Width           =   2535
+   End
    Begin VB.ListBox lstCallStack 
       Height          =   3180
       Left            =   12015
@@ -114,7 +130,7 @@ Private Sub cmdJustDuk_Click()
     Dim duk As New CDukTape
     Dim rv
     
-    rv = duk.Eval(txtManual.Text)
+    rv = duk.eval(txtManual.Text)
     If duk.hadError Then
         MsgBox "Error Line: " & duk.LastErrorLine & " Description:" & duk.LastError
     Else
@@ -130,15 +146,41 @@ End Sub
 
  
 
+Private Sub Command1_Click()
+    
+    Dim duk As New CDukTape
+    Dim c As Collection
+    
+    duk.userCOMDir = App.Path
+    
+    If Not duk.AddObject(Text2, "fartbox", c) Then
+        For Each v In c
+            tmp = tmp & v & vbCrLf
+        Next
+        MsgBox "Error Adding Object: " & tmp
+        Exit Sub
+    End If
+    
+    duk.eval "v=fartbox.Text;alert(v)"
+    
+    If duk.hadError Then
+        MsgBox "Error: " & duk.LastError
+    End If
+    
+End Sub
+
 Private Sub Form_Load()
     
     List1.AddItem "Message Log"
+    
+     Exit Sub
     
     'for multi instance count tests..
     If VB.Forms.Count = 1 Then
         With ucDukDbg1
             .AddObject fso, "fso"
             .AddObject Me, "form"
+            .AddObject Text2, "rawtextbox"
             .LoadFile App.Path & "\test.js"
             .AddIntellisense "fso", "BuildPath GetDriveName GetParentFolderName GetFileName GetBaseName GetExtensionName GetAbsolutePathName GetTempName DriveExists FileExists FolderExists DeleteFile DeleteFolder MoveFile MoveFolder CopyFile CopyFolder CreateTextFile OpenTextFile GetStandardStream GetFileVersion"
             .AddIntellisense "form", "caption,Text1,List2"
@@ -159,8 +201,11 @@ Private Sub Form_Load()
  
     
     'if you want to access the embedded scintilla control
-    'Dim sci As SciSimple
-    'Set sci = ucDukDbg1.sci
+    Dim sci As SciSimple
+    Dim o As Variant
+    Set o = ucDukDbg1.sci
+    Set sci = o
+    'MsgBox TypeName(sci)
 
 End Sub
 

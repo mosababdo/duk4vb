@@ -119,6 +119,7 @@ Sub dbg(msg As String)
     
     On Error Resume Next
     ActiveUserControl.doEvent tmp, True
+    ActiveDukTapeClass.doDbgOut tmp
     
 End Sub
 

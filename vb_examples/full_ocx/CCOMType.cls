@@ -18,6 +18,7 @@ Public methods As New Collection
 Public dependancies As New Collection
 Public errors As New Collection
 Public js_file As String
+Public owner As CDukTape
 
 Function GetMethod(key As String, outMeth As CMethod) As Boolean
     If KeyExistsInCollection(methods, key) Then
@@ -37,18 +38,31 @@ Function LoadType(modname As String) As Boolean
     name = modname
     Set errors = New Collection
     
+    'first we look for the master \COM directory
     pd = App.path & "\COM\"
     If Not FolderExists(pd) Then
         pd = GetParentFolder(App.path) & "\COM\"
         If Not FolderExists(pd) Then
             pd = GetParentFolder(App.path) & "\with_COM\COM\"
             If Not FolderExists(pd) Then
-                errors.Add "COM sub folder does not exist.." & pd
-                Exit Function
+                pd = Empty
+                If Not FolderExists(owner.userCOMDir) Then
+                    errors.Add "COM sub folder does not exist.." & pd
+                    Exit Function
+                End If
             End If
         End If
     End If
         
+    'if the file exists in the userComDir then thats the one we will use as override..
+    If Len(owner.userCOMDir) > 0 And VBA.Right(owner.userCOMDir, 1) <> "\" Then
+        owner.userCOMDir = owner.userCOMDir & "\"
+    End If
+    
+    If Len(owner.userCOMDir) > 0 And FileExists(owner.userCOMDir & name & ".js") Then
+        pd = owner.userCOMDir
+    End If
+    
     If Not FileExists(pd & name & ".js") Then
         errors.Add "No js bindings for " & name
         Exit Function

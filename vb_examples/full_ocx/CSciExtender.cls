@@ -36,7 +36,7 @@ Private Declare Sub CopyMemory Lib "kernel32.dll" Alias "RtlMoveMemory" (Destina
 
 Private Type POINTAPI
     x As Long
-    y As Long
+    Y As Long
 End Type
 
 Private Declare Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
@@ -74,7 +74,7 @@ Private Type SCNotification
     margin As Long
     listType As Long
     x As Long
-    y As Long
+    Y As Long
 End Type
 
 Private Declare Function GetFocus Lib "user32" () As Long
@@ -225,7 +225,7 @@ Sub LockEditor(Optional locked As Boolean = True)
             Next i
         Else
             .ReadOnly = False
-            .SetHighlighter "VB" 'sets back to defaults..
+            .SetHighlighter "Java" 'sets back to defaults..
         End If
     End With
  
@@ -240,7 +240,7 @@ Function isMouseOverCallTip() As Boolean
     On Error Resume Next
     
     GetCursorPos p
-    hWin = WindowFromPoint(p.x, p.y)
+    hWin = WindowFromPoint(p.x, p.Y)
     sz = GetClassName(hWin, sClassName, 100)
     If Left(sClassName, sz) = "CallTip" Then isMouseOverCallTip = True
     

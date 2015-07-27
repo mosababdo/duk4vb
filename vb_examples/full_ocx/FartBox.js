@@ -7,18 +7,18 @@
 
 */
 
-function textboxClass(){
+function fartboxClass(){
 	this.hInst=0;
 }
 
-textboxClass.prototype = {
+fartboxClass.prototype = {
 	get Text (){
-		return resolver("textbox.Text.get", 0, this.hInst); 	
+		return resolver("fartbox.Text.get", 0, this.hInst); 	
 	},
 	set Text (val){
-		resolver("textbox.Text.let", 1, this.hInst, val); 
+		resolver("fartbox.Text.let", 1, this.hInst, val); 
 	}
 };
 
 //this next line allows you to use a AddObject(txtMyTextBox, "textbox") directly..
-var textbox = new textboxClass();
+var fartbox = new fartboxClass();

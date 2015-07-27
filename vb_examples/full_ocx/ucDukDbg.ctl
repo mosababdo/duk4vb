@@ -6,6 +6,7 @@ Begin VB.UserControl ucDukDbg
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   13950
+   ForwardFocus    =   -1  'True
    ScaleHeight     =   7560
    ScaleWidth      =   13950
    ToolboxBitmap   =   "ucDukDbg.ctx":0000
@@ -292,6 +293,8 @@ Private lastEIP As Long 'used for clearing last line highlight
 Private curFile As String
 Private userStop As Boolean
 
+Public userCOMDir As String
+
 Public Enum dbgStates
     dsStarted = 1
     dsIdle = 2
@@ -456,7 +459,7 @@ Friend Property Get duktape() As CDukTape
     Set duktape = duk
 End Property
 
-Public Property Get sci() As Object
+Public Property Get sci() As Variant
     Set sci = scivb
 End Property
 
@@ -666,6 +669,7 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     Set duk = New CDukTape
     Set ActiveUserControl = Me
     Set RecvBuffer = New CWriteBuffer 'this resets our flags like firstMessage and bpInitilized...
+    duk.userCOMDir = userCOMDir
     
     For Each o In objCache
         If Not duk.AddObject(o.obj, o.name, c) Then

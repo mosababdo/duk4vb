@@ -1,6 +1,7 @@
 Attribute VB_Name = "mCOM"
 Option Explicit
 
+'we should really move these into the CDuktape class so they are per held per instance..
 Public comTypes As New Collection
 Public objs As New Collection
 
@@ -25,6 +26,7 @@ Function ParseObjectToCache(name As String, obj As Object, owner As CDukTape) As
     If Not obj Is Nothing Then objs.Add obj, name 'some types arent creatable/top level and are retvals
     
     Set cc = New CCOMType
+    Set cc.owner = owner
     ParseObjectToCache = cc.LoadType(name)
     comTypes.Add cc, name
     
@@ -38,7 +40,7 @@ Function ReleaseObj(hInst As Long)
     objs.Remove "obj:" & hInst
     Set o = Nothing
 hell:
-    If Err.Number <> 0 Then Debug.Print "Error in ReleaseObj(" & hInst & ")" & Err.Description
+    If Err.Number <> 0 Then dbg "Error in ReleaseObj(" & hInst & ")" & Err.Description
 End Function
 
 Sub ResetComObjects()
@@ -73,7 +75,8 @@ Public Function cb_HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argC
     
     On Error Resume Next
     
-    If Not isControlActive() Then Exit Function
+    'this callback can be used by just the CDukTape class without the debugger..
+    'If Not isControlActive() Then Exit Function
     
     key = StringFromPointer(buf)
     dbg "HostResolver: " & key & " ctx:" & ctx & " args: " & argCnt & " hInst: " & hInst

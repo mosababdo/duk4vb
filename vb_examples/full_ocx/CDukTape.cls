@@ -25,8 +25,14 @@ Private mDebugging As Boolean
 Public hadError As Boolean
 Public LastError As String
 Public LastErrorLine As Long
+Public userCOMDir As String
 
 Event Error(ByVal line As Long, ByVal desc As String)
+Event dbgOut(msg As String)
+
+Friend Sub doDbgOut(msg As String)
+    RaiseEvent dbgOut(msg)
+End Sub
 
 Property Get running() As Boolean
     running = mRunning
@@ -159,8 +165,10 @@ Function AddFile(fpath) As Boolean
     ClearErr
 
     mRunning = True
+    Set ActiveDukTapeClass = Me
     rv = mDuk.AddFile(hDuk, CStr(fpath))
     mRunning = False
+    Set ActiveDukTapeClass = Nothing
     
     If rv = 0 Then
         AddFile = True
@@ -192,7 +200,9 @@ Function Eval(js)
     ClearErr
     
     mRunning = True
+    Set ActiveDukTapeClass = Me
     rv = mDuk.Eval(hDuk, CStr(js))
+    Set ActiveDukTapeClass = Nothing
     mRunning = False
     
     If rv = 0 Then

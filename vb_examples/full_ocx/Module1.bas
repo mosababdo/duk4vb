@@ -115,6 +115,8 @@ Public LastCommand As Debug_Commands
 Public replyReceived As Boolean
 
 Public ActiveUserControl As ucDukDbg
+Public ActiveDukTapeClass As CDukTape
+
 Public RespBuffer As New CResponseBuffer
 Public RecvBuffer As New CWriteBuffer
 
@@ -394,7 +396,9 @@ Public Sub cb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
     End If
     
     If lpMsg = 0 Then Exit Sub
-    If Not isControlActive() Then Exit Sub
+    
+    'this callback can be used from CDukTape standalone not just debugger specific..
+    'If Not isControlActive() Then Exit Sub
     
     msg = StringFromPointer(lpMsg)
     
@@ -683,7 +687,8 @@ Function HandleNotify()
               Case ALERT_NOTIFICATION: .DebugDump "Alert Notify"
               
                    'NFY <int: 4> <int: log level> <str: message> EOM - Logger output redirected from Duktape logger calls.
-              Case LOG_NOTIFICATION:   .DebugDump "Log Notify"
+              Case LOG_NOTIFICATION:
+                    .DebugDump "Log Notify"
         End Select
         
     End With
