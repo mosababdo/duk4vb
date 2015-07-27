@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#28.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#32.0#0"; "dukDbg.ocx"
 Begin VB.Form frmHostTest 
    Caption         =   "Form1"
    ClientHeight    =   9000
@@ -173,14 +173,13 @@ Private Sub Form_Load()
     
     List1.AddItem "Message Log"
     
-     Exit Sub
+     'Exit Sub
     
     'for multi instance count tests..
     If VB.Forms.Count = 1 Then
         With ucDukDbg1
             .AddObject fso, "fso"
             .AddObject Me, "form"
-            .AddObject Text2, "rawtextbox"
             .LoadFile App.Path & "\test.js"
             .AddIntellisense "fso", "BuildPath GetDriveName GetParentFolderName GetFileName GetBaseName GetExtensionName GetAbsolutePathName GetTempName DriveExists FileExists FolderExists DeleteFile DeleteFolder MoveFile MoveFolder CopyFile CopyFolder CreateTextFile OpenTextFile GetStandardStream GetFileVersion"
             .AddIntellisense "form", "caption,Text1,List2"
@@ -198,7 +197,6 @@ Private Sub Form_Load()
     cboTest.AddItem "for(i=0;i<10;i++)form.List2.AddItem('item:'+i);alert('clearing!');form.List2.Clear()"
     cboTest.AddItem "var ts = fso.OpenTextFile('c:\\lastGraph.txt',1,true,0);v = ts.ReadAll(); alert(v)"          'value of v is returned from eval..
     cboTest.AddItem "var ts = fso.OpenTextFile('c:\\lastGraph.txt',1); v = ts.ReadAll();alert(v)"          '(default args test)
- 
     
     'if you want to access the embedded scintilla control
     Dim sci As SciSimple

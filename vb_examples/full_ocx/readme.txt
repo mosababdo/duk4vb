@@ -3,6 +3,15 @@ note:
 
   --> this conversion to build as an ocx is still in early development ! <--
 
+So this OCX has 2 public components. one is a usercontrol which is a full IDE
+with syntax highlighting and debugger controls.
+
+The second is a public CDukTape class that allows you to use just the js
+engine part of the code, without having to host a form and UI associated
+with the debugger. 
+
+This build does include the full COM integrations. see the notes
+in ./../with_COM/COM/readme.txt for more details.
 
 the debugger interface has several ActiveX control dependancies
 which must be registered on your system for this to run.
@@ -11,9 +20,9 @@ which must be registered on your system for this to run.
 Register these before opening the project in VB6.
 
 scivb_lite.ocx[1] - 410k, open source VB6 ActiveX control
-SciLexer.dll  [2] - 460k, open source C standard dll
+SciLexer.dll  [2] - 460k, open source C standard dll (no reg required)
 MSCOMCTL.OCX  [3] -   1Mb,closed source free from MS
-Duk4VB.dll    [4] - 400k, (release mode) open source C standard dll
+Duk4VB.dll    [4] - 400k, (release mode) open source C standard dll (no reg required)
 --------------------------------------
 total dependancies: ~2mb
 

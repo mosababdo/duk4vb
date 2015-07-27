@@ -1,10 +1,6 @@
 Attribute VB_Name = "mCOM"
 Option Explicit
 
-'we should really move these into the CDuktape class so they are per held per instance..
-Public comTypes As New Collection
-Public objs As New Collection
-
 'this we dont support..
 'return types string() or arrays in general
 'methods which require object arguments
@@ -12,52 +8,16 @@ Public objs As New Collection
 
 'todo: test property let/get , objrets
 
-
-Function ParseObjectToCache(name As String, obj As Object, owner As CDukTape) As Boolean
-    
-    Dim cc As CCOMType
-    
-    If KeyExistsInCollection(comTypes, name) Then
-        Set cc = comTypes(name)
-        If cc.errors.count = 0 Then ParseObjectToCache = True
-        Exit Function
-    End If
-        
-    If Not obj Is Nothing Then objs.Add obj, name 'some types arent creatable/top level and are retvals
-    
-    Set cc = New CCOMType
-    Set cc.owner = owner
-    ParseObjectToCache = cc.LoadType(name)
-    comTypes.Add cc, name
-    
-End Function
-
 Function ReleaseObj(hInst As Long)
     On Error GoTo hell
     dbg "ReleaseObj: " & hInst
     Dim o As Object
-    Set o = objs("obj:" & hInst)
-    objs.Remove "obj:" & hInst
+    Set o = ActiveDukTapeClass.objs("obj:" & hInst)
+    ActiveDukTapeClass.objs.Remove "obj:" & hInst
     Set o = Nothing
 hell:
     If Err.Number <> 0 Then dbg "Error in ReleaseObj(" & hInst & ")" & Err.Description
 End Function
-
-Sub ResetComObjects()
-
-    Dim o As Object
-    For Each o In comTypes
-        Set o = Nothing
-    Next
-    
-    For Each o In objs
-        Set o = Nothing
-    Next
-    
-    Set comTypes = New Collection
-    Set objs = New Collection
-    
-End Sub
 
 'this is used for script to host app object integration..
 Public Function cb_HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argCnt As Long, ByVal hInst As Long) As Long
@@ -84,20 +44,20 @@ Public Function cb_HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argC
     a = InStr(key, ".") - 1
     If a > 0 Then pObjName = Mid(key, 1, a)
     
-    If Not KeyExistsInCollection(comTypes, pObjName) Then Exit Function
-    Set cc = comTypes(pObjName)
+    If Not KeyExistsInCollection(ActiveDukTapeClass.comTypes, pObjName) Then Exit Function
+    Set cc = ActiveDukTapeClass.comTypes(pObjName)
     
     If Not cc.GetMethod(key, meth) Then Exit Function
     
     If hInst <> 0 Then
-        For Each oo In objs
+        For Each oo In ActiveDukTapeClass.objs
             If ObjPtr(oo) = hInst Then
                 Set o = oo
                 Exit For
             End If
         Next
     Else
-        Set o = objs(pObjName)
+        Set o = ActiveDukTapeClass.objs(pObjName)
     End If
     
     If o Is Nothing Then
@@ -147,7 +107,7 @@ Public Function cb_HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argC
     If meth.retIsObj Then
         dbg "returning new js class " & meth.retType
         DukPushNewJSClass ctx, meth.retType & "Class", ObjPtr(retVal)
-        objs.Add retVal, "obj:" & ObjPtr(retVal)
+        ActiveDukTapeClass.objs.Add retVal, "obj:" & ObjPtr(retVal)
     End If
     
     'If Err.Number <> 0 Then MsgBox Err.Description Else MsgBox retVal

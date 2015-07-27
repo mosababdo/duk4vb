@@ -20,6 +20,8 @@ Private hDuk As Long
 Private mTimeout As Long
 Private mRunning As Boolean
 Private mDebugging As Boolean
+Private m_comTypes As New Collection
+Private m_objs As New Collection
 
 'check for errors either manually after or receive through event..
 Public hadError As Boolean
@@ -29,6 +31,14 @@ Public userCOMDir As String
 
 Event Error(ByVal line As Long, ByVal desc As String)
 Event dbgOut(msg As String)
+
+Friend Property Get comTypes() As Collection
+    Set comTypes = m_comTypes
+End Property
+
+Friend Property Get objs() As Collection
+    Set objs = m_objs
+End Property
 
 Friend Sub doDbgOut(msg As String)
     RaiseEvent dbgOut(msg)
@@ -114,11 +124,47 @@ Function Reset() As Boolean
         Exit Function
     End If
     
+    ResetComObjects
     Class_Terminate
     Class_Initialize
     Reset = True
     
 End Function
+
+Private Function ParseObjectToCache(name As String, obj As Object) As Boolean
+    
+    Dim cc As CCOMType
+    
+    If KeyExistsInCollection(m_comTypes, name) Then
+        Set cc = m_comTypes(name)
+        If cc.errors.count = 0 Then ParseObjectToCache = True
+        Exit Function
+    End If
+        
+    If Not obj Is Nothing Then m_objs.Add obj, name 'some types arent creatable/top level and are retvals
+    
+    Set cc = New CCOMType
+    Set cc.owner = Me
+    ParseObjectToCache = cc.LoadType(name)
+    m_comTypes.Add cc, name
+    
+End Function
+
+Private Sub ResetComObjects()
+
+    Dim o As Object
+    For Each o In m_comTypes
+        Set o = Nothing
+    Next
+    
+    For Each o In m_objs
+        Set o = Nothing
+    Next
+    
+    Set m_comTypes = New Collection
+    Set m_objs = New Collection
+    
+End Sub
 
 Private Sub ClearErr()
     hadError = False
@@ -134,7 +180,7 @@ Function AddObject(obj As Object, name As String, Optional ByRef outErrList As C
         
     If outErrList Is Nothing Then Set outErrList = New Collection
     
-    result = ParseObjectToCache(name, obj, Me)
+    result = ParseObjectToCache(name, obj)
     Set cc = comTypes(name) 'always added even with errors
        
     If Not result Then
