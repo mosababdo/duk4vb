@@ -305,6 +305,9 @@ Event txtOut(msg As String)
 Event dbgOut(msg As String)
 Event dukErr(line As Long, msg As String)
 Event StateChanged(state As dbgStates)
+Event KeyDown(KeyCode As Long, Shift As Long)
+Event MouseUp(Button As Integer, Shift As Integer, x As Long, Y As Long)
+Event PosChanged(Position As Long)
 
 'we cache these per instance and add them to a fresh script engine instance each execution..
 Private objCache As New Collection
@@ -313,9 +316,60 @@ Private intellisense As New Collection
 Private WithEvents ownerForm As Form
 Attribute ownerForm.VB_VarHelpID = -1
 
+'so stupid I cant make scivb public..probbaly if both in same ocx..
+Property Get Text() As String
+    Text = scivb.Text
+End Property
+
+Property Get SelText() As String
+    SelText = scivb.SelText
+End Property
+
+Property Get SelLength() As Long
+    SelLength = scivb.SelLength
+End Property
+
+Property Get SelStart() As Long
+    SelStart = scivb.SelStart
+End Property
+
+Property Let SelText(v As String)
+    scivb.SelText = v
+End Property
+
+Property Let SelLength(v As Long)
+    scivb.SelLength = v
+End Property
+
+Property Let SelStart(v As Long)
+    scivb.SelStart = v
+End Property
+
+Property Let Text(v As String)
+    scivb.Text = v
+End Property
+
 Property Get isRunning() As Boolean
     isRunning = running
 End Property
+
+Property Get CurrentWord() As String
+    CurrentWord = scivb.CurrentWord
+End Property
+
+Function GetLineText(iLine As Long) As String
+    GetLineText = scivb.GetLineText(iLine)
+End Function
+
+Property Get FirstVisibleLine() As Long
+    FirstVisibleLine = scivb.FirstVisibleLine
+End Property
+
+Property Let FirstVisibleLine(v As Long)
+    scivb.FirstVisibleLine = v
+End Property
+
+
 
 'Property Get Closing() As Boolean
 '    Closing = mClosing
@@ -341,12 +395,6 @@ End Property
 Property Get CurrentFile() As String
     CurrentFile = curFile
 End Property
-
-Function LoadString(js) As Boolean
-    curFile = GetFreeFileName(Environ("temp"), ".js")
-    WriteFile curFile, CStr(js)
-    LoadString = scivb.LoadFile(curFile)
-End Function
 
 'note this does not reset the running script..thats up to the user based on state..
 Public Sub Reset(Optional objs As Boolean = False, Optional libs As Boolean = False, Optional itsense As Boolean = False)
@@ -564,11 +612,15 @@ Private Sub scivb_MouseUp(Button As Integer, Shift As Integer, x As Long, Y As L
         lblInfo.Caption = "  " & scivb.hilightWord(sel, , vbBinaryCompare) & " instances of '" & sel & " ' found"
     End If
     
+    RaiseEvent MouseUp(Button, Shift, x, Y)
+    
 End Sub
 
 Private Sub scivb_KeyDown(KeyCode As Long, Shift As Long)
 
     Dim curline As Long
+    
+    RaiseEvent KeyDown(KeyCode, Shift)
     
     If Not CanIBeActiveInstance(Me) Then Exit Sub
     
@@ -585,6 +637,10 @@ Private Sub scivb_KeyDown(KeyCode As Long, Shift As Long)
         Case vbKeyF9: SendDebuggerCmd dc_stepout
     End Select
 
+End Sub
+
+Private Sub scivb_PosChanged(Position As Long)
+    RaiseEvent PosChanged(Position)
 End Sub
 
 Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)

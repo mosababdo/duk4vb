@@ -1,4 +1,5 @@
 
+on error goto line and highlight
 
 behavior: note if you open the same file in two instances of the form breakpoints in one will
  trigger in the other...because the file name is the same..duktape does not differntate between the names..

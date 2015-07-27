@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#32.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#34.0#0"; "dukDbg.ocx"
 Begin VB.Form frmHostTest 
    Caption         =   "Form1"
    ClientHeight    =   9000
@@ -123,7 +123,7 @@ Attribute VB_Exposed = False
 Dim fso As New Scripting.FileSystemObject
 
 Private Sub cboTest_Click()
-    ucDukDbg1.LoadString cboTest.Text
+    ucDukDbg1.Text = cboTest.Text
 End Sub
 
 Private Sub cmdJustDuk_Click()
