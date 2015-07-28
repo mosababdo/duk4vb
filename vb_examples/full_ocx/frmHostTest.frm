@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#34.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#49.0#0"; "dukDbg.ocx"
 Begin VB.Form frmHostTest 
    Caption         =   "Form1"
    ClientHeight    =   9000
@@ -130,7 +130,7 @@ Private Sub cmdJustDuk_Click()
     Dim duk As New CDukTape
     Dim rv
     
-    rv = duk.eval(txtManual.Text)
+    rv = duk.Eval(txtManual.Text)
     If duk.hadError Then
         MsgBox "Error Line: " & duk.LastErrorLine & " Description:" & duk.LastError
     Else
@@ -161,7 +161,7 @@ Private Sub Command1_Click()
         Exit Sub
     End If
     
-    duk.eval "v=fartbox.Text;alert(v)"
+    duk.Eval "v=fartbox.Text;alert(v)"
     
     If duk.hadError Then
         MsgBox "Error: " & duk.LastError
@@ -203,7 +203,7 @@ Private Sub Form_Load()
     Dim o As Variant
     Set o = ucDukDbg1.sci
     Set sci = o
-    'MsgBox TypeName(sci)
+    MsgBox TypeName(sci)
 
 End Sub
 
@@ -218,6 +218,7 @@ Private Sub ucDukDbg1_dukErr(line As Long, msg As String)
 End Sub
 
 Private Sub ucDukDbg1_StateChanged(state As dukDbg.dbgStates)
+
     If state = dsStarted Then
         List1.Clear
         List2.Clear
@@ -237,7 +238,7 @@ Private Sub ucDukDbg1_StateChanged(state As dukDbg.dbgStates)
     
 End Sub
 
-Private Sub ucDukDbg1_txtOut(msg As String)
+Private Sub ucDukDbg1_printOut(msg As String)
  
     Dim leng As Long
     Dim tmp As String

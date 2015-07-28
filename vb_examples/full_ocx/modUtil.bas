@@ -118,8 +118,13 @@ Sub dbg(msg As String)
     disp = Replace(disp, vbTab, "\t")
     
     On Error Resume Next
-    ActiveUserControl.doEvent tmp, True
-    ActiveDukTapeClass.doDbgOut tmp
+    If Not ActiveDukTapeClass Is Nothing Then
+        ActiveDukTapeClass.doDbgOut tmp
+    ElseIf Not ActiveUserControl Is Nothing Then
+        ActiveUserControl.duk_dbgOut tmp
+    Else
+        Debug.Print "No active control/class? dbg: " & msg
+    End If
     
 End Sub
 

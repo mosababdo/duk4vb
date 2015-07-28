@@ -419,24 +419,22 @@ Public Sub cb_stdout(ByVal t As cb_type, ByVal lpMsg As Long)
     
 End Sub
 
+'unix to dos then output to active class..
 Public Function doOutput(msg)
-    Dim leng As Long
     Dim tmp As String
-    Dim includeCRLF As Boolean
-    
     tmp = Replace(msg, vbCr, Empty)
     tmp = Replace(tmp, vbLf, Chr(5))
     tmp = Replace(tmp, Chr(5), vbCrLf)
-    ActiveUserControl.doEvent tmp
     
-'    leng = Len(Form1.txtOut.Text)
-'
-'    If leng > 0 And Right(tmp, 2) <> vbCrLf Then includeCRLF = True
-'
-'    Form1.txtOut.SelLength = 0
-'    Form1.txtOut = Form1.txtOut & IIf(includeCRLF, vbCrLf, "") & tmp
-'    Form1.txtOut.SelStart = leng + 2
-'
+    On Error Resume Next
+    If Not ActiveDukTapeClass Is Nothing Then
+        ActiveDukTapeClass.doPrintOut tmp
+    ElseIf Not ActiveUserControl Is Nothing Then
+        ActiveUserControl.duk_printOut tmp
+    Else
+        Debug.Print "No active control/class? output: " & msg
+    End If
+    
 End Function
 
 'call back: prompt function implementation
@@ -526,7 +524,7 @@ topLine:
         'we block here until the UI sets the readyToReturn = true
         'this is not a CPU hog, and form remains responsive to user actions..
         readyToReturn = False
-        ActiveUserControl.SetStatus "Paused"
+        ActiveUserControl.SetStatus dsPaused
         While Not readyToReturn
             DoEvents
             Sleep 20
@@ -546,7 +544,7 @@ topLine:
             End If
             
         Wend
-        If isControlActive() Then ActiveUserControl.SetStatus "on"
+        If isControlActive() Then ActiveUserControl.SetStatus dsRunning
         
         If Not RespBuffer.isEmpty Then
             

@@ -2,7 +2,7 @@ VERSION 5.00
 Object = "{0E59F1D2-1FBE-11D0-8FF2-00A0D10038BC}#1.0#0"; "msscript.ocx"
 Object = "{3B7C8863-D78F-101B-B9B5-04021C009402}#1.2#0"; "RICHTX32.OCX"
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#36.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#49.0#0"; "dukDbg.ocx"
 Begin VB.Form Form2 
    Caption         =   "PDF Stream Dumper - JS UI"
    ClientHeight    =   8310
@@ -14,6 +14,14 @@ Begin VB.Form Form2
    ScaleHeight     =   8310
    ScaleWidth      =   14460
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton Command1 
+      Caption         =   "Command1"
+      Height          =   285
+      Left            =   9540
+      TabIndex        =   10
+      Top             =   0
+      Width           =   690
+   End
    Begin dukDbg.ucDukDbg DukDbg 
       Height          =   6450
       Left            =   2430
@@ -120,6 +128,7 @@ Begin VB.Form Form2
       _ExtentX        =   20981
       _ExtentY        =   2249
       _Version        =   393217
+      Enabled         =   -1  'True
       HideSelection   =   0   'False
       ScrollBars      =   2
       TextRTF         =   $"Form2.frx":0000
@@ -180,7 +189,7 @@ Begin VB.Form Form2
       Height          =   255
       Index           =   2
       Left            =   10455
-      TabIndex        =   10
+      TabIndex        =   9
       Top             =   30
       Width           =   1230
    End
@@ -199,28 +208,9 @@ Begin VB.Form Form2
       Height          =   255
       Index           =   1
       Left            =   4770
-      TabIndex        =   9
+      TabIndex        =   8
       Top             =   0
       Width           =   1215
-   End
-   Begin VB.Label lblToolbox 
-      Caption         =   "Options"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   400
-         Underline       =   -1  'True
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FF0000&
-      Height          =   255
-      Index           =   3
-      Left            =   11985
-      TabIndex        =   8
-      Top             =   30
-      Width           =   585
    End
    Begin VB.Label lblClipboard 
       Caption         =   "<-- to clipboard"
@@ -417,8 +407,8 @@ Begin VB.Form Form2
          Caption         =   "Clear All"
       End
    End
-   Begin VB.Menu mnuPopup2 
-      Caption         =   "mnuPopup2"
+   Begin VB.Menu mnuOptions 
+      Caption         =   "Options"
       Begin VB.Menu mnuGotoLine 
          Caption         =   "Goto Line"
       End
@@ -547,14 +537,6 @@ Dim toolbox As New CScriptFunctions
 ' savedVar1 = tb.lv.listitems(index).tag
 'even if i am the only one who would use that :P
 
-'the ms script debugger is just to shitty to use..its voodoo if it attaches or not..fuck it
-'i will have a stable independant one soon enough..
-'
-'so the ms script debugger comes with IE, MS Office, Visual Studio, or an old standalone download.
-'Note that when Office 2003 is installed, an internet explorer needs to be "re-registered" again :'
-'Go to "C:\Program Files\Internet Explorer" (or "C:\Program Files (x86)\Internet Explorer" under x64 installs).
-'Run "regsvr32 msdbg2.dll"
-
 Private Capturing As Boolean
 Private Declare Function SetCapture Lib "user32" (ByVal hwnd As Long) As Long
 Private Declare Function ReleaseCapture Lib "user32" () As Long
@@ -565,7 +547,7 @@ Private Declare Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
 Private Declare Function ScreenToClient Lib "user32" (ByVal hwnd As Long, lpPoint As POINTAPI) As Long
 Private Type POINTAPI
         x As Long
-        y As Long
+        Y As Long
 End Type
 
 Private objsAdded As Boolean
@@ -586,27 +568,62 @@ Public Function StandardizeLineBreaks(ByVal x)
     StandardizeLineBreaks = Replace(x, Chr(5), vbCrLf)
 End Function
 
+Private Sub Command1_Click()
+    'wtf wont this work here but it will in the test project...
+    On Error Resume Next
+    Dim d As sci2.SciSimple
+    Set d = DukDbg.sci
+    MsgBox Err.Description
+End Sub
+
 Private Sub duk_dbgOut(msg As String)
     Debug.Print "DukDbg: " & msg
 End Sub
 
 Private Sub duk_Error(ByVal line As Long, ByVal desc As String)
+
     Debug.Print "DukError: " & desc
+    
+    On Error Resume Next
+    Dim pos As Long
+    
+    pos = txtJS.PositionFromLine(line)
+    DukDbg.SelStart = pos
+    txtJS.SelectLine
+    
+    txtOut.Text = "Time: " & Now & vbCrLf & "Error: " & desc
+    txtOut.Text = txtOut.Text & vbCrLf & "Source: " & txtJS.GetLineText(line - 1)  'vbsci specific
+    lv2.ListItems.Add , , "Error: " & txtOut.Text
+    
 End Sub
 
-'Private Sub chkDebug_Click()
-'    Dim reg As New clsRegistry2
-'    Dim v
-'    reg.hive = HKEY_CURRENT_USER
-'    v = reg.ReadValue("\Software\Microsoft\Windows Script\Settings", "JITDebug")
+Private Sub DukDbg_dukErr(line As Long, msg As String)
+    duk_Error line, msg
+End Sub
+
+Private Sub DukDbg_printOut(msg As String)
+    toolbox.t msg
+    
+'    Dim leng As Long
+'    Dim includeCRLF As Boolean
 '
-'    If v = chkDebug.value Then Exit Sub
+'    leng = Len(Form1.txtOut.Text)
 '
-'    reg.SetValue "\Software\Microsoft\Windows Script\Settings", "JITDebug", chkDebug.value, REG_DWORD
-'    'reg.SetValue "\Software\Microsoft\Internet Explorer\Main", "Disable Script Debugger", IIf(chkDebug.value = 1, "no", "yes"), REG_SZ
-'    'reg.SetValue "\Software\Microsoft\Internet Explorer\Main", "DisableScriptDebuggerIE", IIf(chkDebug.value = 1, "no", "yes"), REG_SZ
+'    If leng > 0 And right(tmp, 2) <> vbCrLf Then includeCRLF = True
 '
-'End Sub
+'    txtOut.SelLength = 0
+'    txtOut = txtOut & IIf(includeCRLF, vbCrLf, "") & tmp
+'    txtOut.SelStart = leng + 2
+'
+End Sub
+
+ 
+Private Sub DukDbg_StateChanged(state As DukDbg.dbgStates)
+    If state = dsStarted Then
+        lv2.ListItems.Clear
+        txtOut.Text = Empty
+    End If
+End Sub
 
 Private Sub lv2_ItemClick(ByVal Item As MSComctlLib.ListItem)
     On Error Resume Next
@@ -617,7 +634,7 @@ Private Sub lv2_ItemClick(ByVal Item As MSComctlLib.ListItem)
     End If
 End Sub
 
-Private Sub lv2_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lv2_MouseUp(Button As Integer, Shift As Integer, x As Single, Y As Single)
     If Button = 2 Then PopupMenu mnuPopup3
 End Sub
 
@@ -663,7 +680,7 @@ Private Sub lvFunc_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
-Private Sub lvFunc_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lvFunc_MouseUp(Button As Integer, Shift As Integer, x As Single, Y As Single)
     If Button = 2 Then PopupMenu mnuPopupFuncs
 End Sub
 
@@ -705,12 +722,12 @@ End Sub
 
 Private Sub mnuCopyFuncsNames_Click()
     On Error Resume Next
-    Dim x, y, tmp
+    Dim x, Y, tmp
     
     x = Split(DukDbg.Text, vbCrLf)
-    For Each y In x
-        If InStr(y, "function") > 0 Then
-            tmp = tmp & y & vbCrLf
+    For Each Y In x
+        If InStr(Y, "function") > 0 Then
+            tmp = tmp & Y & vbCrLf
         End If
     Next
     tmp = Replace(tmp, vbTab, Empty)
@@ -737,18 +754,18 @@ Private Sub mnuCopyToLower_Click()
     txtOut.Text = lv.SelectedItem.Tag
 End Sub
 
-Public Function ExtractFunction(ByVal startline As Long, Optional ByRef foundEnd, Optional includeSpacer As Boolean = True) As String
+Public Function ExtractFunction(ByVal startLine As Long, Optional ByRef foundEnd, Optional includeSpacer As Boolean = True) As String
     Dim data, tmp, j, x
     
     data = IIf(includeSpacer, vbCrLf & vbCrLf, Empty)
-    startline = startline - 1
+    startLine = startLine - 1
     tmp = Split(DukDbg.Text, vbCrLf)
     j = -1
     foundEnd = False
     
     For Each x In tmp
         j = j + 1
-        If j > startline Then
+        If j > startLine Then
             data = data & x & vbCrLf
             If RTrim(x) = "}" Or RTrim(x) = "};" Then
                 foundEnd = True
@@ -1004,7 +1021,7 @@ End Sub
 Private Sub mnuRenameFunc_Click()
 
     On Error Resume Next
-    Dim fl As Long, oldname, newname
+    Dim fl As Long, oldname, NewName
     Dim li As ListItem
     
     If lvFunc.SelectedItem Is Nothing Then Exit Sub
@@ -1018,28 +1035,28 @@ Private Sub mnuRenameFunc_Click()
         Exit Sub
     End If
     
-    newname = InputBox("Enter new name for " & oldname, , oldname)
-    If Len(newname) = 0 Then Exit Sub
+    NewName = InputBox("Enter new name for " & oldname, , oldname)
+    If Len(NewName) = 0 Then Exit Sub
     
     For Each li In lvFunc.ListItems
-        If li.Text = newname Then
+        If li.Text = NewName Then
             MsgBox "This name is already taken"
             Exit Sub
         End If
     Next
     
-    If InStr(DukDbg.Text, newname) > 0 Then
+    If InStr(DukDbg.Text, NewName) > 0 Then
         MsgBox "This string is already found in the current script please make unique"
         Exit Sub
     End If
     
-    push renames, oldname & " -> " & newname
-    DukDbg.Text = Replace(DukDbg.Text, oldname & "(", newname & "(")
+    push renames, oldname & " -> " & NewName
+    DukDbg.Text = Replace(DukDbg.Text, oldname & "(", NewName & "(")
     DukDbg.FirstVisibleLine = fl
     
     'MsgBox txtJS.SCI.ReplaceAll(CStr(oldname), CStr(NewName), True) 'buggy...
     
-    lvFunc.SelectedItem.Text = newname
+    lvFunc.SelectedItem.Text = NewName
     
 End Sub
 
@@ -1297,7 +1314,7 @@ Private Sub mnuSeqRenameFuncs_Click()
     Dim reGens As Long
     Dim ignoreSelected As Boolean
     Dim r As VbMsgBoxResult
-    Dim oldname, newname
+    Dim oldname, NewName
     
     i = 1
     fl = DukDbg.FirstVisibleLine 'this can be buggy...
@@ -1314,7 +1331,7 @@ Private Sub mnuSeqRenameFuncs_Click()
         If oldname = UNK_FUNC Then GoTo nextone
         
 reGenerate:
-        newname = "func_" & IIf(i < 10, "0" & i, i)
+        NewName = "func_" & IIf(i < 10, "0" & i, i)
         i = i + 1
         
         If reGens > 500 Then
@@ -1324,20 +1341,20 @@ reGenerate:
         
         'see if name already exists..
         For Each li2 In lvFunc.ListItems
-            If li2.Text = newname Then
+            If li2.Text = NewName Then
                 reGens = reGens + 1
                 GoTo reGenerate
             End If
         Next
         
         'does new name already exist?
-        If InStr(DukDbg.Text, newname) > 0 Then
+        If InStr(DukDbg.Text, NewName) > 0 Then
             reGens = reGens + 1
             GoTo reGenerate
         End If
         
-        DukDbg.Text = Replace(DukDbg.Text, oldname, newname)
-        li.Text = newname
+        DukDbg.Text = Replace(DukDbg.Text, oldname, NewName)
+        li.Text = NewName
 nextone:
         
     Next
@@ -1420,7 +1437,7 @@ End Sub
 
 'splitter code
 '------------------------------------------------
-Private Sub splitter_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub splitter_MouseMove(Button As Integer, Shift As Integer, x As Single, Y As Single)
     Dim a1&
 
     If Button = 1 Then 'The mouse is down
@@ -1430,7 +1447,7 @@ Private Sub splitter_MouseMove(Button As Integer, Shift As Integer, x As Single,
             Capturing = True
         End If
         With splitter
-            a1 = .Top + y
+            a1 = .Top + Y
             If MoveOk(a1) Then
                 .Top = a1
             End If
@@ -1438,7 +1455,7 @@ Private Sub splitter_MouseMove(Button As Integer, Shift As Integer, x As Single,
     End If
 End Sub
 
-Private Sub splitter_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub splitter_MouseUp(Button As Integer, Shift As Integer, x As Single, Y As Single)
     If Capturing Then
         ReleaseCapture
         Capturing = False
@@ -1460,9 +1477,9 @@ Private Sub DoMove()
 End Sub
 
 
-Private Function MoveOk(y&) As Boolean  'Put in any limiters you desire
+Private Function MoveOk(Y&) As Boolean  'Put in any limiters you desire
     MoveOk = False
-    If y > 2500 And y < Me.Height - 1500 Then
+    If Y > 2500 And Y < Me.Height - 1500 Then
         MoveOk = True
     End If
 End Function
@@ -1523,9 +1540,7 @@ End Function
 '
 'End Sub
 
-Private Sub lblToolbox_Click(Index As Integer)
-    PopupMenu mnuPopup2
-End Sub
+
 
  
 
@@ -1533,16 +1548,8 @@ Private Sub Form_Load()
     On Error Resume Next
     
     Set txtJS = DukDbg.sci
-     
-    'wtf wont this work here but it will in the test project...
-'    Dim d As SCIVB_LITE.SciSimple
-'    Set d = txtJS
-'    If Not d Is Nothing Then
-'        MsgBox "got it!"
-'    End If
-     
+
     mnuPopup.Visible = False
-    mnuPopup2.Visible = False
     mnuPopup3.Visible = False
     mnuPopupFuncs.Visible = False
     mnuMainPopup.Visible = False
@@ -1606,11 +1613,8 @@ Private Sub Form_Resize()
     splitter.Width = DukDbg.Width
     
     If Me.WindowState = vbMinimized Then Exit Sub
-    
+    DoMove
      
-        DoMove
-     
-    
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
@@ -1620,10 +1624,6 @@ Private Sub Form_Unload(Cancel As Integer)
     SaveMySetting "WordWrap", IIf(mnuWordWrap.Checked, 1, 0)
     SaveMySetting "IndentGuide", IIf(mnuIndentGuide.Checked, 1, 0)
     SaveMySetting "CodeFolding", IIf(mnuCodeFolding.Checked, 1, 0)
- 
-    
-     
-    
 End Sub
 
 
@@ -1707,7 +1707,7 @@ Private Sub lv_KeyDown(KeyCode As Integer, Shift As Integer)
 End Sub
 
 
-Private Sub lv_MouseDown(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lv_MouseDown(Button As Integer, Shift As Integer, x As Single, Y As Single)
     If Button = 2 Then PopupMenu mnuPopup
 End Sub
 
@@ -2141,7 +2141,7 @@ Private Sub dukdbg_KeyDown(KeyCode As Long, Shift As Long)
     End If
 End Sub
 
-Private Sub dukdbg_MouseUp(Button As Integer, Shift As Integer, x As Long, y As Long)
+Private Sub dukdbg_MouseUp(Button As Integer, Shift As Integer, x As Long, Y As Long)
     
     On Error Resume Next
     

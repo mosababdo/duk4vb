@@ -1,1 +1,3 @@
-form.Text1.Text = 'test'
+
+a = 0
+a++

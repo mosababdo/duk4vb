@@ -31,6 +31,7 @@ Public userCOMDir As String
 
 Event Error(ByVal line As Long, ByVal desc As String)
 Event dbgOut(msg As String)
+Event printOut(msg As String)
 
 Friend Property Get comTypes() As Collection
     Set comTypes = m_comTypes
@@ -42,6 +43,10 @@ End Property
 
 Friend Sub doDbgOut(msg As String)
     RaiseEvent dbgOut(msg)
+End Sub
+
+Friend Sub doPrintOut(msg As String)
+    RaiseEvent printOut(msg)
 End Sub
 
 Property Get running() As Boolean
@@ -105,15 +110,15 @@ Private Sub Class_Initialize()
 End Sub
 
 Private Sub Class_Terminate()
+    ResetComObjects
     If hDuk <> 0 Then DukOp opd_Destroy, hDuk
     mDuk.libRefCnt = mDuk.libRefCnt - 1
-    If IsIde() And mDuk.libRefCnt = 0 Then
+    'If IsIde() And mDuk.libRefCnt = 0 Then
         'in the IDE we release it as soon as not needed..that way IDE doesnt
         'ever hang onto the dll after debugging. If it does we cant recompile the dll
         'without closing VB IDE which is annoying...
         'FreeLibrary mDuk.hDukLib '<--to dangerous to use after initial dev of dll is done..
-    End If
-    'ResetComObjects 'because these are global we can not reset them in a single class terminate..
+    'End If
 End Sub
 
 Function Reset() As Boolean
@@ -124,7 +129,6 @@ Function Reset() As Boolean
         Exit Function
     End If
     
-    ResetComObjects
     Class_Terminate
     Class_Initialize
     Reset = True

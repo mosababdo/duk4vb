@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-Object = "{FBE17B58-A1F0-4B91-BDBD-C9AB263AC8B0}#78.1#0"; "scivb_lite.ocx"
+Object = "{2668C1EA-1D34-42E2-B89F-6B92F3FF627B}#2.0#0"; "scivb2.ocx"
 Begin VB.UserControl ucDukDbg 
    ClientHeight    =   7560
    ClientLeft      =   0
@@ -10,6 +10,15 @@ Begin VB.UserControl ucDukDbg
    ScaleHeight     =   7560
    ScaleWidth      =   13950
    ToolboxBitmap   =   "ucDukDbg.ctx":0000
+   Begin sci2.SciSimple scivb 
+      Height          =   5730
+      Left            =   45
+      TabIndex        =   6
+      Top             =   540
+      Width           =   10905
+      _ExtentX        =   19235
+      _ExtentY        =   10107
+   End
    Begin VB.Timer tmrHideCallTip 
       Enabled         =   0   'False
       Interval        =   600
@@ -239,19 +248,10 @@ Begin VB.UserControl ucDukDbg
          EndProperty
       EndProperty
    End
-   Begin SCIVB_LITE.SciSimple scivb 
-      Height          =   5865
-      Left            =   45
-      TabIndex        =   4
-      Top             =   450
-      Width           =   13650
-      _ExtentX        =   24077
-      _ExtentY        =   10345
-   End
    Begin VB.Label lblInfo 
       Height          =   330
       Left            =   8685
-      TabIndex        =   6
+      TabIndex        =   5
       Top             =   90
       Width           =   5010
    End
@@ -259,7 +259,7 @@ Begin VB.UserControl ucDukDbg
       Caption         =   "Status: Idle"
       Height          =   375
       Left            =   4005
-      TabIndex        =   5
+      TabIndex        =   4
       Top             =   90
       Width           =   4560
    End
@@ -273,16 +273,13 @@ Attribute VB_Exposed = True
 'Site: Sandsprite.com
 'License: http://opensource.org/licenses/MIT
 
-'icon from IconJam
-'   http://www.icojam.com
-'   http://www.iconarchive.com/show/animals-icons-by-icojam/02-duck-icon.html
+'really we should compile scivb into this ocx so that we can make it public and share it
+'as SciSimple from the sci property instead of having to use object...and cant set = type latter :(
 
 Option Explicit
 
 Private WithEvents duk As CDukTape
 Attribute duk.VB_VarHelpID = -1
-Dim WithEvents sciext As CSciExtender
-Attribute sciext.VB_VarHelpID = -1
  
 Const SC_MARK_CIRCLE = 0
 Const SC_MARK_ARROW = 2
@@ -296,12 +293,13 @@ Private userStop As Boolean
 Public userCOMDir As String
 
 Public Enum dbgStates
-    dsStarted = 1
-    dsIdle = 2
-    dsPaused = 3
+    dsStarted = 0
+    dsIdle = 1
+    dsPaused = 2
+    dsRunning = 3
 End Enum
     
-Event txtOut(msg As String)
+Event printOut(msg As String)
 Event dbgOut(msg As String)
 Event dukErr(line As Long, msg As String)
 Event StateChanged(state As dbgStates)
@@ -315,82 +313,12 @@ Private libFiles As New Collection
 Private intellisense As New Collection
 Private WithEvents ownerForm As Form
 Attribute ownerForm.VB_VarHelpID = -1
+Private m_DbgState As dbgStates
+Private isInitilized As Boolean
 
-'so stupid I cant make scivb public..probbaly if both in same ocx..
-Property Get Text() As String
-    Text = scivb.Text
+Property Get DebugState() As dbgStates
+    DebugState = m_DbgState
 End Property
-
-Property Get SelText() As String
-    SelText = scivb.SelText
-End Property
-
-Property Get SelLength() As Long
-    SelLength = scivb.SelLength
-End Property
-
-Property Get SelStart() As Long
-    SelStart = scivb.SelStart
-End Property
-
-Property Let SelText(v As String)
-    scivb.SelText = v
-End Property
-
-Property Let SelLength(v As Long)
-    scivb.SelLength = v
-End Property
-
-Property Let SelStart(v As Long)
-    scivb.SelStart = v
-End Property
-
-Property Let Text(v As String)
-    scivb.Text = v
-End Property
-
-Property Get isRunning() As Boolean
-    isRunning = running
-End Property
-
-Property Get CurrentWord() As String
-    CurrentWord = scivb.CurrentWord
-End Property
-
-Function GetLineText(iLine As Long) As String
-    GetLineText = scivb.GetLineText(iLine)
-End Function
-
-Property Get FirstVisibleLine() As Long
-    FirstVisibleLine = scivb.FirstVisibleLine
-End Property
-
-Property Let FirstVisibleLine(v As Long)
-    scivb.FirstVisibleLine = v
-End Property
-
-
-
-'Property Get Closing() As Boolean
-'    Closing = mClosing
-'End Property
-'
-'Property Let Closing(x As Boolean)
-'    mClosing = True
-'
-''this just causes bugs..screw it force user to stop it..
-''    If Not running Then Exit Property
-''    If Not CanIBeActiveInstance(Me) Then Exit Property
-''
-''    If running Then
-''        If Not duk Is Nothing Then
-''            duk.Timeout = 1
-''            'forceShutDown = True
-''            SendDebuggerCmd dc_stepInto
-''        End If
-''    End If
-'
-'End Property
 
 Property Get CurrentFile() As String
     CurrentFile = curFile
@@ -507,26 +435,27 @@ Friend Property Get duktape() As CDukTape
     Set duktape = duk
 End Property
 
-Public Property Get sci() As Variant
+'i am having problems setting this to a scisimple object in other projects? why?
+Public Property Get sci() As Object
     Set sci = scivb
 End Property
 
-Friend Sub SetStatus(msg As String)
-    If msg = "on" Then
+Friend Sub SetStatus(state As dbgStates)
+
+    m_DbgState = dsPaused
+    RaiseEvent StateChanged(state)
+    
+    Dim msg()
+    msg = Array("Running", "Idle", "Paused", "Running")
+    
+    If state = dsRunning Then
+        'to eliminate flicker from fast changes when debugging..
         tmrSetStatus.Enabled = True
     Else
-        lblStatus.Caption = "Status: " & msg
+        lblStatus.Caption = "Status: " & msg(state)
         tmrSetStatus.Enabled = False
-        If msg = "Paused" Then RaiseEvent StateChanged(dsPaused)
     End If
-End Sub
-
-Friend Sub doEvent(msg As String, Optional isdbg As Boolean = False)
-    If isdbg Then
-        RaiseEvent dbgOut(msg)
-    Else
-        RaiseEvent txtOut(msg)
-    End If
+    
 End Sub
 
 Function LoadFile(fpath As String) As Boolean
@@ -570,10 +499,17 @@ Friend Sub ClearLastLineMarkers()
     
 End Sub
 
-Private Sub duk_Error(ByVal line As Long, ByVal desc As String)
+Friend Sub duk_dbgOut(msg As String)
+    RaiseEvent dbgOut(msg)
+End Sub
+
+Friend Sub duk_Error(ByVal line As Long, ByVal desc As String)
     RaiseEvent dukErr(line, desc)
 End Sub
 
+Friend Sub duk_printOut(msg As String)
+    RaiseEvent printOut(msg)
+End Sub
 
 
 
@@ -648,7 +584,7 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
     Dim txt As String
     
     If Not CanIBeActiveInstance(Me) Then
-        RaiseEvent txtOut("Only one instance can be debugging at a time.")
+        RaiseEvent printOut("Only one instance can be debugging at a time.")
         Exit Sub
     End If
     
@@ -686,18 +622,14 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
     
 End Sub
 
-'this is used to block the user from closing the form while debugger is running.
-Private Sub HookParentEvents()
-    On Error Resume Next
-    Set ownerForm = UserControl.Parent
-    If Err.Number <> 0 Then RaiseEvent dbgOut("Could not Hook parent form Unload event is a form your container?")
-End Sub
+
 
 'this is important dont forget it!
 Private Sub ownerForm_Unload(Cancel As Integer)
     If Me.isRunning Then
         MsgBox "You must stop execution before closing this form"
         Cancel = 1
+        Exit Sub
     End If
 End Sub
 
@@ -713,11 +645,11 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     End If
     
     If Len(curFile) = 0 Then curFile = GetFreeFileName(Environ("temp"), ".js")
-    RaiseEvent StateChanged(dsStarted)
     
-    HookParentEvents
+    'HookParentEvents
+    SetStatus dsStarted
     running = True
-    sciext.LockEditor
+    scivb.LockEditor
     SetToolBarIcons
     lblStatus = "Status: " & IIf(withDebugger, "Debugging...", "Running...")
     
@@ -756,18 +688,18 @@ cleanup:
     If Not duk Is Nothing Then 'form closing?
          If withDebugger Then duk.DebugAttach False
          If duk.hadError And Not userStop Then doOutput duk.LastError
-         duk.Reset 'remove any live COM object references (global and have to add again next time fresh..)
+         duk.Reset 'remove any live COM object references
          Set duk = Nothing
          ClearLastLineMarkers
          lblStatus = "Status: Idle" 'these would call form_load again if closing down..
          running = False
          SetToolBarIcons
-         RaiseEvent StateChanged(dsIdle)
     End If
     
-    sciext.LockEditor False
+    scivb.LockEditor False
     Set ActiveUserControl = Nothing
-    Set ownerForm = Nothing
+    'Set ownerForm = Nothing
+    SetStatus dsIdle
     
 End Sub
 
@@ -807,7 +739,7 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
     'only do this once at runtime startup (this will also fire at design time in IDE)
     'we dont want to run a subclass while in IDE
-    If Ambient.UserMode And sciext Is Nothing Then
+    If Ambient.UserMode And Not isInitilized Then
         scivb.DirectSCI.HideSelection False
         scivb.DirectSCI.MarkerDefine 2, SC_MARK_CIRCLE
         scivb.DirectSCI.MarkerSetFore 2, vbRed 'set breakpoint color
@@ -824,10 +756,12 @@ Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
         scivb.DirectSCI.AutoCSetIgnoreCase True
         scivb.DisplayCallTips = True
         scivb.ReadOnly = False
-        
-        Set sciext = New CSciExtender
-        sciext.init scivb
-    End If
+        isInitilized = True
+        'this is used to block the user from closing the form while debugger is running. and unsubclass..
+        On Error Resume Next
+        Set ownerForm = UserControl.Parent
+        If Err.Number <> 0 Then MsgBox "Could not Hook parent form Unload event is a form the parent container? you may crash on close.."
+     End If
 End Sub
 
 Private Sub UserControl_Resize()
@@ -848,26 +782,25 @@ Private Sub tmrSetStatus_Timer()
     tmrSetStatus.Enabled = False
 End Sub
 
- 
 
 ''we use a timer for this to give them a chance to click on the calltip to edit the variable..
 Private Sub tmrHideCallTip_Timer()
-    If sciext.isMouseOverCallTip() Then Exit Sub
+    If scivb.isMouseOverCallTip() Then Exit Sub
     tmrHideCallTip.Enabled = False
     scivb.StopCallTip
 End Sub
  
-Private Sub sciext_MarginClick(lline As Long, Position As Long, margin As Long, modifiers As Long)
+Private Sub scivb_MarginClick(lline As Long, Position As Long, margin As Long, modifiers As Long)
     'Debug.Print "MarginClick: line,pos,margin,modifiers", lLine, Position, margin, modifiers
     ToggleBreakPoint curFile, lline, scivb.GetLineText(lline), Me
 End Sub
 
-Private Sub sciext_MouseDwellEnd(lline As Long, Position As Long)
+Private Sub scivb_MouseDwellEnd(lline As Long, Position As Long)
    If running Then tmrHideCallTip.Enabled = True
 End Sub
 
-Private Sub sciext_MouseDwellStart(lline As Long, Position As Long)
-    'Debug.Print "MouseDwell: " & lLine & " CurWord: " & sciext.WordUnderMouse(Position)
+Private Sub scivb_MouseDwellStart(lline As Long, Position As Long)
+    
 
     Dim txt As String
     Dim curWord As String
@@ -876,7 +809,7 @@ Private Sub sciext_MouseDwellStart(lline As Long, Position As Long)
     If Not CanIBeActiveInstance(Me) Then Exit Sub
     
     If running Then
-         curWord = sciext.WordUnderMouse(Position)
+         curWord = scivb.WordUnderMouse(Position)
          If Len(curWord) = 0 Then Exit Sub
          Set cv = SyncGetVarValue(curWord)
          If cv.varType <> DUK_VAR_NOT_FOUND Then
@@ -921,4 +854,58 @@ Private Sub txtCmd_KeyPress(KeyAscii As Integer)
     
 End Sub
 
- 
+
+
+'so stupid I cant make scivb public..I could if both in same ocx..
+Property Get Text() As String
+    Text = scivb.Text
+End Property
+
+Property Get SelText() As String
+    SelText = scivb.SelText
+End Property
+
+Property Get SelLength() As Long
+    SelLength = scivb.SelLength
+End Property
+
+Property Get SelStart() As Long
+    SelStart = scivb.SelStart
+End Property
+
+Property Let SelText(v As String)
+    scivb.SelText = v
+End Property
+
+Property Let SelLength(v As Long)
+    scivb.SelLength = v
+End Property
+
+Property Let SelStart(v As Long)
+    scivb.SelStart = v
+End Property
+
+Property Let Text(v As String)
+    scivb.Text = v
+End Property
+
+Property Get isRunning() As Boolean
+    isRunning = running
+End Property
+
+Property Get CurrentWord() As String
+    CurrentWord = scivb.CurrentWord
+End Property
+
+Function GetLineText(iLine As Long) As String
+    GetLineText = scivb.GetLineText(iLine)
+End Function
+
+Property Get FirstVisibleLine() As Long
+    FirstVisibleLine = scivb.FirstVisibleLine
+End Property
+
+Property Let FirstVisibleLine(v As Long)
+    scivb.FirstVisibleLine = v
+End Property
+
