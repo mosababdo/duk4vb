@@ -28,6 +28,7 @@ Public hadError As Boolean
 Public LastError As String
 Public LastErrorLine As Long
 Public userCOMDir As String
+Public throwErrors As Boolean 'sometimes its easier to use on error resume next and check err.number than sink  error message and fragment code..
 
 Event Error(ByVal line As Long, ByVal desc As String)
 Event dbgOut(msg As String)
@@ -141,7 +142,7 @@ Private Function ParseObjectToCache(name As String, obj As Object) As Boolean
     
     If KeyExistsInCollection(m_comTypes, name) Then
         Set cc = m_comTypes(name)
-        If cc.errors.count = 0 Then ParseObjectToCache = True
+        If cc.errors.Count = 0 Then ParseObjectToCache = True
         Exit Function
     End If
         
@@ -176,29 +177,27 @@ Private Sub ClearErr()
     LastErrorLine = 0
 End Sub
 
-Function AddObject(obj As Object, name As String, Optional ByRef outErrList As Collection) As Boolean
+Function AddObject(obj As Object, name As String) As Boolean
     
     Dim d
     Dim cc As CCOMType
     Dim result As Boolean
-        
-    If outErrList Is Nothing Then Set outErrList = New Collection
     
     result = ParseObjectToCache(name, obj)
     Set cc = comTypes(name) 'always added even with errors
        
     If Not result Then
-       Set outErrList = cc.errors
+       LastError = c2s(cc.errors)
        Exit Function
     End If
         
     If Not Me.AddFile(cc.js_file) Then
-        outErrList.Add "Error loading js File: " & cc.js_file & " " & LastError
+        LastError = "Error loading js File: " & cc.js_file & " " & LastError
         Exit Function
     End If
         
     For Each d In cc.dependancies
-        If Not AddObject(Nothing, CStr(d), outErrList) Then
+        If Not AddObject(Nothing, CStr(d)) Then
             Exit Function
         End If
     Next
@@ -240,6 +239,10 @@ Function AddFile(fpath) As Boolean
     
     RaiseEvent Error(LastErrorLine, LastError)
     
+    If throwErrors Then
+        Err.Raise &H40404040, "AddFile", LastError
+    End If
+    
 End Function
 
 Function Eval(js)
@@ -274,5 +277,9 @@ Function Eval(js)
     End If
     
     RaiseEvent Error(LastErrorLine, LastError)
+    
+    If throwErrors Then
+        Err.Raise &H40404040, "Eval", LastError
+    End If
     
 End Function

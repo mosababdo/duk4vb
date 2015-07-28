@@ -660,8 +660,8 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     duk.userCOMDir = userCOMDir
     
     For Each o In objCache
-        If Not duk.AddObject(o.obj, o.name, c) Then
-            doOutput "Error adding object: " & o.name & vbCrLf & c2s(c)
+        If Not duk.AddObject(o.obj, o.name) Then
+            doOutput "Error adding object: " & o.name & vbCrLf & duk.LastError
             GoTo cleanup
         End If
     Next

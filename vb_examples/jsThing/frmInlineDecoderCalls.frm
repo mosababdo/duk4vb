@@ -6,10 +6,10 @@ Begin VB.Form frmInlineDecoderCalls
    ClientHeight    =   8475
    ClientLeft      =   60
    ClientTop       =   630
-   ClientWidth     =   9450
+   ClientWidth     =   10800
    LinkTopic       =   "Form3"
    ScaleHeight     =   8475
-   ScaleWidth      =   9450
+   ScaleWidth      =   10800
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton cmdExample 
       Caption         =   "Example"

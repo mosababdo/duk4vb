@@ -1,8 +1,7 @@
 VERSION 5.00
-Object = "{0E59F1D2-1FBE-11D0-8FF2-00A0D10038BC}#1.0#0"; "msscript.ocx"
 Object = "{3B7C8863-D78F-101B-B9B5-04021C009402}#1.2#0"; "RICHTX32.OCX"
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#49.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#51.0#0"; "dukDbg.ocx"
 Begin VB.Form Form2 
    Caption         =   "PDF Stream Dumper - JS UI"
    ClientHeight    =   8310
@@ -14,14 +13,6 @@ Begin VB.Form Form2
    ScaleHeight     =   8310
    ScaleWidth      =   14460
    StartUpPosition =   3  'Windows Default
-   Begin VB.CommandButton Command1 
-      Caption         =   "Command1"
-      Height          =   285
-      Left            =   9540
-      TabIndex        =   10
-      Top             =   0
-      Width           =   690
-   End
    Begin dukDbg.ucDukDbg DukDbg 
       Height          =   6450
       Left            =   2430
@@ -34,8 +25,8 @@ Begin VB.Form Form2
    Begin VB.Timer tmrFormatting 
       Enabled         =   0   'False
       Interval        =   300
-      Left            =   12510
-      Top             =   45
+      Left            =   13950
+      Top             =   0
    End
    Begin MSComctlLib.ListView lv2 
       Height          =   2670
@@ -67,13 +58,6 @@ Begin VB.Form Form2
          Text            =   "data"
          Object.Width           =   2540
       EndProperty
-   End
-   Begin MSScriptControlCtl.ScriptControl sc 
-      Left            =   13770
-      Top             =   90
-      _ExtentX        =   1005
-      _ExtentY        =   1005
-      Language        =   "jscript"
    End
    Begin VB.Frame splitter 
       BackColor       =   &H00808080&
@@ -128,7 +112,6 @@ Begin VB.Form Form2
       _ExtentX        =   20981
       _ExtentY        =   2249
       _Version        =   393217
-      Enabled         =   -1  'True
       HideSelection   =   0   'False
       ScrollBars      =   2
       TextRTF         =   $"Form2.frx":0000
@@ -524,7 +507,7 @@ Option Explicit
 Dim WithEvents duk As CDukTape
 Attribute duk.VB_VarHelpID = -1
 
-Public txtJS As Object 'i cant directly reference as scisimple here why?
+Public txtJS As sci2.SciSimple
 Attribute txtJS.VB_VarHelpID = -1
 
 Dim dlg As New CCmnDlg
@@ -568,14 +551,7 @@ Public Function StandardizeLineBreaks(ByVal x)
     StandardizeLineBreaks = Replace(x, Chr(5), vbCrLf)
 End Function
 
-Private Sub Command1_Click()
-    'wtf wont this work here but it will in the test project...
-    On Error Resume Next
-    Dim d As sci2.SciSimple
-    Set d = DukDbg.sci
-    MsgBox Err.Description
-End Sub
-
+ 
 Private Sub duk_dbgOut(msg As String)
     Debug.Print "DukDbg: " & msg
 End Sub
@@ -1548,7 +1524,8 @@ Private Sub Form_Load()
     On Error Resume Next
     
     Set txtJS = DukDbg.sci
-
+    If txtJS Is Nothing Then txtOut = "Failed to set txtjs!"
+    
     mnuPopup.Visible = False
     mnuPopup3.Visible = False
     mnuPopupFuncs.Visible = False
