@@ -1,37 +1,37 @@
 VERSION 5.00
 Object = "{3B7C8863-D78F-101B-B9B5-04021C009402}#1.2#0"; "RICHTX32.OCX"
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#51.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#57.0#0"; "dukDbg.ocx"
 Begin VB.Form Form2 
-   Caption         =   "PDF Stream Dumper - JS UI"
+   Caption         =   "jsThing - http://sandsprite.com"
    ClientHeight    =   8310
    ClientLeft      =   165
    ClientTop       =   1020
-   ClientWidth     =   14460
+   ClientWidth     =   14355
    KeyPreview      =   -1  'True
    LinkTopic       =   "Form2"
    ScaleHeight     =   8310
-   ScaleWidth      =   14460
+   ScaleWidth      =   14355
    StartUpPosition =   3  'Windows Default
-   Begin dukDbg.ucDukDbg DukDbg 
-      Height          =   6450
-      Left            =   2430
-      TabIndex        =   7
-      Top             =   315
-      Width           =   11895
-      _ExtentX        =   20981
-      _ExtentY        =   11377
-   End
    Begin VB.Timer tmrFormatting 
       Enabled         =   0   'False
       Interval        =   300
       Left            =   13950
       Top             =   0
    End
+   Begin dukDbg.ucDukDbg DukDbg 
+      Height          =   6450
+      Left            =   2430
+      TabIndex        =   5
+      Top             =   90
+      Width           =   11895
+      _ExtentX        =   20981
+      _ExtentY        =   11377
+   End
    Begin MSComctlLib.ListView lv2 
       Height          =   2670
       Left            =   30
-      TabIndex        =   5
+      TabIndex        =   3
       TabStop         =   0   'False
       Top             =   5580
       Width           =   2295
@@ -62,18 +62,18 @@ Begin VB.Form Form2
    Begin VB.Frame splitter 
       BackColor       =   &H00808080&
       Height          =   75
-      Left            =   2400
+      Left            =   2430
       MousePointer    =   7  'Size N S
-      TabIndex        =   3
-      Top             =   6840
+      TabIndex        =   1
+      Top             =   6615
       Width           =   11895
    End
    Begin MSComctlLib.ListView lv 
       Height          =   2775
       Left            =   45
-      TabIndex        =   1
+      TabIndex        =   0
       TabStop         =   0   'False
-      Top             =   270
+      Top             =   45
       Width           =   2295
       _ExtentX        =   4048
       _ExtentY        =   4895
@@ -103,14 +103,14 @@ Begin VB.Form Form2
       EndProperty
    End
    Begin RichTextLib.RichTextBox txtOut 
-      Height          =   1275
+      Height          =   1455
       Left            =   2400
-      TabIndex        =   4
+      TabIndex        =   2
       TabStop         =   0   'False
-      Top             =   6960
+      Top             =   6780
       Width           =   11895
       _ExtentX        =   20981
-      _ExtentY        =   2249
+      _ExtentY        =   2566
       _Version        =   393217
       HideSelection   =   0   'False
       ScrollBars      =   2
@@ -126,14 +126,14 @@ Begin VB.Form Form2
       EndProperty
    End
    Begin MSComctlLib.ListView lvFunc 
-      Height          =   2490
-      Left            =   60
-      TabIndex        =   6
+      Height          =   2670
+      Left            =   45
+      TabIndex        =   4
       TabStop         =   0   'False
-      Top             =   3060
+      Top             =   2880
       Width           =   2295
       _ExtentX        =   4048
-      _ExtentY        =   4392
+      _ExtentY        =   4710
       View            =   3
       LabelEdit       =   1
       MultiSelect     =   -1  'True
@@ -157,80 +157,6 @@ Begin VB.Form Form2
          Object.Width           =   2540
       EndProperty
    End
-   Begin VB.Label lblClipboard 
-      Caption         =   "^ to script pane"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   400
-         Underline       =   -1  'True
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FF0000&
-      Height          =   255
-      Index           =   2
-      Left            =   10455
-      TabIndex        =   9
-      Top             =   30
-      Width           =   1230
-   End
-   Begin VB.Label lblClipboard 
-      Caption         =   "<-- to clipboard"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   400
-         Underline       =   -1  'True
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FF0000&
-      Height          =   255
-      Index           =   1
-      Left            =   4770
-      TabIndex        =   8
-      Top             =   0
-      Width           =   1215
-   End
-   Begin VB.Label lblClipboard 
-      Caption         =   "<-- to clipboard"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   400
-         Underline       =   -1  'True
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FF0000&
-      Height          =   255
-      Index           =   0
-      Left            =   2400
-      TabIndex        =   2
-      Top             =   0
-      Width           =   1215
-   End
-   Begin VB.Label Label1 
-      Caption         =   "Script"
-      BeginProperty Font 
-         Name            =   "Courier New"
-         Size            =   11.25
-         Charset         =   0
-         Weight          =   400
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      Height          =   375
-      Left            =   3600
-      TabIndex        =   0
-      Top             =   0
-      Width           =   975
-   End
    Begin VB.Menu mnuMainLoadFile 
       Caption         =   "Load"
       Begin VB.Menu mnuLoadFile 
@@ -240,8 +166,20 @@ Begin VB.Form Form2
          Caption         =   "Load Shellcode"
       End
    End
+   Begin VB.Menu mnuTools 
+      Caption         =   "Tools"
+      Begin VB.Menu mnuScriptToClip 
+         Caption         =   "Script to Clipboard"
+      End
+      Begin VB.Menu mnuOutputToClip 
+         Caption         =   "Output to Clipboard"
+      End
+      Begin VB.Menu mnuOutputToScript 
+         Caption         =   "Output To Script"
+      End
+   End
    Begin VB.Menu mnuBeautify 
-      Caption         =   "Format_Javascript"
+      Caption         =   "Format_JS"
    End
    Begin VB.Menu mnuUnescapeSelection 
       Caption         =   "Unescape_Selection (F6)"
@@ -289,18 +227,11 @@ Begin VB.Form Form2
          Caption         =   "HexString to %u encoded"
       End
    End
-   Begin VB.Menu mnuExploitScan 
-      Caption         =   "Exploit_Scan"
-   End
    Begin VB.Menu mnuSimplifySelection 
       Caption         =   "Simplify_Selection_Quotes"
    End
    Begin VB.Menu mnuShellcodeUI 
       Caption         =   "Shellcode_Analysis"
-      Begin VB.Menu mnuLaunchSclog 
-         Caption         =   "scLog ( iDefense - Runs Live)"
-         Index           =   0
-      End
       Begin VB.Menu mnuLaunchSclog 
          Caption         =   "scDbg ( libEmu - Emulation )"
          Index           =   1
@@ -394,9 +325,6 @@ Begin VB.Form Form2
       Caption         =   "Options"
       Begin VB.Menu mnuGotoLine 
          Caption         =   "Goto Line"
-      End
-      Begin VB.Menu mnuQuickEval 
-         Caption         =   "Quick Eval"
       End
       Begin VB.Menu mnuCopyFuncsNames 
          Caption         =   "Copy Func Names"
@@ -563,9 +491,10 @@ Private Sub duk_Error(ByVal line As Long, ByVal desc As String)
     On Error Resume Next
     Dim pos As Long
     
-    pos = txtJS.PositionFromLine(line)
-    DukDbg.SelStart = pos
-    txtJS.SelectLine
+    txtJS.GotoLine line - 1
+    pos = txtJS.PositionFromLine(line - 1)
+    txtJS.SelStart = pos
+    txtJS.SelLength = Len(txtJS.GetLineText(line - 1))
     
     txtOut.Text = "Time: " & Now & vbCrLf & "Error: " & desc
     txtOut.Text = txtOut.Text & vbCrLf & "Source: " & txtJS.GetLineText(line - 1)  'vbsci specific
@@ -623,7 +552,7 @@ Private Sub lvFunc_DblClick()
     If Not lvFunc.SelectedItem Is Nothing Then
          'txtJS.GotoLine lvFunc.SelectedItem.tag
          'push navPoints, CLng(lvFunc.SelectedItem.tag)
-         DukDbg.FirstVisibleLine = CLng(lvFunc.SelectedItem.Tag)
+         txtJS.FirstVisibleLine = CLng(lvFunc.SelectedItem.Tag)
          txtJS.SelectLine
          txtJS.SetFocus
     End If
@@ -700,7 +629,7 @@ Private Sub mnuCopyFuncsNames_Click()
     On Error Resume Next
     Dim x, Y, tmp
     
-    x = Split(DukDbg.Text, vbCrLf)
+    x = Split(txtJS.Text, vbCrLf)
     For Each Y In x
         If InStr(Y, "function") > 0 Then
             tmp = tmp & Y & vbCrLf
@@ -720,7 +649,7 @@ End Sub
 Private Sub mnuCopyToJs_Click()
     On Error Resume Next
     If lv.SelectedItem Is Nothing Then Exit Sub
-    DukDbg.Text = lv.SelectedItem.Tag
+    txtJS.Text = lv.SelectedItem.Tag
     Erase renames
 End Sub
 
@@ -735,7 +664,7 @@ Public Function ExtractFunction(ByVal startLine As Long, Optional ByRef foundEnd
     
     data = IIf(includeSpacer, vbCrLf & vbCrLf, Empty)
     startLine = startLine - 1
-    tmp = Split(DukDbg.Text, vbCrLf)
+    tmp = Split(txtJS.Text, vbCrLf)
     j = -1
     foundEnd = False
     
@@ -757,6 +686,10 @@ End Function
 
 Private Sub mnuExpandAll_Click()
     If mnuCodeFolding.Checked = True Then mnuCodeFolding_Click
+End Sub
+
+Private Sub mnuExploitScan_Click()
+
 End Sub
 
 Private Sub mnuExtractFunc_Click()
@@ -828,11 +761,11 @@ Public Sub mnuFunctionScan_Click()
     lvFunc.ListItems.Clear
     
     i = -1
-    'tmp = Split(dukdbg.text, vbCrLf)
+    'tmp = Split(txtjs.text, vbCrLf)
     'For Each x In tmp
     For i = 0 To txtJS.DirectSCI.GetLineCount
         'i = i + 1
-        x = DukDbg.GetLineText(i)
+        x = txtJS.GetLineText(i)
         func = Empty
         
         a = InStr(x, " = function(")
@@ -876,7 +809,7 @@ Private Sub mnuHex2Unicode_Click()
     On Error Resume Next
     Dim x, a, b, ret, i
     
-    x = Replace(DukDbg.SelText, vbCrLf, Empty)
+    x = Replace(txtJS.SelText, vbCrLf, Empty)
     x = Replace(x, Chr(0), "")
     If Len(x) = 0 Then
         MsgBox "Nothing selected!"
@@ -891,7 +824,7 @@ Private Sub mnuHex2Unicode_Click()
        ret = ret & "%u" & b & a
     Next
     If right(ret, 2) = "%u" Then ret = Mid(ret, 1, Len(ret) - 2)
-    DukDbg.SelText = ret
+    txtJS.SelText = ret
 End Sub
 
 Private Sub mnuHighLightAllRefs_Click()
@@ -921,7 +854,7 @@ Public Sub mnuLoadShellcode_Click()
     If Len(f) = 0 Then Exit Sub
     If Not fso.FileExists(f) Then Exit Sub
     x = HexDump(fso.ReadFile(f), 1)
-    DukDbg.Text = AddPercentToHexString(x)
+    txtJS.Text = AddPercentToHexString(x)
     txtJS.SelectAll
 End Sub
 
@@ -934,12 +867,12 @@ Private Sub mnuMain_Click(Index As Integer)
     Select Case Index
         Case 0: lvFunc_DblClick
         Case 1:
-                If Len(DukDbg.CurrentWord) > 0 Then
-                    If isWordFunctionName(DukDbg.CurrentWord) Then
+                If Len(txtJS.CurrentWord) > 0 Then
+                    If isWordFunctionName(txtJS.CurrentWord) Then
                         mnuFindFuncRefs_Click   'func already selected by mouse up event code
                     Else
                         Set f = txtJS.ShowFindReplace
-                        f.Text1 = DukDbg.CurrentWord
+                        f.Text1 = txtJS.CurrentWord
                         f.cmdFindAll_Click
                     End If
                 End If
@@ -947,17 +880,17 @@ Private Sub mnuMain_Click(Index As Integer)
         Case 2: mnuGraphTo_Click
         Case 3: mnuiGraphFrom_Click
         Case 4:
-                If DukDbg.SelLength > 0 Then
+                If txtJS.SelLength > 0 Then
                     txtJS.Copy
                 Else
                     Clipboard.Clear
-                    Clipboard.SetText DukDbg.CurrentWord
+                    Clipboard.SetText txtJS.CurrentWord
                 End If
                 
         Case 5: txtJS.Paste
         Case 6:
-                hexstring = LongHex(CDbl(DukDbg.CurrentWord))
-                If Err.Number = 0 Then txtJS.ReplaceAll DukDbg.CurrentWord, "0x" & hexstring
+                hexstring = LongHex(CDbl(txtJS.CurrentWord))
+                If Err.Number = 0 Then txtJS.ReplaceAll txtJS.CurrentWord, "0x" & hexstring
     End Select
     
 End Sub
@@ -974,25 +907,27 @@ Function LongHex(ByVal Number As Double) As String
   LongHex = h$
 End Function
 
+Private Sub mnuOutputToClip_Click()
+    lblClipboard_Click 1
+End Sub
+
+Private Sub mnuOutputToScript_Click()
+    lblClipboard_Click 2
+End Sub
+
 Private Sub mnuProcessActionScript_Click()
     On Error Resume Next
     Dim tmp
-    tmp = ProcessActionScript(DukDbg.Text)
+    tmp = ProcessActionScript(txtJS.Text)
     If Len(tmp) = 0 Then
         MsgBox "Had an error processing the text, assumes output from as3 sourcerer", vbInformation
     Else
-        DukDbg.Text = tmp
+        txtJS.Text = tmp
         mnuBeautify_Click
     End If
 End Sub
 
-Private Sub mnuQuickEval_Click()
-    On Error Resume Next
-    Dim s
-    s = InputBox("Enter a script to execute in current script contect. You can use this to probe runtime variables like tb.alert(my_var) or tb.t(longtext_var)")
-    If Len(s) = 0 Then Exit Sub
-    sc.eval s
-End Sub
+ 
 
 Private Sub mnuRenameFunc_Click()
 
@@ -1002,7 +937,7 @@ Private Sub mnuRenameFunc_Click()
     
     If lvFunc.SelectedItem Is Nothing Then Exit Sub
     
-    fl = DukDbg.FirstVisibleLine 'this can be buggy...
+    fl = txtJS.FirstVisibleLine 'this can be buggy...
     Debug.Print "Top line: " & fl
     
     oldname = lvFunc.SelectedItem.Text
@@ -1021,14 +956,14 @@ Private Sub mnuRenameFunc_Click()
         End If
     Next
     
-    If InStr(DukDbg.Text, NewName) > 0 Then
+    If InStr(txtJS.Text, NewName) > 0 Then
         MsgBox "This string is already found in the current script please make unique"
         Exit Sub
     End If
     
     push renames, oldname & " -> " & NewName
-    DukDbg.Text = Replace(DukDbg.Text, oldname & "(", NewName & "(")
-    DukDbg.FirstVisibleLine = fl
+    txtJS.Text = Replace(txtJS.Text, oldname & "(", NewName & "(")
+    txtJS.FirstVisibleLine = fl
     
     'MsgBox txtJS.SCI.ReplaceAll(CStr(oldname), CStr(NewName), True) 'buggy...
     
@@ -1052,7 +987,7 @@ Private Sub mnuReplaceHexAscii_Click()
     
     On Error Resume Next
     
-    topLine = Form2.DukDbg.FirstVisibleLine
+    topLine = Form2.txtJS.FirstVisibleLine
     mnuUniAsciiToHex_Click
     
     a = Asc("A")
@@ -1064,7 +999,7 @@ Private Sub mnuReplaceHexAscii_Click()
     r.IgnoreCase = True
     r.Pattern = "(\\[xX][0-9a-fA-F]+)+" 'find all \x__\x__ strings
 
-    Set mm = r.Execute(DukDbg.Text)
+    Set mm = r.Execute(txtJS.Text)
     
     For Each m In mm
         
@@ -1093,7 +1028,7 @@ Private Sub mnuReplaceHexAscii_Click()
         
     Next
     
-    Form2.DukDbg.FirstVisibleLine = topLine
+    Form2.txtJS.FirstVisibleLine = topLine
     
 End Sub
 
@@ -1128,7 +1063,7 @@ Function Shellcode2Exe(Index As Long)
     Dim simple_husk As Boolean
     Dim x, i
     
-    x = DukDbg.SelText
+    x = txtJS.SelText
     
     If Len(x) = 0 Then
         MsgBox "No text selected", vbInformation
@@ -1218,13 +1153,17 @@ Private Sub mnuSciVerInfo_Click()
      txtJS.ShowAbout
 End Sub
 
+Private Sub mnuScriptToClip_Click()
+    lblClipboard_Click 0
+End Sub
+
 Private Sub mnuSend2IDA_Click()
     Dim h As String, x, scf
     Const def = "C:\Program Files\IDA\idag.exe"
     
     On Error Resume Next
     
-    If Len(DukDbg.SelText) = 0 Then
+    If Len(txtJS.SelText) = 0 Then
         MsgBox "You must first select the shellcode to extract in the script window."
         Exit Sub
     End If
@@ -1242,7 +1181,7 @@ Private Sub mnuSend2IDA_Click()
         End If
     End If
     
-    x = DukDbg.SelText
+    x = txtJS.SelText
     x = PrepareShellcode(x) 'does not handle just hex blobs like 9090 other formats supported though with multiescape
     
     scf = App.path & "\tmp.sc"
@@ -1275,7 +1214,7 @@ End Sub
 '
 '    tmp = fso.ReadFile(pth)
 '    tmp = HexDump(tmp, 1)
-'    dukdbg.text = AddPercentToHexString(tmp)
+'    txtjs.text = AddPercentToHexString(tmp)
 '    txtJS.SelectAll
 '
 'End Sub
@@ -1293,7 +1232,7 @@ Private Sub mnuSeqRenameFuncs_Click()
     Dim oldname, NewName
     
     i = 1
-    fl = DukDbg.FirstVisibleLine 'this can be buggy...
+    fl = txtJS.FirstVisibleLine 'this can be buggy...
     
     r = MsgBox("Ignore Selected functions? ", vbYesNoCancel)
     If r = vbCancel Then Exit Sub
@@ -1324,18 +1263,18 @@ reGenerate:
         Next
         
         'does new name already exist?
-        If InStr(DukDbg.Text, NewName) > 0 Then
+        If InStr(txtJS.Text, NewName) > 0 Then
             reGens = reGens + 1
             GoTo reGenerate
         End If
         
-        DukDbg.Text = Replace(DukDbg.Text, oldname, NewName)
+        txtJS.Text = Replace(txtJS.Text, oldname, NewName)
         li.Text = NewName
 nextone:
         
     Next
     
-    DukDbg.FirstVisibleLine = fl
+    txtJS.FirstVisibleLine = fl
     
 End Sub
 
@@ -1352,8 +1291,8 @@ Private Sub mnuStripInlineDecoderCalls_Click()
 End Sub
 
 Private Sub mnuUniAsciiToHex_Click()
-    DukDbg.Text = Replace(DukDbg.Text, "\u00", "\x", , , vbTextCompare)
-    DukDbg.Text = Replace(DukDbg.Text, "%u00", "\x", , , vbTextCompare)
+    txtJS.Text = Replace(txtJS.Text, "\u00", "\x", , , vbTextCompare)
+    txtJS.Text = Replace(txtJS.Text, "%u00", "\x", , , vbTextCompare)
 End Sub
 
 Private Sub mnuVarPrefix_Click()
@@ -1361,18 +1300,18 @@ Private Sub mnuVarPrefix_Click()
     On Error Resume Next
     Dim x, tmp, i
     
-    If DukDbg.SelLength = 0 Then
+    If txtJS.SelLength = 0 Then
         MsgBox "This is used for the refactor form, used to add var to the beginning of all lines selected.", vbInformation
         Exit Sub
     End If
     
-    x = DukDbg.SelText
+    x = txtJS.SelText
     tmp = Split(x, vbCrLf)
     For i = 0 To UBound(tmp)
         tmp(i) = "var " & tmp(i)
     Next
         
-    If Err.Number = 0 Then DukDbg.SelText = Join(tmp, vbCrLf)
+    If Err.Number = 0 Then txtJS.SelText = Join(tmp, vbCrLf)
 
 
 End Sub
@@ -1387,13 +1326,13 @@ Private Sub mnuXorBruteForce_Click()
     Dim infile As String
     Dim x, base
     
-    If Len(DukDbg.SelText) = 0 Then
+    If Len(txtJS.SelText) = 0 Then
         If MsgBox("No Shellcode was selected, do you want to open a file to scan?", vbYesNo) = vbNo Then Exit Sub
         infile = dlg.OpenDialog(AllFiles, , "Open File to Xor Scan")
         If Len(infile) = 0 Then Exit Sub
         x = fso.ReadFile(infile)
     Else
-        x = DukDbg.SelText
+        x = txtJS.SelText
         'does not handle just hex blobs like 9090 other formats supported though with multiescape
         x = PrepareShellcode(x)
     End If
@@ -1507,11 +1446,11 @@ End Function
 '
 '    If USING_MYMAIN = True Then
 '        main_wrapper = fso.ReadFile(main_wrapper)
-'        'main_wrapper = Replace(main_wrapper, "//real script here", IIf(chkDebug.value = 1, "debugger" & vbCrLf, "") & dukdbg.text)
-'        main_wrapper = Replace(main_wrapper, "//real script here", DukDbg.Text)
+'        'main_wrapper = Replace(main_wrapper, "//real script here", IIf(chkDebug.value = 1, "debugger" & vbCrLf, "") & txtjs.text)
+'        main_wrapper = Replace(main_wrapper, "//real script here", txtjs.Text)
 '        sc.AddCode main_wrapper
 '    Else
-'        sc.AddCode IIf(chkDebug.value = 1, "debugger" & vbCrLf, "") & DukDbg.Text
+'        sc.AddCode IIf(chkDebug.value = 1, "debugger" & vbCrLf, "") & txtjs.Text
 '    End If
 '
 'End Sub
@@ -1587,7 +1526,7 @@ Private Sub Form_Resize()
     'lv.height = lvFunc.Top - lv.Top - (tw * 10)  '25
     
     'lv.Height = Me.Height - lv.Top - 700
-    splitter.Width = DukDbg.Width
+    splitter.Width = txtJS.Width
     
     If Me.WindowState = vbMinimized Then Exit Sub
     DoMove
@@ -1607,7 +1546,7 @@ End Sub
 Public Sub SaveToListView(data As String, Optional nameAs As String)
     Dim li As ListItem
     On Error Resume Next
-    If Len(nameAs) = 0 Then nameAs = (lv.ListItems.count + 1) & " len - " & Len(DukDbg.Text)
+    If Len(nameAs) = 0 Then nameAs = (lv.ListItems.count + 1) & " len - " & Len(txtJS.Text)
     Set li = lv.ListItems.Add(, , nameAs)
     li.Tag = data
     li.ToolTipText = data
@@ -1619,10 +1558,10 @@ Private Sub lblClipboard_Click(Index As Integer)
     On Error Resume Next
     
     Select Case Index
-        Case 0: SaveToListView DukDbg.Text
+        Case 0: SaveToListView txtJS.Text
         Case 1: SaveToListView txtOut.Text
         Case 2:
-            DukDbg.Text = txtOut.Text
+            txtJS.Text = txtOut.Text
             txtOut.Text = Empty
             Erase renames
     End Select
@@ -1631,7 +1570,7 @@ End Sub
 
 Private Sub lv_DblClick()
     If lv.SelectedItem Is Nothing Then Exit Sub
-    DukDbg.Text = lv.SelectedItem.Tag
+    txtJS.Text = lv.SelectedItem.Tag
     mnuFunctionScan_Click
 End Sub
 
@@ -1695,7 +1634,7 @@ Private Sub mnuAddPercentoHexString_Click()
     Dim b() As Byte
     Dim c As String, i As Long
     
-    t = DukDbg.SelText
+    t = txtJS.SelText
     If Len(t) = 0 Then
         MsgBox "No selection", vbInformation
         Exit Sub
@@ -1711,7 +1650,7 @@ Private Sub mnuAddPercentoHexString_Click()
         t = t & "%" & c
     Next
     
-    DukDbg.SelText = t
+    txtJS.SelText = t
     
 End Sub
 
@@ -1720,12 +1659,12 @@ Private Sub mnuBasicRefactor_Click()
     On Error GoTo hell
     Const debugMode As Boolean = True
     
-    If InStr(1, DukDbg.Text, vbCrLf & "}" & vbCrLf) < 1 Then
+    If InStr(1, txtJS.Text, vbCrLf & "}" & vbCrLf) < 1 Then
         MsgBox "This assumes you already ran Format_Javascript", vbInformation
         'Exit Sub
     End If
     
-    frmRefactor.LoadFunctions DukDbg.Text, debugMode
+    frmRefactor.LoadFunctions txtJS.Text, debugMode
      
     Exit Sub
 hell:
@@ -1742,7 +1681,7 @@ Private Sub mnuBeautify_Click()
     Dim c As New Collection
     Dim rv
     
-    'dukdbg.text = "a=0;if(a){a++;}else{a++;}a=0;a=0"
+    'txtjs.text = "a=0;if(a){a++;}else{a++;}a=0;a=0"
     
     Set duk = New CDukTape
     tmrFormatting.Enabled = True
@@ -1760,7 +1699,7 @@ Private Sub mnuBeautify_Click()
     If duk.hadError Then
         MsgBox "Error running beautify: " & duk.LastError
     Else
-        DukDbg.Text = rv
+        txtJS.Text = rv
     End If
     
     tmrFormatting.Enabled = False
@@ -1790,23 +1729,23 @@ End Sub
 '
 '    For i = 0 To UBound(exploits)
 '            p() = Split(exploits(i), "=")
-'            If ContainsExploit(dukdbg.text, p(1), offset) Then
+'            If ContainsExploit(txtjs.text, p(1), offset) Then
 '                push report, "Exploit " & p(0) & " - " & p(1) & " - found in main textbox"
-'                dukdbg.selstart = offset - 1
-'                'dukdbg.sellength = Len(p(1))
+'                txtjs.selstart = offset - 1
+'                'txtjs.sellength = Len(p(1))
 '
 '                'vbsci specific
 '                report(UBound(report)) = report(UBound(report)) & " Line: " & txtJS.CurrentLine
 '
 '                'txtJS.SelColor = vbBlue
 '                'txtJS.SelBold = True
-'                'dukdbg.sellength = 0
+'                'txtjs.sellength = 0
 '
 '            End If
 '    Next
 '
-'    If InStr(dukdbg.text, "import") > 0 Then  'its an as3 sourcer decompilation of a flash file?
-'        push report, vbCrLf & "Flash CVE Scan: " & vbCrLf & flash_as_cveScan(dukdbg.text)
+'    If InStr(txtjs.text, "import") > 0 Then  'its an as3 sourcer decompilation of a flash file?
+'        push report, vbCrLf & "Flash CVE Scan: " & vbCrLf & flash_as_cveScan(txtjs.text)
 '    End If
 '
 '    If AryIsEmpty(report) Then
@@ -1831,13 +1770,13 @@ End Sub
 
 Private Sub mnuLaunchSclog_Click(Index As Integer)
     
-    'If Len(dukdbg.seltext) = 0 Then
+    'If Len(txtjs.seltext) = 0 Then
     '    MsgBox "You must first select the shellcode to extract in the script window."
     '    Exit Sub
     'End If
     Dim x
     
-    x = DukDbg.SelText
+    x = txtJS.SelText
     
     'does not handle just hex blobs like 9090 other formats supported though with multiescape
     
@@ -1854,14 +1793,14 @@ End Sub
 Private Sub mnuScSigs_Click()
     On Error Resume Next
     
-    'If Len(dukdbg.seltext) = 0 Then
+    'If Len(txtjs.seltext) = 0 Then
     '    MsgBox "You must first select the shellcode to extract in the script window."
     '    Exit Sub
     'End If
     
     Dim x, base
     
-    x = DukDbg.SelText
+    x = txtJS.SelText
     
     'does not handle just hex blobs like 9090 other formats supported though with multiescape
     
@@ -1910,7 +1849,7 @@ Public Sub mnuLoadFile_Click()
     f = dlg.OpenDialog(CustomFilter, "", "Open file")
     If Len(f) = 0 Then Exit Sub
     If Not fso.FileExists(f) Then Exit Sub
-    DukDbg.Text = fso.ReadFile(f)
+    txtJS.Text = fso.ReadFile(f)
     mnuFunctionScan_Click
     Erase renames
 End Sub
@@ -1921,8 +1860,8 @@ Private Sub mnuManualEscape_Click(Index As Integer)
     Dim ss As Long
     On Error Resume Next
     
-    t = DukDbg.SelText
-    ss = DukDbg.SelStart
+    t = txtJS.SelText
+    ss = txtJS.SelStart
     
     If Len(t) = 0 Then
         MsgBox "No text selected", vbInformation
@@ -1939,9 +1878,9 @@ Private Sub mnuManualEscape_Click(Index As Integer)
         Case 6: t = octal_unescape(t)
     End Select
     
-    DukDbg.SelText = t
-    DukDbg.SelStart = ss
-    DukDbg.SelLength = Len(t)
+    txtJS.SelText = t
+    txtJS.SelStart = ss
+    txtJS.SelLength = Len(t)
     
 End Sub
 
@@ -1990,7 +1929,7 @@ End Sub
 Private Sub mnuSaveShellcode_Click()
     Dim x
     
-    x = DukDbg.SelText
+    x = txtJS.SelText
     If Len(x) = 0 Then
         MsgBox "No text selected", vbInformation
         Exit Sub
@@ -2034,16 +1973,16 @@ Private Sub mnuSimplifySelection_Click()
     '"p"+"ar"+"ent"+""
     'effata+'A'+'B'+'C'+cruore+'E'+eumque+effata
     On Error Resume Next
-    ss = DukDbg.SelStart
-    x = DukDbg.SelText
+    ss = txtJS.SelStart
+    x = txtJS.SelText
     x = Replace(x, "'", """") 'unify
     x = Replace(x, """ + """, Empty) 'remove " + "
     x = Replace(x, "+""""", Empty) 'remove + empty
     x = Replace(x, """+""", Empty) 'remove "+"
     
-    DukDbg.SelText = x
-    DukDbg.SelStart = ss
-    DukDbg.SelLength = Len(x)
+    txtJS.SelText = x
+    txtJS.SelStart = ss
+    txtJS.SelLength = Len(x)
     txtJS.SetFocus
 
 End Sub
@@ -2052,7 +1991,7 @@ Private Sub mnuUnescapeSelection_Click()
     
     On Error Resume Next
     
-    If DukDbg.SelLength = 0 Then Exit Sub
+    If txtJS.SelLength = 0 Then Exit Sub
     Dim t As Object
     
     Set t = txtJS
@@ -2076,7 +2015,7 @@ Private Sub mnuUnescapeSelection_Click()
    MsgBox "todo:mnuUnescapeSelection"
     'sc2.Reset
     'sc2.AddObject "txtJs", txtJS, True
-    'sc2.AddCode "dukdbg.seltext = unescape(dukdbg.seltext)"
+    'sc2.AddCode "txtjs.seltext = unescape(txtjs.seltext)"
     
     
     
@@ -2112,13 +2051,13 @@ Function selectFunction(name As String)
     Next
 End Function
 
-Private Sub dukdbg_KeyDown(KeyCode As Long, Shift As Long)
+Private Sub txtjs_KeyDown(KeyCode As Long, Shift As Long)
     If KeyCode = 117 Then 'f6
-        If DukDbg.SelLength > 0 Then mnuUnescapeSelection_Click
+        If txtJS.SelLength > 0 Then mnuUnescapeSelection_Click
     End If
 End Sub
 
-Private Sub dukdbg_MouseUp(Button As Integer, Shift As Integer, x As Long, Y As Long)
+Private Sub txtJS_MouseUp(Button As Integer, Shift As Integer, x As Long, Y As Long)
     
     On Error Resume Next
     
@@ -2126,7 +2065,7 @@ Private Sub dukdbg_MouseUp(Button As Integer, Shift As Integer, x As Long, Y As 
     Dim isFuncName As Boolean
 
     If Button = 2 Then
-        word = DukDbg.CurrentWord
+        word = txtJS.CurrentWord
         'Me.Caption = word
         isFuncName = isWordFunctionName(word)
         If isFuncName Then selectFunction word
@@ -2140,7 +2079,7 @@ Private Sub dukdbg_MouseUp(Button As Integer, Shift As Integer, x As Long, Y As 
 End Sub
 
 'everytime first visible line changes..
-Private Sub dukdbg_PosChanged(Position As Long)
+Private Sub txtjs_LineChanged(Position As Long)
 
 On Error Resume Next
 
@@ -2185,7 +2124,7 @@ Private Sub Form_KeyPress(KeyAscii As Integer)
             ignoreNavPoint = True
             'Debug.Print "nav back to: " & lastPos
             'txtJS.GotoLine lastPos
-            DukDbg.FirstVisibleLine = lastPos
+            txtJS.FirstVisibleLine = lastPos
         End If
     End If
 End Sub

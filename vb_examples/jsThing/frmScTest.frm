@@ -462,7 +462,7 @@ Public Function InitInterface(Optional Shellcode As String = Empty)
        
     scfile = Empty
     
-    If Not checkFor_sctest() Then Command1.enabled = False
+    If Not checkFor_sctest() Then Command1.Enabled = False
     
     If Len(Shellcode) = 0 Then
         Text1 = "No text selected! you can use demo link."
@@ -595,7 +595,7 @@ End Function
     
 
 Private Sub Form_Load()
-    Me.Icon = Form1.Icon
+    Me.Icon = Form2.Icon
     If fso.FileExists(Form1.txtPDFPath) Then
         txtFopen = Form1.txtPDFPath
         txtTemp = fso.GetParentFolder(txtFopen)
@@ -643,14 +643,14 @@ Private Sub Label6_Click(Index As Integer)
         Shell "cmd /c start http://sandsprite.com/blogs/index.php?uid=7^&pid=152"
     End If
     
-    dump = App.path & "\libemu\sample.unpack"
+    Dump = App.path & "\libemu\sample.unpack"
     If InStr(1, cap, "dump", 1) > 0 Then
-        If Not fso.FileExists(dump) Then
+        If Not fso.FileExists(Dump) Then
             MsgBox "No dump file found. Maybe no changes were detected.", vbInformation
         Else
             pth = dlg.SaveDialog(AllFiles, RecommendedName(), , "Save dump as")
             If Len(pth) = 0 Then Exit Sub
-            FileCopy dump, pth
+            FileCopy Dump, pth
         End If
     End If
     

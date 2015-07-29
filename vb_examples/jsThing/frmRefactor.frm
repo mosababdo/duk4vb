@@ -558,8 +558,8 @@ Private Sub Command4_Click()
     
     Complete = Replace(Complete, "__gvar_", "gvar_") 'cheap shot bug fix...
     
-    Form2.SaveToListView Form2.DukDbg.Text, "Before Refactor" 'save a copy of the original
-    Form2.DukDbg.Text = Complete
+    Form2.SaveToListView Form2.txtJS.Text, "Before Refactor" 'save a copy of the original
+    Form2.txtJS.Text = Complete
     Form2.mnuFunctionScan_Click
     Unload Me
     
@@ -762,7 +762,7 @@ End Sub
 
 
 Private Sub Form_Load()
-    Me.Icon = Form1.Icon
+    Me.Icon = Form2.Icon
     fraStatus.Top = Text1.Top
     FormPos Me, True
 End Sub

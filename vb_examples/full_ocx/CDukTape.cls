@@ -23,12 +23,13 @@ Private mDebugging As Boolean
 Private m_comTypes As New Collection
 Private m_objs As New Collection
 
-'check for errors either manually after or receive through event..
+'Error handling same as MSScript control. both with an event
+'and an err.raise. You must use On Error handling when using this
+'class. (Its easier than all the if duk.AddObject tests.)
 Public hadError As Boolean
 Public LastError As String
 Public LastErrorLine As Long
 Public userCOMDir As String
-Public throwErrors As Boolean 'sometimes its easier to use on error resume next and check err.number than sink  error message and fragment code..
 
 Event Error(ByVal line As Long, ByVal desc As String)
 Event dbgOut(msg As String)
@@ -130,6 +131,7 @@ Function Reset() As Boolean
         Exit Function
     End If
     
+    ClearErr
     Class_Terminate
     Class_Initialize
     Reset = True
@@ -183,16 +185,17 @@ Function AddObject(obj As Object, name As String) As Boolean
     Dim cc As CCOMType
     Dim result As Boolean
     
+    ClearErr
     result = ParseObjectToCache(name, obj)
     Set cc = comTypes(name) 'always added even with errors
        
     If Not result Then
-       LastError = c2s(cc.errors)
+       SetError "AddObject", c2s(cc.errors)
        Exit Function
     End If
         
     If Not Me.AddFile(cc.js_file) Then
-        LastError = "Error loading js File: " & cc.js_file & " " & LastError
+        SetError "AddObject", "Error loading js File: " & cc.js_file & " " & LastError
         Exit Function
     End If
         
@@ -224,24 +227,7 @@ Function AddFile(fpath) As Boolean
         Exit Function
     End If
     
-    On Error Resume Next
-    hadError = True
-    LastError = GetLastString()
-    
-    rv = InStr(LastError, "(line")
-    If rv > 0 Then
-        tmp = Mid(LastError, rv + 5)
-        'LastError = Mid(LastError, 1, rv - 1)
-        tmp = Left(tmp, Len(tmp) - 1)
-        tmp = Trim(tmp)
-        LastErrorLine = CLng(tmp)
-    End If
-    
-    RaiseEvent Error(LastErrorLine, LastError)
-    
-    If throwErrors Then
-        Err.Raise &H40404040, "AddFile", LastError
-    End If
+    SetError "AddFile", GetLastString()
     
 End Function
 
@@ -263,9 +249,17 @@ Function Eval(js)
         Exit Function
     End If
     
-    On Error Resume Next
+    SetError "Eval", GetLastString()
+    
+End Function
+
+ 
+Private Sub SetError(from As String, msg As String)
+
+    Dim rv As Long, tmp
+    
     hadError = True
-    LastError = GetLastString()
+    LastError = msg
    
     rv = InStr(LastError, "(line")
     If rv > 0 Then
@@ -276,10 +270,8 @@ Function Eval(js)
         LastErrorLine = CLng(tmp)
     End If
     
+    'this emulates the behavior of the msscript control..
     RaiseEvent Error(LastErrorLine, LastError)
-    
-    If throwErrors Then
-        Err.Raise &H40404040, "Eval", LastError
-    End If
-    
-End Function
+    Err.Raise 21, "Eval", LastError
+
+End Sub

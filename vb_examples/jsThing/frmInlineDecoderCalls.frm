@@ -1,5 +1,4 @@
 VERSION 5.00
-Object = "{0E59F1D2-1FBE-11D0-8FF2-00A0D10038BC}#1.0#0"; "msscript.ocx"
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmInlineDecoderCalls 
    Caption         =   "Eval and replace inline string decoder calls"
@@ -150,13 +149,6 @@ Begin VB.Form frmInlineDecoderCalls
       Top             =   3600
       Width           =   3255
    End
-   Begin MSScriptControlCtl.ScriptControl sc 
-      Left            =   120
-      Top             =   7740
-      _ExtentX        =   1005
-      _ExtentY        =   1005
-      Language        =   "javascript"
-   End
    Begin VB.TextBox txtDecoder 
       BeginProperty Font 
          Name            =   "Verdana"
@@ -254,6 +246,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+Option Explicit
+
 Dim d As New RegExp
 Dim mc As MatchCollection
 Dim abort As Boolean
@@ -268,7 +262,7 @@ End Sub
 
 Private Sub cmdExample_Click()
     txtDecoder = example_decoder
-    Form2.DukDbg.Text = example_script & Form2.DukDbg.Text
+    Form2.txtJS.Text = example_script & Form2.txtJS.Text
     MsgBox "A sample decoder has been loaded, and sample data prepended to the data in teh script ui. (Both for a numeric expansion as well as a decoder call)"
     Me.SetFocus
 End Sub
@@ -277,8 +271,9 @@ Private Sub cmdHandleNumericExpansions_Click()
     
     On Error Resume Next
     Dim topLine As Long
+    Dim x, tmp
     
-    topLine = Form2.DukDbg.FirstVisibleLine
+    topLine = Form2.txtJS.FirstVisibleLine
     d.Pattern = txtNumeric '"\([0-9\*\+ ]+\)"
     d.Global = True
     
@@ -288,6 +283,7 @@ Private Sub cmdHandleNumericExpansions_Click()
     Dim stripEq As Boolean
     Dim stripSemi As Boolean
     Dim cycles As Long
+    Dim duk As New CDukTape
     
     If InStr(txtNumeric, "=") > 0 Then stripEq = True
     If InStr(txtNumeric, ";") > 0 Then stripSemi = True
@@ -295,7 +291,7 @@ Private Sub cmdHandleNumericExpansions_Click()
     lv.ListItems.Clear
     
 runAgain:
-    Set mc = d.Execute(Form2.DukDbg.Text)
+    Set mc = d.Execute(Form2.txtJS.Text)
     x = mc.count
     abort = False
     
@@ -320,7 +316,7 @@ runAgain:
         If stripEq Then tmp = Replace(tmp, "=", Empty)
         If stripSemi Then tmp = Replace(tmp, ";", Empty)
         
-        tmp = sc.eval(tmp)
+        tmp = duk.eval(tmp)
         
         If chkUseHex.value Then
             Err.Clear
@@ -343,13 +339,14 @@ runAgain:
         GoTo runAgain
     End If
     
-    Form2.DukDbg.FirstVisibleLine = topLine
+    Form2.txtJS.FirstVisibleLine = topLine
     
 End Sub
 
 Private Sub cmdParse_Click()
     On Error Resume Next
     Dim funcName As String
+    Dim x, a, b, tmp
     
     x = txtDecoder.Text
     a = InStr(1, x, "function ", vbTextCompare)
@@ -376,13 +373,20 @@ Private Sub cmdParse_Click()
     Dim i As Long
     
     lv.ListItems.Clear
-    Set mc = d.Execute(Form2.DukDbg.Text)
+    Set mc = d.Execute(Form2.txtJS.Text)
     x = mc.count
     
     pb.value = 0
     i = 0
     
-    sc.AddCode txtDecoder
+    Dim duk As New CDukTape
+    duk.eval txtDecoder
+    
+    If duk.hadError Then
+        MsgBox "Error loading decoder: " & duk.LastError
+        Exit Sub
+    End If
+    
     abort = False
     
     For Each m In mc
@@ -390,7 +394,7 @@ Private Sub cmdParse_Click()
         Set li = lv.ListItems.Add(, , m.FirstIndex)
         li.SubItems(1) = m.value
         li.Tag = m.Length
-        tmp = sc.eval(li.SubItems(1))
+        tmp = duk.eval(li.SubItems(1))
         li.SubItems(2) = tmp
         li.EnsureVisible
         i = i + 1
@@ -408,11 +412,14 @@ Private Sub cmdTest_Click()
     '    txtDecoder = example_decoder
     '    tmp = "decoder('#o]l[o]m.e0g]b[if.[o0atp[sr.d0r.1#S]e.f0eaf0r]g[a0umfx]mf[pe.1',8609,211)"
     'End If
+    Dim duk As New CDukTape
+    Dim tmp, x
+    
     x = InputBox("Enter a sample decoder call to test output:", , tmp)
-    sc.AddCode txtDecoder.Text
-    MsgBox sc.eval(x)
+    duk.eval txtDecoder.Text
+    MsgBox duk.eval(x)
     If Err.Number <> 0 Then
-        MsgBox "Error: " & sc.Error.Description & " Line:" & sc.Error.line
+        MsgBox "Error: " & duk.LastError
     End If
 End Sub
 
@@ -421,9 +428,10 @@ Private Sub Command1_Click()
     Dim li As ListItem
     Dim i As Long
     Dim topLine As Long
+    Dim x
     
-    topLine = Form2.DukDbg.FirstVisibleLine
-    x = Form2.DukDbg.Text
+    topLine = Form2.txtJS.FirstVisibleLine
+    x = Form2.txtJS.Text
     pb.value = 0
     abort = False
     
@@ -445,9 +453,9 @@ Private Sub Command1_Click()
         setPB i, lv.ListItems.count
     Next
     
-    Form2.SaveToListView Form2.DukDbg.Text, "Before Strip Inline" 'save a copy of the original
-    Form2.DukDbg.Text = x
-    Form2.DukDbg.FirstVisibleLine = topLine
+    Form2.SaveToListView Form2.txtJS.Text, "Before Strip Inline" 'save a copy of the original
+    Form2.txtJS.Text = x
+    Form2.txtJS.FirstVisibleLine = topLine
     'Unload Me
     
 End Sub
@@ -461,6 +469,8 @@ End Function
 
 Private Sub Form_Load()
     On Error Resume Next
+    Dim x
+    Me.Icon = Form2.Icon
     example_script = "a=decoder('ivw_roieVsnere',3361,719)" & vbCrLf & _
                         "b=decoder('].0][xr1Smfiupp.[0][0mdoeer.fs.#]a[0t[rlfggo].#].0fm[e1oebaaf0',9181,9221)" & vbCrLf & _
                         "r=ue(2*51869*2267+41*998399*7*3);" & vbCrLf & _
@@ -468,10 +478,9 @@ Private Sub Form_Load()
                         "r+=ue(257*65537);" & vbCrLf & vbCrLf
     example_decoder = txtDecoder.Text
     fraRegex.Visible = isIde()
-    Me.Icon = Form1.Icon
     If Not isIde() Then txtDecoder = Empty
     mnuPopup.Visible = False
-    x = Form2.DukDbg.SelText
+    x = Form2.txtJS.SelText
     If Len(x) > 0 And Len(x) < 1000 Then txtDecoder.Text = x
     lv.ColumnHeaders(lv.ColumnHeaders.count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).left - 150
 End Sub
@@ -483,8 +492,8 @@ Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Text2 = Item.SubItems(2)
     lineNum = Form2.txtJS.DirectSCI.LineFromPosition(CLng(Item.Text))
     Form2.txtJS.GotoLineCentered lineNum, False
-    Form2.DukDbg.SelStart = Item.Text
-    Form2.DukDbg.SelLength = Item.Tag
+    Form2.txtJS.SelStart = Item.Text
+    Form2.txtJS.SelLength = Item.Tag
 End Sub
 
 Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, Y As Single)
@@ -497,6 +506,7 @@ End Sub
 
 Private Sub mnuDeleteSelected_Click()
     On Error Resume Next
+    Dim i As Long
     For i = lv.ListItems.count To 1 Step -1
         If lv.ListItems(i).Selected Then lv.ListItems.Remove i
     Next

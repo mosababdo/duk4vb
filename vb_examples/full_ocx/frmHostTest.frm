@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#49.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#53.0#0"; "dukDbg.ocx"
 Begin VB.Form frmHostTest 
    Caption         =   "Form1"
    ClientHeight    =   9000
@@ -130,6 +130,8 @@ Private Sub cmdJustDuk_Click()
     Dim duk As New CDukTape
     Dim rv
     
+    On Error Resume Next
+    
     rv = duk.Eval(txtManual.Text)
     If duk.hadError Then
         MsgBox "Error Line: " & duk.LastErrorLine & " Description:" & duk.LastError
@@ -147,17 +149,16 @@ End Sub
  
 
 Private Sub Command1_Click()
+        
+    On Error Resume Next
     
     Dim duk As New CDukTape
     Dim c As Collection
     
     duk.userCOMDir = App.Path
     
-    If Not duk.AddObject(Text2, "fartbox", c) Then
-        For Each v In c
-            tmp = tmp & v & vbCrLf
-        Next
-        MsgBox "Error Adding Object: " & tmp
+    If Not duk.AddObject(Text2, "fartbox") Then
+        MsgBox "Error Adding Object: " & duk.LastError
         Exit Sub
     End If
     
@@ -200,10 +201,8 @@ Private Sub Form_Load()
     
     'if you want to access the embedded scintilla control
     Dim sci As SciSimple
-    Dim o As Variant
-    Set o = ucDukDbg1.sci
-    Set sci = o
-    MsgBox TypeName(sci)
+    Set sci = ucDukDbg1.sci
+
 
 End Sub
 

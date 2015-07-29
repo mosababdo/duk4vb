@@ -157,6 +157,10 @@ Private Sub Command2_Click()
     Me.SetFocus
 End Sub
 
+Private Sub Form_Load()
+    Me.Icon = Form2.Icon
+End Sub
+
 Private Sub Label4_Click()
     MsgBox "This tool is designed to update the parent script where a bunch " & vbCrLf & _
             "of strings have been decoded and are being held in an array." & vbCrLf & _

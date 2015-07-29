@@ -313,6 +313,7 @@ Private Sub Form_Load()
     Me.Visible = True
     loaded = True
     Check1.value = GetMySetting("graphTopMost", 1)
+    Me.Icon = Form2.Icon
 End Sub
 
 Private Sub Form_Resize()

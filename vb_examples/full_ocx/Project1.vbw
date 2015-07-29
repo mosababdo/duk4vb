@@ -1,13 +1,13 @@
 mDuk = 0, 0, 0, 0, C
 CDukTape = 66, 66, 821, 639, 
-modUtil = 0, 0, 0, 0, C
+modUtil = 132, 132, 1211, 637, 
 CResponseBuffer = 0, 0, 0, 0, C
 CWriteBuffer = 0, 0, 0, 0, C
 CVariable = 0, 0, 0, 0, C
 CBreakpoint = 0, 0, 0, 0, C
 modBreakpoints = 0, 0, 0, 0, C
 cCallStack = 0, 0, 0, 0, C
-ucDukDbg = 44, 44, 1123, 549, Z, 66, 66, 813, 639, C
+ucDukDbg = 44, 44, 1123, 549, , 66, 66, 813, 639, C
 mCOM = 0, 0, 0, 0, C
 CCOMType = 0, 0, 0, 0, C
 CMethod = 0, 0, 0, 0, C

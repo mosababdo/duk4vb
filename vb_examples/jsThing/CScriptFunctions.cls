@@ -33,7 +33,6 @@ Function ResetAlertCount()
     alertCount = 0
     alertCycles = 0
     showingAlerts = True
-    Form2.sc.Timeout = 10000
 End Function
 
 Function DebugLog(msg, Optional data)

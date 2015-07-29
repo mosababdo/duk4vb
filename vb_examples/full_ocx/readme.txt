@@ -1,7 +1,7 @@
 
 note: 
 
-  --> this conversion to build as an ocx is still in early development ! <--
+  --> this conversion to build as an ocx is still in development ! <--
 
 So this OCX has 2 public components. one is a usercontrol which is a full IDE
 with syntax highlighting and debugger controls.
@@ -19,15 +19,15 @@ which must be registered on your system for this to run.
 
 Register these before opening the project in VB6.
 
-scivb_lite.ocx[1] - 410k, open source VB6 ActiveX control
+scivb2.ocx    [1] - 410k, open source VB6 ActiveX control
 SciLexer.dll  [2] - 460k, open source C standard dll (no reg required)
 MSCOMCTL.OCX  [3] -   1Mb,closed source free from MS
 Duk4VB.dll    [4] - 400k, (release mode) open source C standard dll (no reg required)
 --------------------------------------
 total dependancies: ~2mb
 
-[1] https://github.com/dzzie/scivb_lite
-[2] http://www.scintilla.org/  (build included w/scivb)
+[1] https://github.com/dzzie/scivb2
+[2] http://www.scintilla.org/  (build included w/scivb2)
 [3] probably pre-installed on system - from Microsoft 
 [4] https://github.com/dzzie/duk4vb
     authors site: http://duktape.org/

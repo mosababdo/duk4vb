@@ -18,6 +18,14 @@ Begin VB.Form Form1
    ScaleHeight     =   10740
    ScaleWidth      =   15705
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command4 
+      Caption         =   "Scan Source"
+      Height          =   375
+      Left            =   8415
+      TabIndex        =   8
+      Top             =   3870
+      Width           =   2310
+   End
    Begin VB.CheckBox chkHinst 
       Caption         =   "requires hInst"
       Height          =   330
@@ -35,12 +43,12 @@ Begin VB.Form Form1
       Width           =   1275
    End
    Begin VB.CommandButton Command2 
-      Caption         =   "Load File"
+      Caption         =   "Load Prototypes"
       Height          =   375
-      Left            =   11610
+      Left            =   10845
       TabIndex        =   5
       Top             =   3870
-      Width           =   2085
+      Width           =   3165
    End
    Begin VB.TextBox txtClassName 
       Height          =   420
@@ -195,6 +203,39 @@ Dim pd As String
     tmp = pd & "\" & txtClassName & ".js"
     fso.WriteFile CStr(tmp), Text2.Text
     MsgBox "saved to: " & tmp
+End Sub
+
+Private Sub Command4_Click()
+    Dim src As String
+    Dim tmp() As String
+    Dim t
+    Dim proto() As String
+    
+    src = dlg.OpenDialog(AllFiles)
+    If Len(src) = 0 Then Exit Sub
+    tmp = Split(fso.ReadFile(src), vbCrLf)
+    
+    For Each t In tmp
+        If InStr(1, t, "property ", vbTextCompare) > 0 Or _
+           InStr(1, t, "function ", vbTextCompare) > 0 Or _
+           InStr(1, t, "sub ", vbTextCompare) > 0 Then
+                If InStr(1, t, "private ", vbTextCompare) < 1 And _
+                   InStr(1, t, "friend ", vbTextCompare) < 1 And _
+                   InStr(1, t, "declare ", vbTextCompare) < 1 Then
+                        t = Replace(t, "public", Empty, , , vbTextCompare)
+                        t = Replace(t, "optional", Empty, , , vbTextCompare)
+                        'todo: string optional default args
+                        push proto, Trim(t)
+                End If
+        End If
+    Next
+    
+    Text1 = Join(proto, vbCrLf)
+    
+    txtClassName = fso.GetBaseName(src)
+                    
+    
+    
 End Sub
 
 'Function OpenTextFile(

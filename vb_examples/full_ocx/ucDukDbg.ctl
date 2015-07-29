@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-Object = "{2668C1EA-1D34-42E2-B89F-6B92F3FF627B}#2.0#0"; "scivb2.ocx"
+Object = "{2668C1EA-1D34-42E2-B89F-6B92F3FF627B}#4.0#0"; "scivb2.ocx"
 Begin VB.UserControl ucDukDbg 
    ClientHeight    =   7560
    ClientLeft      =   0
@@ -303,9 +303,6 @@ Event printOut(msg As String)
 Event dbgOut(msg As String)
 Event dukErr(line As Long, msg As String)
 Event StateChanged(state As dbgStates)
-Event KeyDown(KeyCode As Long, Shift As Long)
-Event MouseUp(Button As Integer, Shift As Integer, x As Long, Y As Long)
-Event PosChanged(Position As Long)
 
 'we cache these per instance and add them to a fresh script engine instance each execution..
 Private objCache As New Collection
@@ -315,6 +312,13 @@ Private WithEvents ownerForm As Form
 Attribute ownerForm.VB_VarHelpID = -1
 Private m_DbgState As dbgStates
 Private isInitilized As Boolean
+
+'use this to get full access to the editor:
+'  dim txtjs withevents as sci2.SciSimple
+'  set txtjs = dukdbg.sci
+Public Property Get sci() As Object
+    Set sci = scivb
+End Property
 
 Property Get DebugState() As dbgStates
     DebugState = m_DbgState
@@ -435,10 +439,7 @@ Friend Property Get duktape() As CDukTape
     Set duktape = duk
 End Property
 
-'i am having problems setting this to a scisimple object in other projects? why?
-Public Property Get sci() As Object
-    Set sci = scivb
-End Property
+
 
 Friend Sub SetStatus(state As dbgStates)
 
@@ -548,15 +549,11 @@ Private Sub scivb_MouseUp(Button As Integer, Shift As Integer, x As Long, Y As L
         lblInfo.Caption = "  " & scivb.hilightWord(sel, , vbBinaryCompare) & " instances of '" & sel & " ' found"
     End If
     
-    RaiseEvent MouseUp(Button, Shift, x, Y)
-    
 End Sub
 
 Private Sub scivb_KeyDown(KeyCode As Long, Shift As Long)
 
     Dim curline As Long
-    
-    RaiseEvent KeyDown(KeyCode, Shift)
     
     If Not CanIBeActiveInstance(Me) Then Exit Sub
     
@@ -573,10 +570,6 @@ Private Sub scivb_KeyDown(KeyCode As Long, Shift As Long)
         Case vbKeyF9: SendDebuggerCmd dc_stepout
     End Select
 
-End Sub
-
-Private Sub scivb_PosChanged(Position As Long)
-    RaiseEvent PosChanged(Position)
 End Sub
 
 Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
@@ -639,6 +632,8 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     Dim o As CCachedObj
     Dim c As New Collection
     
+    On Error GoTo cleanup
+    
     If isControlActive() Then
         MsgBox "Another debugger instance is already running", vbInformation
         Exit Sub
@@ -646,7 +641,6 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     
     If Len(curFile) = 0 Then curFile = GetFreeFileName(Environ("temp"), ".js")
     
-    'HookParentEvents
     SetStatus dsStarted
     running = True
     scivb.LockEditor
@@ -660,17 +654,11 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     duk.userCOMDir = userCOMDir
     
     For Each o In objCache
-        If Not duk.AddObject(o.obj, o.name) Then
-            doOutput "Error adding object: " & o.name & vbCrLf & duk.LastError
-            GoTo cleanup
-        End If
+         duk.AddObject o.obj, o.name
     Next
     
     For Each f In libFiles
-        If Not duk.AddFile(f) Then
-            doOutput "Error adding " & FileNameFromPath(f) & ": " & duk.LastError
-            GoTo cleanup
-        End If
+        duk.AddFile f
     Next
 
     If withDebugger Then
@@ -685,21 +673,18 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
     rv = duk.AddFile(curFile)
     
 cleanup:
-    If Not duk Is Nothing Then 'form closing?
-         If withDebugger Then duk.DebugAttach False
-         If duk.hadError And Not userStop Then doOutput duk.LastError
-         duk.Reset 'remove any live COM object references
-         Set duk = Nothing
-         ClearLastLineMarkers
-         lblStatus = "Status: Idle" 'these would call form_load again if closing down..
-         running = False
-         SetToolBarIcons
-    End If
+     
+    If withDebugger Then duk.DebugAttach False
+    If duk.hadError And Not userStop Then doOutput duk.LastError
+    duk.Reset 'remove any live COM object references
+    Set duk = Nothing
     
+    SetStatus dsIdle 'these could call form_load again if closing down..
+    running = False
+    SetToolBarIcons
+    ClearLastLineMarkers
     scivb.LockEditor False
     Set ActiveUserControl = Nothing
-    'Set ownerForm = Nothing
-    SetStatus dsIdle
     
 End Sub
 
@@ -855,34 +840,9 @@ Private Sub txtCmd_KeyPress(KeyAscii As Integer)
 End Sub
 
 
-
-'so stupid I cant make scivb public..I could if both in same ocx..
+'for convience but really just use the sci property to get full access. (withevents even)
 Property Get Text() As String
     Text = scivb.Text
-End Property
-
-Property Get SelText() As String
-    SelText = scivb.SelText
-End Property
-
-Property Get SelLength() As Long
-    SelLength = scivb.SelLength
-End Property
-
-Property Get SelStart() As Long
-    SelStart = scivb.SelStart
-End Property
-
-Property Let SelText(v As String)
-    scivb.SelText = v
-End Property
-
-Property Let SelLength(v As Long)
-    scivb.SelLength = v
-End Property
-
-Property Let SelStart(v As Long)
-    scivb.SelStart = v
 End Property
 
 Property Let Text(v As String)
@@ -891,21 +851,5 @@ End Property
 
 Property Get isRunning() As Boolean
     isRunning = running
-End Property
-
-Property Get CurrentWord() As String
-    CurrentWord = scivb.CurrentWord
-End Property
-
-Function GetLineText(iLine As Long) As String
-    GetLineText = scivb.GetLineText(iLine)
-End Function
-
-Property Get FirstVisibleLine() As Long
-    FirstVisibleLine = scivb.FirstVisibleLine
-End Property
-
-Property Let FirstVisibleLine(v As Long)
-    scivb.FirstVisibleLine = v
 End Property
 
