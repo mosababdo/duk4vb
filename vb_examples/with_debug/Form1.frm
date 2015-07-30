@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-Object = "{FBE17B58-A1F0-4B91-BDBD-C9AB263AC8B0}#78.1#0"; "scivb_lite.ocx"
+Object = "{2668C1EA-1D34-42E2-B89F-6B92F3FF627B}#5.0#0"; "scivb2.ocx"
 Begin VB.Form Form1 
    Caption         =   "DukTape JS Debugger Example"
    ClientHeight    =   9795
@@ -11,6 +11,15 @@ Begin VB.Form Form1
    ScaleHeight     =   9795
    ScaleWidth      =   13845
    StartUpPosition =   2  'CenterScreen
+   Begin sci2.SciSimple scivb 
+      Height          =   5775
+      Left            =   90
+      TabIndex        =   9
+      Top             =   765
+      Width           =   13695
+      _ExtentX        =   24156
+      _ExtentY        =   10186
+   End
    Begin VB.Timer tmrSetStatus 
       Enabled         =   0   'False
       Interval        =   700
@@ -20,7 +29,7 @@ Begin VB.Form Form1
    Begin VB.Frame fraCmd 
       Height          =   600
       Left            =   225
-      TabIndex        =   7
+      TabIndex        =   6
       Top             =   8685
       Width           =   13155
       Begin VB.TextBox txtCmd 
@@ -35,7 +44,7 @@ Begin VB.Form Form1
          EndProperty
          Height          =   285
          Left            =   630
-         TabIndex        =   9
+         TabIndex        =   8
          Top             =   180
          Width           =   12255
       End
@@ -52,7 +61,7 @@ Begin VB.Form Form1
          EndProperty
          Height          =   240
          Left            =   90
-         TabIndex        =   8
+         TabIndex        =   7
          Top             =   225
          Width           =   510
       End
@@ -60,7 +69,7 @@ Begin VB.Form Form1
    Begin MSComctlLib.ListView lvLog 
       Height          =   1050
       Left            =   1575
-      TabIndex        =   6
+      TabIndex        =   5
       Top             =   6795
       Width           =   1860
       _ExtentX        =   3281
@@ -95,14 +104,14 @@ Begin VB.Form Form1
       Left            =   5670
       MultiLine       =   -1  'True
       ScrollBars      =   2  'Vertical
-      TabIndex        =   5
+      TabIndex        =   4
       Top             =   6705
       Width           =   3165
    End
    Begin MSComctlLib.ListView lvCallStack 
       Height          =   1185
       Left            =   8955
-      TabIndex        =   4
+      TabIndex        =   3
       Top             =   6795
       Width           =   1815
       _ExtentX        =   3201
@@ -325,19 +334,10 @@ Begin VB.Form Form1
          EndProperty
       EndProperty
    End
-   Begin SCIVB_LITE.SciSimple scivb 
-      Height          =   5865
-      Left            =   90
-      TabIndex        =   2
-      Top             =   675
-      Width           =   13650
-      _ExtentX        =   24077
-      _ExtentY        =   10345
-   End
    Begin MSComctlLib.TabStrip ts 
       Height          =   3120
       Left            =   90
-      TabIndex        =   3
+      TabIndex        =   2
       Top             =   6570
       Width           =   13695
       _ExtentX        =   24156
@@ -388,8 +388,6 @@ Attribute VB_Exposed = False
 'License: http://opensource.org/licenses/MIT
 
 Dim duk As CDukTape
-Dim WithEvents sciext As CSciExtender
-Attribute sciext.VB_VarHelpID = -1
  
 Const SC_MARK_CIRCLE = 0
 Const SC_MARK_ARROW = 2
@@ -600,9 +598,6 @@ Private Sub Form_Load()
     scivb.DisplayCallTips = True
     Call scivb.LoadCallTips(App.path & "\dependancies\calltips.txt")
     scivb.ReadOnly = False
-
-    Set sciext = New CSciExtender
-    sciext.Init scivb
     
     'scivb.Text = Replace(Replace("function b(c){\n\treturn c++\n}\na=0;\na = b(a)\na=b(a)", "\n", vbCrLf), "\t", vbTab)
     scivb.LoadFile App.path & "\test.js"
@@ -653,30 +648,29 @@ End Sub
 
 ''we use a timer for this to give them a chance to click on the calltip to edit the variable..
 Private Sub tmrHideCallTip_Timer()
-    If sciext.isMouseOverCallTip() Then Exit Sub
+    If scivb.isMouseOverCallTip() Then Exit Sub
     tmrHideCallTip.Enabled = False
     scivb.StopCallTip
     Set selVariable = Nothing
 End Sub
  
-Private Sub sciext_MarginClick(lline As Long, Position As Long, margin As Long, modifiers As Long)
+Private Sub scivb_MarginClick(lline As Long, Position As Long, margin As Long, modifiers As Long)
     'Debug.Print "MarginClick: line,pos,margin,modifiers", lLine, Position, margin, modifiers
     ToggleBreakPoint curFile, lline, scivb.GetLineText(lline)
 End Sub
 
-Private Sub sciext_MouseDwellEnd(lline As Long, Position As Long)
+Private Sub scivb_MouseDwellEnd(lline As Long, Position As Long)
    If running Then tmrHideCallTip.Enabled = True
 End Sub
 
-Private Sub sciext_MouseDwellStart(lline As Long, Position As Long)
-    'Debug.Print "MouseDwell: " & lLine & " CurWord: " & sciext.WordUnderMouse(Position)
+Private Sub scivb_MouseDwellStart(lline As Long, Position As Long)
 
     Dim txt As String
     Dim curWord As String
     Dim cv As CVariable
     
     If running Then
-         curWord = sciext.WordUnderMouse(Position)
+         curWord = scivb.WordUnderMouse(Position)
          If Len(curWord) = 0 Then Exit Sub
          Set cv = SyncGetVarValue(curWord)
          If cv.varType <> DUK_VAR_NOT_FOUND Then

@@ -1,7 +1,7 @@
 VERSION 5.00
 Object = "{3B7C8863-D78F-101B-B9B5-04021C009402}#1.2#0"; "RICHTX32.OCX"
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#57.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#58.0#0"; "dukDbg.ocx"
 Begin VB.Form Form2 
    Caption         =   "jsThing - http://sandsprite.com"
    ClientHeight    =   8310
@@ -21,11 +21,11 @@ Begin VB.Form Form2
    End
    Begin dukDbg.ucDukDbg DukDbg 
       Height          =   6450
-      Left            =   2430
+      Left            =   2565
       TabIndex        =   5
       Top             =   90
-      Width           =   11895
-      _ExtentX        =   20981
+      Width           =   11760
+      _ExtentX        =   20743
       _ExtentY        =   11377
    End
    Begin MSComctlLib.ListView lv2 
@@ -73,7 +73,7 @@ Begin VB.Form Form2
       Left            =   45
       TabIndex        =   0
       TabStop         =   0   'False
-      Top             =   45
+      Top             =   90
       Width           =   2295
       _ExtentX        =   4048
       _ExtentY        =   4895
@@ -104,12 +104,12 @@ Begin VB.Form Form2
    End
    Begin RichTextLib.RichTextBox txtOut 
       Height          =   1455
-      Left            =   2400
+      Left            =   2535
       TabIndex        =   2
       TabStop         =   0   'False
       Top             =   6780
-      Width           =   11895
-      _ExtentX        =   20981
+      Width           =   11760
+      _ExtentX        =   20743
       _ExtentY        =   2566
       _Version        =   393217
       HideSelection   =   0   'False
@@ -157,6 +157,69 @@ Begin VB.Form Form2
          Object.Width           =   2540
       EndProperty
    End
+   Begin VB.Label lblClipboard 
+      AutoSize        =   -1  'True
+      Caption         =   "^"
+      BeginProperty Font 
+         Name            =   "Courier New"
+         Size            =   15.75
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FF0000&
+      Height          =   345
+      Index           =   2
+      Left            =   2340
+      TabIndex        =   8
+      ToolTipText     =   "Copy output to script pane"
+      Top             =   6750
+      Width           =   195
+   End
+   Begin VB.Label lblClipboard 
+      AutoSize        =   -1  'True
+      Caption         =   "<"
+      BeginProperty Font 
+         Name            =   "System"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FF0000&
+      Height          =   240
+      Index           =   1
+      Left            =   2385
+      TabIndex        =   7
+      ToolTipText     =   "copy output to clipboard"
+      Top             =   7290
+      Width           =   120
+   End
+   Begin VB.Label lblClipboard 
+      AutoSize        =   -1  'True
+      Caption         =   "<"
+      BeginProperty Font 
+         Name            =   "System"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FF0000&
+      Height          =   240
+      Index           =   0
+      Left            =   2385
+      TabIndex        =   6
+      ToolTipText     =   "Copy Script to Clipboard"
+      Top             =   720
+      Width           =   120
+   End
    Begin VB.Menu mnuMainLoadFile 
       Caption         =   "Load"
       Begin VB.Menu mnuLoadFile 
@@ -164,18 +227,6 @@ Begin VB.Form Form2
       End
       Begin VB.Menu mnuLoadShellcode 
          Caption         =   "Load Shellcode"
-      End
-   End
-   Begin VB.Menu mnuTools 
-      Caption         =   "Tools"
-      Begin VB.Menu mnuScriptToClip 
-         Caption         =   "Script to Clipboard"
-      End
-      Begin VB.Menu mnuOutputToClip 
-         Caption         =   "Output to Clipboard"
-      End
-      Begin VB.Menu mnuOutputToScript 
-         Caption         =   "Output To Script"
       End
    End
    Begin VB.Menu mnuBeautify 
@@ -1389,6 +1440,8 @@ Private Sub DoMove()
     txtOut.Top = splitter.Top + splitter.Height + buf
     txtOut.Height = Me.Height - txtOut.Top - (th * 60)
     DukDbg.Height = splitter.Top - DukDbg.Top - buf
+    lblClipboard(2).Top = txtOut.Top
+    lblClipboard(1).Top = lblClipboard(2).Top + 400
 End Sub
 
 
@@ -1464,6 +1517,8 @@ Private Sub Form_Load()
     
     Set txtJS = DukDbg.sci
     If txtJS Is Nothing Then txtOut = "Failed to set txtjs!"
+    
+    'DukDbg.AddLibFile "C:\Documents and Settings\david\Desktop\pre.js"
     
     mnuPopup.Visible = False
     mnuPopup3.Visible = False

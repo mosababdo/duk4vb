@@ -45,7 +45,8 @@ enum opDuk{
 	opd_ScriptTimeout=8,
 	opd_debugAttach=9,
 	opd_dbgCoOp = 10,
-	opd_dbgTriggerRead = 12
+	opd_dbgTriggerRead = 12,
+	opd_PushBool = 13
 };
 
 int watchdogTimeout = 0;
@@ -79,6 +80,7 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 		case opd_GetString: return (int)duk_safe_to_string(ctx, arg1);
 		case opd_Destroy: duk_destroy_heap(ctx); ctx = 0; return 0;
 		case opd_dbgCoOp: duk_debugger_cooperate(ctx); return 0;
+		case opd_PushBool: duk_push_boolean(ctx, (arg1==0 ? 0 : 1) ); return 0; //(0==false, 1==true, vbtrue = -1 ok)
 		case opd_debugAttach:
 			if(arg1==1){
 				if(vbDbgReadHandler==0 || vbStdOut==0 || vbDbgWriteHandler==0) return -1;

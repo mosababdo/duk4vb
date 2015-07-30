@@ -1,3 +1,3 @@
 
-a = 0
-a++
+v = fso.FileExists("c:\\autoexec.bat")
+print(v)

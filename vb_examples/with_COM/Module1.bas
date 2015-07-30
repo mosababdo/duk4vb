@@ -37,6 +37,7 @@ Enum opDuk
     opd_Destroy = 6
     opd_LastString = 7
     opd_ScriptTimeout = 8
+    opd_PushBool = 13 '0=false
 End Enum
 
 Public LastStringReturn As String

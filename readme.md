@@ -58,7 +58,7 @@ benchmarks:
      * handling of object return types (form.text1.text = etc)
      * integrate with debugger protocol of engine
      * use scintilla (scivb) control to provide optional IDE/debugger UI
-     - wrap in ocx for easy reuse (in progress)
+     - wrap in ocx for easy reuse (in progress 96% complete)
      
 </pre>
 

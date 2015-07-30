@@ -94,13 +94,17 @@ Public Function cb_HostResolver(ByVal buf As Long, ByVal ctx As Long, ByVal argC
     cb_HostResolver = IIf(meth.hasRet, 1, 0)
     
     'todo handle all ret types..
-    If LCase(meth.retType) = "string" Or LCase(meth.retType) = "variant" Or LCase(meth.retType) = "boolean" Then
+    If LCase(meth.retType) = "string" Or LCase(meth.retType) = "variant" Then
         dbg "returning string"
         DukOp opd_PushStr, ctx, 0, CStr(retVal)
         If t <> VbLet Then cb_HostResolver = 1
     ElseIf LCase(meth.retType) = "long" Then
         dbg "returning long"
         DukOp opd_PushNum, ctx, CLng(retVal)
+        If t <> VbLet Then cb_HostResolver = 1
+    ElseIf LCase(meth.retType) = "boolean" Then
+        dbg "returning boolean:" & retVal
+        DukOp opd_PushBool, ctx, CLng(retVal)
         If t <> VbLet Then cb_HostResolver = 1
     End If
         

@@ -49,6 +49,7 @@ Enum opDuk
     opd_debugAttach = 9
     opd_dbgCoOp = 10
     opd_dbgTriggerRead = 12
+    opd_PushBool = 13 '0=false
 End Enum
 
 'commands we create to send to duktape

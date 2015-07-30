@@ -7,14 +7,14 @@ which must be registered on your system for this to run.
 
 Register these before opening the project in VB6.
 
-scivb_lite.ocx[1] - 410k, open source VB6 ActiveX control
+scivb2.ocx    [1] - 410k, open source VB6 ActiveX control
 SciLexer.dll  [2] - 460k, open source C standard dll
 MSCOMCTL.OCX  [3] -   1Mb,closed source free from MS
 Duk4VB.dll    [4] - 400k, (release mode) open source C standard dll
 --------------------------------------
 total dependancies: ~2mb
 
-[1] https://github.com/dzzie/scivb_lite
+[1] https://github.com/dzzie/scivb2
 [2] http://www.scintilla.org/  (build included w/scivb)
 [3] probably pre-installed on system - from Microsoft 
 [4] https://github.com/dzzie/duk4vb
