@@ -120,19 +120,7 @@ Public ActiveDukTapeClass As CDukTape
 
 Public RespBuffer As New CResponseBuffer
 Public RecvBuffer As New CWriteBuffer
-
-Public Type Stats
-    state As Long
-    fileName As String
-    curFunc As String
-    lineNumber As Long
-    pc As Long
-    callStackLoaded As Boolean
-    lastLineNo As Long
-    stepToLine As Long
-End Type
-
-Public status As Stats
+Public Status As New CStatus
 
 'because we have to work across callbacks we need some module level variables..
 Private tmpVar       As CVariable
@@ -214,14 +202,13 @@ End Function
 
 'debugger is just starting up first message already received..
 Sub On_DebuggerInilitize()
-    status.stepToLine = -1
+    Status.StepToLine = -1
     InitDebuggerBpx ActiveUserControl
 End Sub
 
 Private Sub On_DebuggerTerminate()
     
-    Dim emptyStatus As Stats
-    status = emptyStatus
+    Set Status = New CStatus 'clear all fields for next session
     
     Dim b As CBreakpoint
     For Each b In breakpoints
@@ -247,7 +234,7 @@ Function SyncSetBreakPoint(b As CBreakpoint) As Boolean
     Set tmpBreakPoint = b
     LastCommand = dc_SetBreakpoint
     replyReceived = False
-    RespBuffer.ConstructMessage dc_SetBreakpoint, b.fileName, b.lineNo + 1
+    RespBuffer.ConstructMessage dc_SetBreakpoint, b.FileName, b.lineNo + 1
     DukOp opd_dbgTriggerRead, ActiveUserControl.context
     SyncSetBreakPoint = CBool(Len(b.errText) = 0)
 End Function
@@ -488,25 +475,25 @@ topLine:
             If Not RecvBuffer.breakPointsInitilized Then 'only once at debugger start
                 RecvBuffer.breakPointsInitilized = True
                 On_DebuggerInilitize
-            ElseIf Not status.callStackLoaded Then 'every time we step/bp
+            ElseIf Not Status.callStackLoaded Then 'every time we step/bp
                 
-                If Len(status.fileName) > 0 And status.fileName <> ActiveUserControl.CurrentFile Then
+                If Len(Status.FileName) > 0 And Status.FileName <> ActiveUserControl.CurrentFile Then
                     'my personal preference is to only debug current file user sees..
                     'for me any other js is lib files I add as glue and dont want to bother them with..
                     SendDebuggerCmd dc_stepout
                     GoTo topLine
                 End If
                 
-                If status.lastLineNo = status.lineNumber And LastCommand = dc_stepout Then
+                If Status.lastLineNo = Status.lineNumber And LastCommand = dc_stepout Then
                     'must be above case + var assignment of return value..
                     SendDebuggerCmd dc_StepOver
                     GoTo topLine
                 End If
                                 
-                If status.stepToLine <> -1 Then
+                If Status.StepToLine <> -1 Then
                     'this is the run to cursor implementation
-                    If status.lineNumber = status.stepToLine Then
-                        status.stepToLine = -1
+                    If Status.lineNumber = Status.StepToLine Then
+                        Status.StepToLine = -1
                     Else
                         SendDebuggerCmd dc_stepInto
                         GoTo topLine
@@ -665,13 +652,13 @@ Function HandleNotify()
         Select Case msg
                    'NFY <int: 1> <int: state> <str: filename> <str: funcname> <int: linenumber> <int: pc> EOM
               Case STATUS_NOTIFICATION:
-                    status.lastLineNo = status.lineNumber
-                    status.state = .ReadInt
-                    status.fileName = .ReadString
-                    status.curFunc = .ReadString
-                    status.lineNumber = .ReadInt
-                    status.pc = .ReadInt
-                    status.callStackLoaded = False
+                    Status.lastLineNo = Status.lineNumber
+                    Status.state = .ReadInt
+                    Status.FileName = .ReadString
+                    Status.curFunc = .ReadString
+                    Status.lineNumber = .ReadInt
+                    Status.pc = .ReadInt
+                    Status.callStackLoaded = False
                     
                     'for debugging
                     'doOutput "STATUS_NOTIFICATION Line: " & status.lineNumber & " LastLine: " & status.lastLineNo & " pc: " & status.pc & " File: " & status.fileName

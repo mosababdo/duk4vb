@@ -1,12 +1,10 @@
 
 
-note that full_ocx and jsThing are still in development.
+full_ocx is pretty much done at this point I think. binary compatability is
+not yet set though. You may have to recompile hostform.exe and jsthing.exe
+to get them to work with whatever the latest version ID of the ocx is.
 
-you will probably have to compile any exes in these two directories
-yourself to ensure they are using the latest ocx version
-(binary compatiability not yet set)
-
-the ocx and with_debug use the open source scivb2 control:
+the ocx, with_debug, and jsThing use the open source scivb2 control:
 
 https://github.com/dzzie/scivb2
 

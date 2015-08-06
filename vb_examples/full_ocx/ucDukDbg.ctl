@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-Object = "{2668C1EA-1D34-42E2-B89F-6B92F3FF627B}#4.0#0"; "scivb2.ocx"
+Object = "{2668C1EA-1D34-42E2-B89F-6B92F3FF627B}#5.0#0"; "scivb2.ocx"
 Begin VB.UserControl ucDukDbg 
    ClientHeight    =   7560
    ClientLeft      =   0
@@ -320,6 +320,10 @@ Public Property Get sci() As Object
     Set sci = scivb
 End Property
 
+Property Get Status() As CStatus
+    Set Status = mDuk.Status
+End Property
+
 Property Get DebugState() As dbgStates
     DebugState = m_DbgState
 End Property
@@ -469,11 +473,11 @@ Friend Sub SyncUI()
        
     Dim curline As Long
     
-    If Len(status.fileName) = 0 Or status.fileName <> curFile Then Exit Sub
+    If Len(Status.FileName) = 0 Or Status.FileName <> curFile Then Exit Sub
     
     ClearLastLineMarkers
     
-    curline = status.lineNumber - 1
+    curline = Status.lineNumber - 1
     scivb.SetMarker curline, 1
     scivb.SetMarker curline, 3
     lastEIP = curline
@@ -596,7 +600,7 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
                                   If Not isExecutableLine(txt) Then
                                         doOutput "Can not run to cursor: not executable line"
                                   Else
-                                        status.stepToLine = curline + 1
+                                        Status.StepToLine = curline + 1
                                         SendDebuggerCmd dc_stepInto
                                   End If
                                   

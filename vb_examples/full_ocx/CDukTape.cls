@@ -173,6 +173,13 @@ Private Sub ResetComObjects()
     
 End Sub
 
+Private Function comTypeExists(name) As Boolean
+    On Error Resume Next
+    Dim dd As CCOMType
+    Set dd = m_comTypes(CStr(name))
+    If Err.Number = 0 Then comTypeExists = True
+End Function
+
 Private Sub ClearErr()
     hadError = False
     LastError = Empty
@@ -200,8 +207,10 @@ Function AddObject(obj As Object, name As String) As Boolean
     End If
         
     For Each d In cc.dependancies
-        If Not AddObject(Nothing, CStr(d)) Then
-            Exit Function
+        If Not comTypeExists(d) Then
+            If Not AddObject(Nothing, CStr(d)) Then
+                Exit Function
+            End If
         End If
     Next
     
@@ -257,17 +266,25 @@ End Function
 Private Sub SetError(from As String, msg As String)
 
     Dim rv As Long, tmp
+    Dim b As Long
     
     hadError = True
     LastError = msg
    
     rv = InStr(LastError, "(line")
     If rv > 0 Then
-        tmp = Mid(LastError, rv + 5)
-        'LastError = Mid(LastError, 1, rv - 1)
-        tmp = Left(tmp, Len(tmp) - 1)
-        tmp = Trim(tmp)
-        LastErrorLine = CLng(tmp)
+        rv = rv + 5
+        b = InStr(rv, LastError, ")")
+        If b > 0 Then
+            tmp = Trim(Mid(LastError, rv, b - rv))
+            If IsNumeric(tmp) Then LastErrorLine = CLng(tmp)
+        End If
+        If CountOccurances(msg, "(line") > 1 Then 'this handles double line number bug from errCreate standardization..lazy but reliable..
+            rv = InStrRev(msg, "(line")
+            If rv > 0 Then
+                LastError = Trim(Mid(LastError, 1, rv - 1))
+            End If
+        End If
     End If
     
     'this emulates the behavior of the msscript control..

@@ -230,7 +230,7 @@ End Function
 
 Function c2s(c As Collection) As String
     Dim x, Y
-    If c.count = 0 Then Exit Function
+    If c.Count = 0 Then Exit Function
     For Each x In c
         Y = Y & x & ", "
     Next
@@ -268,13 +268,13 @@ Dim tmp
     End If
 End Function
 
-Function ReadFile(fileName) As Variant
+Function ReadFile(FileName) As Variant
   Dim f As Long
   Dim temp As Variant
   f = FreeFile
   temp = ""
-   Open fileName For Binary As #f        ' Open file.(can be text or image)
-     temp = Input(FileLen(fileName), #f) ' Get entire Files data
+   Open FileName For Binary As #f        ' Open file.(can be text or image)
+     temp = Input(FileLen(FileName), #f) ' Get entire Files data
    Close #f
    ReadFile = temp
 End Function
@@ -350,3 +350,11 @@ Function GetFreeFileName(ByVal folder, Optional ByVal extension = ".txt") As Str
     GetFreeFileName = tmp
 End Function
 
+
+
+Function CountOccurances(it, find) As Integer
+    Dim tmp() As String
+    If InStr(1, it, find, vbTextCompare) < 1 Then CountOccurances = 0: Exit Function
+    tmp = Split(it, find, , vbTextCompare)
+    CountOccurances = UBound(tmp)
+End Function

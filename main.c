@@ -272,6 +272,29 @@ void RegisterNativeHandlers(duk_context *ctx){
 	duk_eval_string(ctx, "Duktape.Logger.prototype.raw = print");
 	duk_pop(ctx);
 
+	/* ReferenceError: does not include a line number
+	   SyntaxError: always include line number.
+	   err type is not part of err.message, (line is not part of err.message either not sure how to detect type, but 
+	   easy answer is to just always add it for standardization... but sometimes we get a 2x display bug with this code.. 
+	   this is easy enough..we will just detect it in the ocx and strip it.
+	*/
+	duk_eval_string(ctx,"Duktape.errCreate = function (err) "
+		              " {\n"  
+					  "  try { \n"
+					  "   if (typeof err === 'object' &&\n"
+					  "       typeof err.message !== 'undefined' &&\n"
+					  "        typeof err.lineNumber === 'number')"
+	                  "      { \n"
+					  "        //alert(err.message.indexOf('ReferenceError:')+' '+err.message);\n"
+					  "		   err.message = err.message + ' (line ' + err.lineNumber + ')';\n"
+					  "      } \n"
+					  "  } catch (e) { \n"
+					  "    // ignore; for cases such as where message is not writable etc\n"
+					  "  } \n"
+					  "  return err;\n"
+					  " }");
+	duk_pop(ctx);   
+
 }
 
 int __stdcall DukCreate(){
@@ -289,6 +312,7 @@ int __stdcall DukCreate(){
 int __stdcall AddFile(duk_context *ctx, char* pth){
 #pragma EXPORT
 	int rv;
+	char* l;
 	if(ctx == 0) return -1;
 	startTime = GetTickCount();
 	rv = duk_peval_file(ctx, pth); //0 = success

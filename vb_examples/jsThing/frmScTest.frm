@@ -360,7 +360,7 @@ Dim scfile As String
 Dim sctest As String
 Dim lastcmdline As String
 
-'Option Explicit
+Option Explicit
 
 'Private Declare Function WinExec Lib "kernel32" (ByVal lpCmdLine As String, ByVal nCmdShow As Long) As Long
 'Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
@@ -520,6 +520,7 @@ Private Sub Command1_Click()
    
     Dim cmdline As String
     Dim graphpth As String
+    Dim libemu As String
     
     scfile = Trim(Replace(scfile, Chr(0), Empty))
     cmdline = GetShortName(sctest)
@@ -557,6 +558,7 @@ Private Sub Command1_Click()
     cmdline = "cmd /k chdir /d " & libemu & "\ && " & cmdline
     lastcmdline = cmdline
     
+    Dim pid As Long
     pid = Shell(cmdline, vbNormalFocus)
     
     'If chkGraph.Value = 1 And fso.FileExists("c:\sc_graph.dot") Then
@@ -573,7 +575,7 @@ End Sub
 
 Private Function RecommendedPath() As String
     On Error Resume Next
-    RecommendedPath = fso.GetParentFolder(Form1.txtPDFPath)
+    'RecommendedPath = fso.GetParentFolder(Form1.txtPDFPath)
 End Function
 
 Private Function RecommendedName(Optional ext = ".sc") As String
@@ -581,9 +583,9 @@ Private Function RecommendedName(Optional ext = ".sc") As String
     On Error Resume Next
     Dim r As String
     
-    If Form1.txtPDFPath <> "Drag and drop pdf file here" Then
-        r = fso.GetBaseName(Form1.txtPDFPath)
-    End If
+    'If Form1.txtPDFPath <> "Drag and drop pdf file here" Then
+    '    r = fso.GetBaseName(Form1.txtPDFPath)
+    'End If
     
     'old extension was .gv
     If Len(r) = 0 Then
@@ -598,11 +600,11 @@ End Function
 
 Private Sub Form_Load()
     Me.Icon = Form2.Icon
-    If fso.FileExists(Form1.txtPDFPath) Then
-        txtFopen = Form1.txtPDFPath
-        txtTemp = fso.GetParentFolder(txtFopen)
-        chktemp.value = 1
-    End If
+    'If fso.FileExists(Form1.txtPDFPath) Then
+    '    txtFopen = Form1.txtPDFPath
+    '    txtTemp = fso.GetParentFolder(txtFopen)
+    '    chktemp.value = 1
+    'End If
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
@@ -614,7 +616,9 @@ End Sub
 
 Private Sub Label6_Click(Index As Integer)
     On Error Resume Next
-     
+    Dim cap As String
+    Dim f As String, x, dump, pth, graph
+    
     cap = Label6(Index).Caption
     
     If InStr(cap, "Help") > 0 Then
@@ -645,14 +649,14 @@ Private Sub Label6_Click(Index As Integer)
         Shell "cmd /c start http://sandsprite.com/blogs/index.php?uid=7^&pid=152"
     End If
     
-    Dump = App.path & "\libemu\sample.unpack"
+    dump = App.path & "\libemu\sample.unpack"
     If InStr(1, cap, "dump", 1) > 0 Then
-        If Not fso.FileExists(Dump) Then
+        If Not fso.FileExists(dump) Then
             MsgBox "No dump file found. Maybe no changes were detected.", vbInformation
         Else
             pth = dlg.SaveDialog(AllFiles, RecommendedName(), , "Save dump as")
             If Len(pth) = 0 Then Exit Sub
-            FileCopy Dump, pth
+            FileCopy dump, pth
         End If
     End If
     

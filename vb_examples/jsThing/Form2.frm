@@ -1,7 +1,7 @@
 VERSION 5.00
 Object = "{3B7C8863-D78F-101B-B9B5-04021C009402}#1.2#0"; "RICHTX32.OCX"
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#58.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#64.0#0"; "dukDbg.ocx"
 Begin VB.Form Form2 
    Caption         =   "jsThing - http://sandsprite.com"
    ClientHeight    =   8310
@@ -20,13 +20,13 @@ Begin VB.Form Form2
       Top             =   0
    End
    Begin dukDbg.ucDukDbg DukDbg 
-      Height          =   6450
-      Left            =   2565
-      TabIndex        =   5
-      Top             =   90
-      Width           =   11760
-      _ExtentX        =   20743
-      _ExtentY        =   11377
+      Height          =   6360
+      Left            =   2610
+      TabIndex        =   8
+      Top             =   135
+      Width           =   11670
+      _ExtentX        =   20585
+      _ExtentY        =   11218
    End
    Begin MSComctlLib.ListView lv2 
       Height          =   2670
@@ -62,7 +62,7 @@ Begin VB.Form Form2
    Begin VB.Frame splitter 
       BackColor       =   &H00808080&
       Height          =   75
-      Left            =   2430
+      Left            =   2610
       MousePointer    =   7  'Size N S
       TabIndex        =   1
       Top             =   6615
@@ -112,6 +112,7 @@ Begin VB.Form Form2
       _ExtentX        =   20743
       _ExtentY        =   2566
       _Version        =   393217
+      Enabled         =   -1  'True
       HideSelection   =   0   'False
       ScrollBars      =   2
       TextRTF         =   $"Form2.frx":0000
@@ -173,7 +174,7 @@ Begin VB.Form Form2
       Height          =   345
       Index           =   2
       Left            =   2340
-      TabIndex        =   8
+      TabIndex        =   5
       ToolTipText     =   "Copy output to script pane"
       Top             =   6750
       Width           =   195
@@ -547,7 +548,7 @@ Private Sub duk_Error(ByVal line As Long, ByVal desc As String)
     txtJS.SelStart = pos
     txtJS.SelLength = Len(txtJS.GetLineText(line - 1))
     
-    txtOut.Text = "Time: " & Now & vbCrLf & "Error: " & desc
+    txtOut.Text = "Time: " & Now & vbCrLf & "Line: " & line & vbCrLf & " Error: " & desc
     txtOut.Text = txtOut.Text & vbCrLf & "Source: " & txtJS.GetLineText(line - 1)  'vbsci specific
     lv2.ListItems.Add , , "Error: " & txtOut.Text
     
@@ -1516,7 +1517,7 @@ Private Sub Form_Load()
     On Error Resume Next
     
     Set txtJS = DukDbg.sci
-    If txtJS Is Nothing Then txtOut = "Failed to set txtjs!"
+    If txtJS Is Nothing Then MsgBox "Failed to set txtjs!"
     
     'DukDbg.AddLibFile "C:\Documents and Settings\david\Desktop\pre.js"
     
@@ -1549,6 +1550,9 @@ Private Sub Form_Load()
         apiLoaded = txtJS.LoadCallTips(jsapi)
         Debug.Print "JSApi loaded: " & apiLoaded & " path: " & jsapi
     End If
+    
+    jsapi = App.path & "\jsunpack_pre.js"
+    If fso.FileExists(jsapi) Then DukDbg.AddLibFile jsapi
     
 '    Dim tmp() As String 'AV never liked this, people worried..
 '    i = 0

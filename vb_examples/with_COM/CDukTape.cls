@@ -16,6 +16,7 @@ Private mTimeout As Long
 Private mRunning As Boolean
 
 'check for errors either manually after or receive through event..
+'see ocx build for a version which raises hard errors like msscript control (easier to trap sometimes)
 Public hadError As Boolean
 Public LastError As String
 Public LastErrorLine As Long
@@ -44,7 +45,8 @@ Function AddObject(obj As Object, name As String, Optional ByRef outErrList As C
     Dim d
     Dim cc As CCOMType
     Dim result As Boolean
-        
+    Dim dd As CCOMType
+    
     result = ParseObjectToCache(name, obj, Me)
     Set cc = comTypes(name) 'always added even with errors
        
@@ -59,8 +61,10 @@ Function AddObject(obj As Object, name As String, Optional ByRef outErrList As C
     End If
         
     For Each d In cc.dependancies
-        If Not AddObject(Nothing, CStr(d), outErrList) Then
-            Exit Function
+        If Not comTypeExists(d) Then
+            If Not AddObject(Nothing, CStr(d), outErrList) Then
+                Exit Function
+            End If
         End If
     Next
     
@@ -104,7 +108,10 @@ Function AddFile(fPath) As Boolean
     
     If hDuk = 0 Then Exit Function
     ClearErr
-
+    
+    Debug.Print "AddFile: " & fPath
+    If InStr(1, fPath, "textstream", vbTextCompare) > 0 Then Stop
+    
     mRunning = True
     rv = mDuk.AddFile(hDuk, CStr(fPath))
     mRunning = False

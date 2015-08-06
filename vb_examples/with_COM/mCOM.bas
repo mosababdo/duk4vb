@@ -28,6 +28,13 @@ Function ParseObjectToCache(name As String, obj As Object, owner As CDukTape) As
     
 End Function
 
+Function comTypeExists(name) As Boolean
+    On Error Resume Next
+    Dim dd As CCOMType
+    Set dd = comTypes(CStr(name))
+    If Err.Number = 0 Then comTypeExists = True
+End Function
+
 Function ReleaseObj(hInst As Long)
     On Error GoTo hell
     dbg "ReleaseObj: ", hInst
