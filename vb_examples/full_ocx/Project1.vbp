@@ -50,8 +50,8 @@ Unattended=0
 Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
-DebugStartupOption=1
-DebugStartupComponent=ucDukDbg
+DebugStartupOption=2
+DebugStartupComponent=D:\_code\RE_Plugins\IDA_JScript_w_DukDbg\IDA_JScript.exe
 
 [MS Transaction Server]
 AutoRefresh=1

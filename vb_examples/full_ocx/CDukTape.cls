@@ -288,7 +288,7 @@ Private Sub SetError(from As String, msg As String)
     End If
     
     'this emulates the behavior of the msscript control..
-    RaiseEvent Error(LastErrorLine, LastError)
-    Err.Raise 21, "Eval", LastError
+    RaiseEvent Error(LastErrorLine, from & ": " & LastError)
+    Err.Raise 21, "Eval", from & ": " & LastError
 
 End Sub

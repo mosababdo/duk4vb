@@ -18,6 +18,14 @@ Begin VB.Form Form1
    ScaleHeight     =   10740
    ScaleWidth      =   15705
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command5 
+      Caption         =   "Copy Names"
+      Height          =   420
+      Left            =   11790
+      TabIndex        =   9
+      Top             =   9315
+      Width           =   2400
+   End
    Begin VB.CommandButton Command4 
       Caption         =   "Scan Source"
       Height          =   375
@@ -118,8 +126,9 @@ Attribute VB_Exposed = False
 Dim dlg As New clsCmnDlg2
 Dim fso As New CFileSystem2
 Dim loadedFile As String
+Dim names() As String
 
-Private Sub Command1_Click()
+Private Sub Command1_Click() 'step 2: parse
 
      If Len(txtClassName) = 0 Then
         MsgBox "Class name must be filled in", vbInformation
@@ -138,11 +147,14 @@ Private Sub Command1_Click()
     Dim protos()
     Dim js As String
     
+    Erase names
+    
     push protos, "/*"
     Dim m As CMethod
     For Each t In tmp
         t = Trim(t)
         If Len(t) > 0 And _
+            VBA.Left(t, 1) <> "'" And _
             VBA.Left(t, 1) <> "/" And _
             VBA.Left(t, 1) <> "#" And _
             VBA.Left(t, 1) <> ";" _
@@ -152,6 +164,7 @@ Private Sub Command1_Click()
                 If Not m.parse(txtClassName, t) Then
                     push o, "Failed: " & t
                 Else
+                    push names, m.Name
                     push protos, vbTab & t
                     push o, m.DescribeSelf()
                     If m.ctype = "call" Then
@@ -173,8 +186,10 @@ Private Sub Command1_Click()
     
     If Not AryIsEmpty(props) Then
         a = InStrRev(props(UBound(props)), ",")
-        props(UBound(props)) = Mid(props(UBound(props)), 1, a - 1)
-        js = js & vbCrLf & vbCrLf & txtClassName & "Class.prototype = {" & vbCrLf & Join(props, vbCrLf) & vbCrLf & "}"
+        If a > 0 Then
+            props(UBound(props)) = Mid(props(UBound(props)), 1, a - 1)
+            js = js & vbCrLf & vbCrLf & txtClassName & "Class.prototype = {" & vbCrLf & Join(props, vbCrLf) & vbCrLf & "}"
+        End If
     End If
     
     js = js & vbCrLf & vbCrLf & "var " & txtClassName & " = new " & txtClassName & "Class()" & vbCrLf
@@ -182,14 +197,14 @@ Private Sub Command1_Click()
     Text2 = js
 End Sub
 
-Private Sub Command2_Click()
+Private Sub Command2_Click() 'load prototypes  (load data method 2)
     loadedFile = dlg.OpenDialog(AllFiles)
     If Len(loadedFile) = 0 Then Exit Sub
     Text1 = fso.ReadFile(loadedFile)
     txtClassName = fso.GetBaseName(loadedFile)
 End Sub
 
-Private Sub Command3_Click()
+Private Sub Command3_Click() 'save results
 Dim pd As String
 
     If Len(loadedFile) = 0 Then
@@ -205,7 +220,8 @@ Dim pd As String
     MsgBox "saved to: " & tmp
 End Sub
 
-Private Sub Command4_Click()
+
+Private Sub Command4_Click() 'scan source (load data method 1)
     Dim src As String
     Dim tmp() As String
     Dim t
@@ -236,6 +252,15 @@ Private Sub Command4_Click()
                     
     
     
+End Sub
+
+Private Sub Command5_Click()
+    If AryIsEmpty(names) Then
+        MsgBox "Names array is empty have you parsed anything yet?"
+    Else
+        Clipboard.Clear
+        Clipboard.SetText Join(names, " ")
+    End If
 End Sub
 
 'Function OpenTextFile(
