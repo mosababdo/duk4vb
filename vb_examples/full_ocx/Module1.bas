@@ -173,6 +173,11 @@ Function CanIBeActiveInstance(ctl As ucDukDbg) As Boolean
     If ObjPtr(ActiveUserControl) = ObjPtr(ctl) Then CanIBeActiveInstance = True
 End Function
 
+Function AmIActive(ctl As ucDukDbg) As Boolean
+    If ActiveUserControl Is Nothing Then Exit Function
+    If ObjPtr(ActiveUserControl) = ObjPtr(ctl) Then AmIActive = True
+End Function
+
 'Function MonitorInstances(ctl As ucDukDbg, Optional isClosing As Boolean = False)
 '
 '    Dim duk As CDukTape

@@ -332,6 +332,15 @@ Property Get CurrentFile() As String
     CurrentFile = curFile
 End Property
 
+'this only seems to work when debugging..not free run..how to abort execution then?
+Public Sub StopExecution()
+    If AmIActive(Me) And running Then
+        userStop = True
+        duk.Timeout = 1
+        SendDebuggerCmd dc_stepInto
+    End If
+End Sub
+
 'note this does not reset the running script..thats up to the user based on state..
 Public Sub Reset(Optional objs As Boolean = False, Optional libs As Boolean = False, Optional itsense As Boolean = False)
     Dim o As CCachedObj
@@ -525,7 +534,7 @@ Private Sub scivb_AutoCompleteEvent(className As String)
     prev = scivb.PreviousWord
     
     For Each it In intellisense
-        If it.objName = className Then
+        If it.objName = className Or prev = it.objName Then
             scivb.ShowAutoComplete it.methods
             Exit Sub
         End If
