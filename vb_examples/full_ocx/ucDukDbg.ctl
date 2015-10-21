@@ -803,13 +803,46 @@ Private Sub scivb_MouseDwellStart(lline As Long, Position As Long)
     Dim txt As String
     Dim curWord As String
     Dim cv As CVariable
+    Dim eow As Long
+    Dim b As Long, lstart As Long, relativeEow As Long
     
     If Not CanIBeActiveInstance(Me) Then Exit Sub
     
     If running Then
          curWord = scivb.WordUnderMouse(Position)
          If Len(curWord) = 0 Then Exit Sub
-         Set cv = SyncGetVarValue(curWord)
+         
+         'this next block allows to do lookups on array values. while we could support
+         'looking up indexes calculated with embedded function calls, we are going to
+         'avoid it since it may have unexpected side effects. This also blocks math that
+         'includes () for operator preecedence though...kiss principle..im ok with it.
+         txt = scivb.GetLineText(lline)
+         eow = scivb.DirectSCI.WordEndPosition(Position, True) + 1
+         lstart = scivb.PositionFromLine(lline)
+         relativeEow = eow - lstart
+         
+         If relativeEow > 0 Then
+            txt = Trim(Mid(txt, relativeEow))
+            If VBA.Left(txt, 1) = "[" Then
+               b = InStr(txt, "]")
+               If b > 2 Then
+                   txt = Mid(txt, 2, b - 2)
+                   If InStr(txt, "(") < 1 Then
+                       curWord = curWord & "[" & txt & "]"
+                   End If
+               End If
+            End If
+         End If
+         '------------------------------------------------------------------------------
+         
+         If InStr(curWord, "[") > 0 Then
+            Set cv = SyncEval(curWord)
+            If cv.varType = "undefined" Then Exit Sub
+            If Len(cv.value) = 0 Then Exit Sub
+         Else
+            Set cv = SyncGetVarValue(curWord)
+         End If
+         
          If cv.varType <> DUK_VAR_NOT_FOUND Then
             scivb.SelStart = Position 'so call tip shows right under it..
             scivb.SelLength = 0
