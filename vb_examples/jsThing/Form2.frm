@@ -1,7 +1,7 @@
 VERSION 5.00
 Object = "{3B7C8863-D78F-101B-B9B5-04021C009402}#1.2#0"; "RICHTX32.OCX"
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#64.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#73.0#0"; "dukDbg.ocx"
 Begin VB.Form Form2 
    Caption         =   "jsThing - http://sandsprite.com"
    ClientHeight    =   8310
@@ -711,27 +711,45 @@ Private Sub mnuCopyToLower_Click()
     txtOut.Text = lv.SelectedItem.Tag
 End Sub
 
-Public Function ExtractFunction(ByVal startLine As Long, Optional ByRef foundEnd, Optional includeSpacer As Boolean = True) As String
-    Dim data, tmp, j, x
+Public Function ExtractFunction(ByVal startLine As Long, Optional ByRef foundEnd, Optional includeSpacer As Boolean = True, Optional linesOfCode As Long) As String
+    Dim data, tmp() As String, j, x, il As Long, indent As Long
     
+    indent = GetIndentLevel(startLine)
     data = IIf(includeSpacer, vbCrLf & vbCrLf, Empty)
-    startLine = startLine - 1
-    tmp = Split(txtJS.Text, vbCrLf)
-    j = -1
+    j = startLine
     foundEnd = False
     
-    For Each x In tmp
-        j = j + 1
-        If j > startLine Then
-            data = data & x & vbCrLf
-            If RTrim(x) = "}" Or RTrim(x) = "};" Then
-                foundEnd = True
-                Exit For
-            End If
+    Do
+        x = txtJS.GetLineText(j)
+        
+        If Len(x) > 2 Then
+            If right(x, 2) = vbCrLf Then x = Mid(x, 1, Len(x) - 2)
         End If
+        
+        If Len(x) > 1 Then
+            If right(x, 1) = vbLf Then x = Mid(x, 1, Len(x) - 1)
+        End If
+                
+        il = GetIndentLevel(, x)
+        data = data & x & vbCrLf
+        
+        If il = indent Then x = Trim(Replace(x, vbTab, ""))
+        
+        If VBA.left(x, 1) = "}" Then
+            foundEnd = True
+            Exit Do
+        End If
+        
+        j = j + 1
+        If j > txtJS.TotalLines Then 'GetLineText failing on very last line?
+            foundEnd = True
+            Exit Do
+        End If
+        
         DoEvents
-    Next
+    Loop While Not foundEnd
     
+    linesOfCode = j - startLine
     ExtractFunction = data & IIf(includeSpacer, vbCrLf & vbCrLf, Empty)
     
 End Function
@@ -804,26 +822,28 @@ End Sub
 
 Public Sub mnuFunctionScan_Click()
     
-    'very quick and dirty function scan, assumes you already ran format js
+    'kinda quick and dirty function scan, assumes you already ran format js
+    'wokrs on standard js, js with functions embedded within funcs, and jquery type classes.
+    
     On Error Resume Next
     
     Dim li As ListItem
     Dim loc As Long, i As Long, x As String, func, a, b
     
     lvFunc.ListItems.Clear
-    
-    i = -1
-    'tmp = Split(txtjs.text, vbCrLf)
-    'For Each x In tmp
+
     For i = 0 To txtJS.DirectSCI.GetLineCount
-        'i = i + 1
         x = txtJS.GetLineText(i)
         func = Empty
         
         a = InStr(x, " = function(")
+        b = InStr(x, ": function(")
         
         If a > 0 Then
             func = Trim(Mid(x, 1, a))
+            func = Trim(Replace(func, vbTab, Empty))
+        ElseIf b > 0 Then
+            func = Trim(Mid(x, 1, b - 1))
             func = Trim(Replace(func, vbTab, Empty))
         ElseIf InStr(x, "function") > 0 And InStr(x, "(") > 0 And InStr(x, "{") > 0 Then
             a = InStr(x, "(")
@@ -835,7 +855,7 @@ Public Sub mnuFunctionScan_Click()
         
         If Len(func) > 0 Then
             Set li = lvFunc.ListItems.Add(, , func)
-            loc = CountOccurances(ExtractFunction(i, , False), vbCrLf)
+            ExtractFunction i, , False, loc
             li.SubItems(1) = VBA.right("    " & loc, 5) 'for sorting
             li.Tag = i
         End If
@@ -845,6 +865,25 @@ Public Sub mnuFunctionScan_Click()
     Next
     
 End Sub
+
+Function GetIndentLevel(Optional lineNo = 0, Optional strText = Empty) As Long
+    On Error Resume Next
+    Dim cnt As Long, x
+    
+    If Len(strText) > 0 Then
+        x = strText
+    Else
+        x = txtJS.GetLineText(lineNo)
+    End If
+    
+    While VBA.left(x, 1) = vbTab
+        cnt = cnt + 1
+        x = Mid(x, 2)
+    Wend
+    
+    GetIndentLevel = cnt
+    
+End Function
 
 Private Sub mnuGotoLine_Click()
     On Error Resume Next

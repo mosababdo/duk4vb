@@ -1,11 +1,11 @@
 Type=Exe
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
 Object={0E59F1D2-1FBE-11D0-8FF2-00A0D10038BC}#1.0#0; msscript.ocx
-Reference=*\G{052DB09C-95F7-43BD-B7F8-492373D1151E}#1.0#0#C:\Program Files\WinGraphviz\WinGraphviz.dll#WinGraphviz 1.01.7 Type Library
+Reference=*\G{052DB09C-95F7-43BD-B7F8-492373D1151E}#1.0#0#c:\PDFStreamDumper\WinGraphviz.dll#WinGraphviz 1.01.7 Type Library
 Reference=*\G{3F4DACA7-160D-11D2-A8E9-00104B365C9F}#5.5#0#C:\WINDOWS\system32\vbscript.dll\3#Microsoft VBScript Regular Expressions 5.5
-Object={3B7C8863-D78F-101B-B9B5-04021C009402}#1.2#0; RICHTX32.OCX
+Object={3B7C8863-D78F-101B-B9B5-04021C009402}#1.2#0; richtx32.ocx
 Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; MSCOMCTL.OCX
-Object={047848A0-21DD-421D-951E-B4B1F3E1718D}#66.0#0; dukDbg.ocx
+Object={047848A0-21DD-421D-951E-B4B1F3E1718D}#75.0#0; dukDbg.ocx
 Class=CFunc; CFunc.cls
 Class=CGraph; CGraph.cls
 Class=CNode; CNode.cls
