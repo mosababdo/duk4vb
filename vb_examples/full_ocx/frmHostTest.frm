@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#62.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#77.0#0"; "dukDbg.ocx"
 Begin VB.Form frmHostTest 
    Caption         =   "Form1"
    ClientHeight    =   9000
@@ -174,7 +174,7 @@ Private Sub Form_Load()
     
     List1.AddItem "Message Log"
     
-     Exit Sub
+     'Exit Sub
     
     'for multi instance count tests..
     If VB.Forms.Count = 1 Then
@@ -209,7 +209,10 @@ End Sub
 
 
 Private Sub ucDukDbg1_dbgOut(msg As String)
+
     List1.AddItem "dbgout: " & msg
+    If msg = "cls" Then txtOut.Text = Empty
+    
 End Sub
 
 Private Sub ucDukDbg1_dukErr(line As Long, msg As String)

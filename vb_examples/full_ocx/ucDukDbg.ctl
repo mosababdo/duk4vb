@@ -870,8 +870,9 @@ Private Sub txtCmd_KeyPress(KeyAscii As Integer)
     If KeyAscii <> 13 Then Exit Sub 'wait for user to press return key
     KeyAscii = 0 'eat the keypress to prevent vb from doing a msgbeep
     
-    If txtCmd.Text = "cls" Then
-        RaiseEvent dbgOut("cls")
+    If Left(txtCmd.Text, 1) = "." Then
+        handleDebuggerCmdLine txtCmd
+        txtCmd = Empty
         Exit Sub
     End If
     
@@ -882,6 +883,60 @@ Private Sub txtCmd_KeyPress(KeyAscii As Integer)
     If v.varType = "undefined" Then Exit Sub
     If Len(v.value) = 0 Then Exit Sub
     doOutput v.value
+    
+End Sub
+
+Sub handleDebuggerCmdLine(cmdLine As String)
+    
+    On Error Resume Next
+    
+    Dim args() As String
+    Dim ret() As String
+    Dim o As CCachedObj
+    Dim b As CBreakpoint
+    Dim cmd As String
+    Dim x
+    
+    args = Split(cmdLine, " ")
+    cmd = LCase(args(0))
+    
+    If cmd = ".cls" Then
+        RaiseEvent dbgOut("cls")
+        Exit Sub
+    End If
+    
+    If Left(cmd, 8) = ".objs" Then
+        If objCache.Count = 0 Then
+            push ret, "No scriptable objects have been added by host"
+        Else
+            For Each o In objCache
+                push ret, o.name & " (" & TypeName(o.obj) & ")"
+            Next
+        End If
+    End If
+            
+    
+    If cmd = ".libs" Then
+        If libFiles.Count = 0 Then
+            push ret, "No libraries script files have been added by host"
+        Else
+            For Each x In libFiles
+                push ret, x
+            Next
+        End If
+    End If
+    
+    If cmd = ".bl" Then
+        If modBreakpoints.breakpoints.Count = 0 Then
+            push ret, "No breakpoints set"
+        Else
+            For Each b In modBreakpoints.breakpoints
+                push ret, b.Stats & vbCrLf & String(20, "-") & vbCrLf
+            Next
+        End If
+    End If
+    
+    RaiseEvent printOut(Join(ret, vbCrLf))
     
 End Sub
 

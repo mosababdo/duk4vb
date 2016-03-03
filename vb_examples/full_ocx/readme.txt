@@ -42,3 +42,21 @@ to bother the user with having to see. If the user tries to single
 step into a library function, it will just stepout automatically.
 
 You can change this around however you wish. 
+
+----------------------------------------
+
+
+The built in duk> command line textbox lets you execute script calls
+while debugging. Breakpoints will not be hit in sub functions however
+as per how duktape was designed with regards to run time evals. 
+
+scripts are also locked while running, there is no chance for edit and
+continue. but at least you can reset script variable values, test
+function outputs at runtime and print variable values at runtime.
+
+this textbox also supports a couple built in commands.
+
+.objs  - lists objects added to script envirnoment
+.libs  - lists library files added 
+.bl    - lists breakpoints
+.cls   - raises a dbgout(cls) event for host to clear output window

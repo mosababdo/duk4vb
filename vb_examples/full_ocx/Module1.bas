@@ -425,7 +425,7 @@ Public Function doOutput(msg)
     ElseIf Not ActiveUserControl Is Nothing Then
         ActiveUserControl.duk_printOut tmp
     Else
-        Debug.Print "No active control/class? output: " & msg
+        Debug.Print "debug.print: No active control/class? output: " & msg
     End If
     
 End Function

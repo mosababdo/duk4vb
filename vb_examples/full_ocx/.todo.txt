@@ -7,3 +7,8 @@ behavior: note if you open the same file in two instances of the form breakpoint
 
 behavior: dont allow the user to close the active form if debugging..
 bug: with code folding on..folding triggers breakpoint set..
+
+cmd textbox, would be nice to implement
+ .listObjects
+ .bl, .bc (for debugging)
+ .debugMsg true/false

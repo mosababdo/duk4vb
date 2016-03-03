@@ -1,13 +1,13 @@
 mDuk = 148, 112, 1103, 898, 
 CDukTape = 162, 64, 917, 637, 
 modUtil = 118, 76, 1348, 689, 
-CResponseBuffer = 180, 103, 1164, 772, C
+CResponseBuffer = 180, 103, 1164, 772, 
 CWriteBuffer = 0, 0, 0, 0, C
 CVariable = 0, 0, 0, 0, C
-CBreakpoint = 198, 198, 855, 781, 
-modBreakpoints = 89, 39, 928, 863, 
+CBreakpoint = 198, 198, 855, 781, C
+modBreakpoints = 89, 39, 928, 863, C
 cCallStack = 0, 0, 0, 0, C
-ucDukDbg = 44, 44, 1344, 796, , 67, 55, 814, 628, C
+ucDukDbg = 44, 44, 1344, 796, Z, 67, 55, 814, 628, C
 mCOM = 132, 132, 969, 705, 
 CCOMType = 0, 0, 0, 0, C
 CMethod = 0, 0, 1380, 487, 
