@@ -1,0 +1,13 @@
+GetListviewData(Index As Long)
+DebugLog(msg,  data)
+alert(x)
+t(x)
+Save2Clipboard(x)
+GetClipboard()
+writeFile(path, data)
+HexDump(str)
+ReadFile(path)
+unescape(x)
+HexString2Bytes(str)
+EscapeHexString(hexstr)
+

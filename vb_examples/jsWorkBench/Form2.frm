@@ -1,7 +1,7 @@
 VERSION 5.00
 Object = "{3B7C8863-D78F-101B-B9B5-04021C009402}#1.2#0"; "RICHTX32.OCX"
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#73.0#0"; "dukDbg.ocx"
+Object = "{047848A0-21DD-421D-951E-B4B1F3E1718D}#85.0#0"; "dukDbg.ocx"
 Begin VB.Form Form2 
    Caption         =   "jsThing - http://sandsprite.com"
    ClientHeight    =   8310
@@ -112,7 +112,6 @@ Begin VB.Form Form2
       _ExtentX        =   20743
       _ExtentY        =   2566
       _Version        =   393217
-      Enabled         =   -1  'True
       HideSelection   =   0   'False
       ScrollBars      =   2
       TextRTF         =   $"Form2.frx":0000
@@ -1285,31 +1284,6 @@ Private Sub mnuSend2IDA_Click()
     
 End Sub
 
-
-
-'Private Sub mnuShellcode_Click(Index As Integer)
-'
-'    On Error Resume Next
-'
-'    cap = mnuShellcode(Index).Caption
-'    If cap = "Copy sc files to /sc_samples directory to load list" Or _
-'       cap = "samples removed due to AV alert" Then _
-'    Exit Sub
-'
-'    pth = App.path & "\sc_samples\" & cap
-'
-'    If Not fso.FileExists(pth) Then
-'        MsgBox "File not found: " & pth
-'        Exit Sub
-'    End If
-'
-'    tmp = fso.ReadFile(pth)
-'    tmp = HexDump(tmp, 1)
-'    txtjs.text = AddPercentToHexString(tmp)
-'    txtJS.SelectAll
-'
-'End Sub
-
 Private Sub mnuSeqRenameFuncs_Click()
     
     On Error Resume Next
@@ -1583,27 +1557,22 @@ Private Sub Form_Load()
     DoMove
    
     Dim jsapi As String
-    jsapi = App.path & "\js_api.txt"
+    jsapi = App.path & "\scripts\js_api.txt"
     If fso.FileExists(jsapi) Then
         Dim apiLoaded As Long
         apiLoaded = txtJS.LoadCallTips(jsapi)
         Debug.Print "JSApi loaded: " & apiLoaded & " path: " & jsapi
     End If
     
-    jsapi = App.path & "\jsunpack_pre.js"
+    jsapi = App.path & "\scripts\jsunpack_pre.js"
     If fso.FileExists(jsapi) Then DukDbg.AddLibFile jsapi
     
-'    Dim tmp() As String 'AV never liked this, people worried..
-'    i = 0
-'    tmp() = fso.GetFolderFiles(App.path & "\sc_samples\")
-'    For Each x In tmp
-'        If Len(x) > 0 And fso.FileExists(x) Then
-'            If i > 1 Then Load mnuShellcode(i)
-'            mnuShellcode(i).Caption = x
-'            'mnuShellcode(i).Tag = x
-'            i = i + 1
-'        End If
-'    Next
+    DukDbg.userCOMDir = App.path & "\scripts\COM\"
+    If DukDbg.AddObject(toolbox, "tb") Then
+        DukDbg.AddIntellisense "tb", "GetListviewData DebugLog alert t Save2Clipboard GetClipboard writeFile HexDump ReadFile unescape HexString2Bytes EscapeHexString"
+    Else
+        Debug.Print "Failed to add toolbox class?"
+    End If
         
 End Sub
 
@@ -1787,7 +1756,7 @@ Private Sub mnuBeautify_Click()
         Exit Sub
     End If
     
-    If Not duk.AddFile(App.path & "\beautify.js") Then
+    If Not duk.AddFile(App.path & "\scripts\beautify.js") Then
         MsgBox "Could not add beautify.js Error: " & duk.LastError
         Exit Sub
     End If

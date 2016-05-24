@@ -154,7 +154,5 @@ End Function
 
 Private Sub Class_Initialize()
     On Error Resume Next
-    Set Collab = Me
     Set lv = Form2.lv
-    Set media = Me
 End Sub

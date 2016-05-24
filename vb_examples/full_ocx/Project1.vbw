@@ -1,6 +1,6 @@
-mDuk = 148, 112, 1103, 898, 
-CDukTape = 162, 64, 917, 637, 
-modUtil = 118, 76, 1348, 689, 
+mDuk = 148, 112, 1103, 898, C
+CDukTape = 162, 64, 917, 637, C
+modUtil = 118, 76, 1348, 689, C
 CResponseBuffer = 180, 103, 1164, 772, 
 CWriteBuffer = 0, 0, 0, 0, C
 CVariable = 0, 0, 0, 0, C

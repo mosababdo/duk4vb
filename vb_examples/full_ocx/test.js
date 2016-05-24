@@ -3,4 +3,5 @@
 //print(v)
 //alert(window.location)
 
-alert(1/0)
+while(1){}
+alert(1)

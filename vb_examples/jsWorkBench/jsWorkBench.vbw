@@ -1,7 +1,7 @@
 CFunc = 0, 0, 0, 0, C
 CGraph = 0, 0, 0, 0, C
 CNode = 0, 0, 0, 0, C
-CScriptFunctions = 89, 26, 851, 737, C
+CScriptFunctions = 89, 26, 851, 737, 
 Form2 = 66, 65, 1117, 735, , 22, 22, 1073, 691, C
 frmFuncGraph = 0, 0, 0, 0, C, 66, 66, 1117, 735, C
 frmInlineDecoderCalls = 0, 0, 0, 0, C, 88, 88, 1139, 757, C

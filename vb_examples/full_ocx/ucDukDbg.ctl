@@ -620,7 +620,7 @@ Private Sub tbarDebug_ButtonClick(ByVal Button As MSComctlLib.Button)
                                     
         Case "Stop":
                                   userStop = True
-                                  duk.Timeout = 1
+                                  duk.Timeout = -1
                                   SendDebuggerCmd dc_stepInto
                         
         

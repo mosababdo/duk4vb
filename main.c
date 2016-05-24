@@ -66,7 +66,8 @@ int __stdcall DukOp(int operation, duk_context *ctx, int arg1, char* arg2){
 	//these do not require a context..
 	switch(operation){
 		case opd_LastString: return mLastString;
-		case opd_ScriptTimeout: watchdogTimeout = arg1; return 0;
+		case opd_ScriptTimeout: 
+			watchdogTimeout = arg1; return 0;
 	}
 
 	if(ctx == 0) return -1;
@@ -129,6 +130,8 @@ int ScriptTimeoutCheck(const void*udata)
 			lastRefresh = tick;
 		}
 	}
+
+	if(watchdogTimeout < 0) return 1; //force stop
 
     if (watchdogTimeout) {
 		if (tick - startTime > watchdogTimeout){  
