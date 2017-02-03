@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Object = "{2668C1EA-1D34-42E2-B89F-6B92F3FF627B}#5.0#0"; "scivb2.ocx"
 Begin VB.UserControl ucDukDbg 
    ClientHeight    =   7560
@@ -312,6 +312,15 @@ Private WithEvents ownerForm As Form
 Attribute ownerForm.VB_VarHelpID = -1
 Private m_DbgState As dbgStates
 Private isInitilized As Boolean
+Private m_timeout As Long
+
+Property Get Timeout() As Long
+    Timeout = m_timeout
+End Property
+
+Property Let Timeout(v As Long)
+    m_timeout = v
+End Property
 
 'use this to get full access to the editor:
 '  dim txtjs withevents as sci2.SciSimple
@@ -678,7 +687,7 @@ Private Sub ExecuteScript(Optional withDebugger As Boolean)
         duk.Timeout = 0
         duk.DebugAttach
     Else
-        duk.Timeout = 7000 'set to 0 to disabled
+        duk.Timeout = m_timeout '7000 'set to 0 to disabled
     End If
      
     If Len(curFile) = 0 Then curFile = GetFreeFileName(Environ("temp"), ".js")
@@ -732,6 +741,7 @@ End Sub
  
 Private Sub UserControl_Initialize()
     SetToolBarIcons
+    m_timeout = 7000
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
@@ -870,7 +880,7 @@ Private Sub txtCmd_KeyPress(KeyAscii As Integer)
     If KeyAscii <> 13 Then Exit Sub 'wait for user to press return key
     KeyAscii = 0 'eat the keypress to prevent vb from doing a msgbeep
     
-    If Left(txtCmd.Text, 1) = "." Then
+    If Left(txtCmd.Text, 1) = "." Or txtCmd.Text = "?" Then
         handleDebuggerCmdLine txtCmd
         txtCmd = Empty
         Exit Sub
@@ -899,6 +909,12 @@ Sub handleDebuggerCmdLine(cmdLine As String)
     
     args = Split(cmdLine, " ")
     cmd = LCase(args(0))
+    
+    If cmd = "?" Then
+        push ret, "Command list: .cls .objs .libs .bl .timeout"
+        push ret, "You can also use this area to run javascript and set variables."
+        push ret, "You can not debug function calls made from here."
+    End If
     
     If cmd = ".cls" Then
         RaiseEvent dbgOut("cls")
@@ -936,6 +952,16 @@ Sub handleDebuggerCmdLine(cmdLine As String)
         End If
     End If
     
+    If cmd = ".timeout" Then
+        x = CLng(args(1))
+        If Err.Number = 0 Then
+            Me.Timeout = CLng(x)
+            push ret, "Timeout set to " & x
+        Else
+            push ret, "Error setting timeout: " & Err.Description
+        End If
+    End If
+        
     RaiseEvent printOut(Join(ret, vbCrLf))
     
 End Sub

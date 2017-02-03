@@ -117,8 +117,9 @@ int __stdcall setLastString(const char* s){ //accepts null string to just free l
 }
 
 
-int ScriptTimeoutCheck(const void*udata)
-{
+int ScriptTimeoutCheck(const void *udata)
+{ //this is exported strictly for debugging purposes not for use with vb!
+#pragma EXPORT 
 
 	unsigned int tick = GetTickCount();
 
@@ -131,6 +132,7 @@ int ScriptTimeoutCheck(const void*udata)
 		}
 	}
 
+	if(watchdogTimeout == 0) return 0; //disabled
 	if(watchdogTimeout < 0) return 1; //force stop
 
     if (watchdogTimeout) {
